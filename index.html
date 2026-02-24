@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI先锋·伙伴之家</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+</head>
+<body>
+
+<!-- ===== Sticky Header (single row: logo + nav + login) ===== -->
+<header class="header">
+  <div class="header-row">
+    <div class="header-logo">
+      <div class="logo-icon">🚀</div>
+      <span>AI先锋·伙伴之家</span>
+    </div>
+    <nav class="header-nav" id="pillNav">
+      <button class="pill-btn active" data-tab="home">🏠 首页</button>
+      <button class="pill-btn" data-tab="weapons">🧰 打单兵器</button>
+      <button class="pill-btn" data-tab="maas">🚀 赢战MaaS</button>
+      <button class="pill-btn" data-tab="guide">🎯 拜访教练</button>
+      <button class="pill-btn" data-tab="rank">🏆 龙虎榜</button>
+      <button class="pill-btn" data-tab="feedback">💬 回音壁</button>
+    </nav>
+    <div class="header-right">
+      <button class="btn-login" onclick="showToast('钉钉登录功能将在二期上线')">钉钉登录</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Search Bar (below header, above content) ===== -->
+<div class="search-bar-area">
+  <div class="search-box">
+    <input type="text" placeholder="向 AI 教练提问，或搜索资料..." id="heroSearchInput" />
+    <button class="btn-search" onclick="handleSearch()">🔍</button>
+  </div>
+</div>
+
+<div class="hot-search" id="hotSearch">
+  <span>热搜：</span>
+</div>
+
+<!-- ===== Content Area ===== -->
+<main class="content-area">
+
+  <!-- ===== HOME TAB ===== -->
+  <div class="tab-panel active" id="tab-home">
+    <!-- Announcements -->
+    <div class="announce-bar" id="announceBar">
+      <span class="tag">公告</span>
+      <span class="text" id="announceText"></span>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="section-title">
+      <span class="icon">⚡</span> 快速入口
+    </div>
+    <div class="quick-grid" id="quickGrid"></div>
+
+    <!-- Recommended -->
+    <div class="section-title">
+      <span class="icon">✨</span> 为你推荐的武器
+      <span class="badge">精选</span>
+    </div>
+    <div class="recommend-grid" id="recommendGrid"></div>
+  </div>
+
+  <!-- ===== WEAPONS TAB ===== -->
+  <div class="tab-panel" id="tab-weapons">
+    <div class="section-title">
+      <span class="icon">🧰</span> 打单兵器库
+    </div>
+
+    <!-- Business Rules -->
+    <div class="sub-section">
+      <div class="sub-title">📋 业务规则</div>
+      <div class="doc-list" id="rulesList"></div>
+    </div>
+
+    <!-- Tools -->
+    <div class="sub-section">
+      <div class="sub-title">🔧 常用工具</div>
+      <div class="tool-grid" id="toolGrid"></div>
+    </div>
+
+    <!-- Knowledge Base -->
+    <div class="sub-section">
+      <div class="sub-title">📖 生态知识库</div>
+      <div class="doc-list" id="knowledgeList"></div>
+      <a class="kb-link" id="kbLink" target="_blank" rel="noopener">
+        📂 打开钉钉知识库完整目录 →
+      </a>
+    </div>
+
+    <!-- Live Training (moved from Guide) -->
+    <div class="sub-section">
+      <div class="sub-title">🎬 周五上干货：钉钉直播培训</div>
+      <div class="live-grid" id="liveGrid"></div>
+      <a class="kb-link" id="moreLiveLink" href="#" target="_blank" rel="noopener" style="margin-top: 16px;">
+        📺 查看更多培训内容 →
+      </a>
+    </div>
+  </div>
+
+  <!-- ===== MAAS TAB ===== -->
+  <div class="tab-panel" id="tab-maas">
+    <div class="section-title">
+      <span class="icon">🚀</span> 赢战MaaS
+      <span class="badge">赛道拓展</span>
+    </div>
+
+    <div class="track-grid" id="trackGrid">
+      <!-- Track cards rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ===== GUIDE TAB (拜访教练) ===== -->
+  <div class="tab-panel" id="tab-guide">
+    <div class="section-title">
+      <span class="icon">🎯</span> 拜访教练
+    </div>
+
+    <!-- Customer Analysis -->
+    <div class="guide-section">
+      <div class="sub-title">🔍 甄选客户：AI潜力评估</div>
+      <div class="form-card">
+        <div class="form-group">
+          <label>输入客户名称或产品名称</label>
+          <input type="text" id="customerInput" placeholder="例如：山东深度数科 / 钉钉 / XX医疗科技有限公司" />
+        </div>
+        <div class="form-group">
+          <label>选择AI模型（可多选对比）</label>
+          <div class="model-selector" id="customerModelSelector">
+            <label class="model-option">
+              <input type="checkbox" name="customerModel" value="turbo" checked />
+              <span class="model-chip">Qwen-Turbo <em>快速</em></span>
+            </label>
+            <label class="model-option">
+              <input type="checkbox" name="customerModel" value="plus" />
+              <span class="model-chip">Qwen-Plus <em>均衡</em></span>
+            </label>
+            <label class="model-option">
+              <input type="checkbox" name="customerModel" value="max" />
+              <span class="model-chip">Qwen-Max <em>旗舰</em></span>
+            </label>
+            <label class="model-option">
+              <input type="checkbox" name="customerModel" value="think" />
+              <span class="model-chip">QwQ-32B <em>深度思考</em></span>
+            </label>
+          </div>
+        </div>
+        <button class="btn-generate" onclick="handleCustomerAnalysis()">🤖 生成客户分析报告</button>
+      </div>
+      <div id="customerResults"></div>
+    </div>
+
+    <!-- Visit Plan -->
+    <div class="guide-section">
+      <div class="sub-title">🎯 拜访客户：生成拜访计划</div>
+      <div class="form-card">
+        <div class="scene-selector" id="sceneSelector">
+          <button class="scene-btn active" data-scene="first">👋 首次拜访</button>
+          <button class="scene-btn" data-scene="progress">📈 商机推进</button>
+          <button class="scene-btn" data-scene="executive">👔 高层拜访</button>
+        </div>
+
+        <!-- Common Field: Role -->
+        <div class="form-group">
+          <label>拜访对象角色 *</label>
+          <select id="visitRole">
+            <option value="">请选择</option>
+            <option>CEO</option>
+            <option>CTO</option>
+            <option>业务负责人</option>
+            <option>IT负责人</option>
+            <option>采购负责人</option>
+            <option>财务负责人</option>
+          </select>
+        </div>
+
+        <!-- First Visit Form -->
+        <div class="scene-form active" id="form-first">
+          <div class="form-group">
+            <label>客户名称 *</label>
+            <input type="text" placeholder="请输入客户名称" />
+          </div>
+          <div class="form-group">
+            <label>解决方案/产品 *</label>
+            <input type="text" placeholder="例如：通义千问API / 云服务器ECS" />
+          </div>
+        </div>
+
+        <!-- Progress Form -->
+        <div class="scene-form" id="form-progress">
+          <div class="form-group">
+            <label>项目名称 *</label>
+            <input type="text" placeholder="请输入项目名称" />
+          </div>
+          <div class="form-group">
+            <label>解决方案/产品 *</label>
+            <input type="text" placeholder="例如：智慧医疗解决方案" />
+          </div>
+          <div class="form-group">
+            <label>项目阶段 *</label>
+            <select>
+              <option value="">请选择</option>
+              <option>销售线索</option>
+              <option>潜在商机</option>
+              <option>商机确认</option>
+              <option>技术和商务方案评估</option>
+              <option>合同签署</option>
+              <option>上量</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Executive Form -->
+        <div class="scene-form" id="form-executive">
+          <div class="form-group">
+            <label>客户名称 *</label>
+            <input type="text" placeholder="请输入客户名称" />
+          </div>
+          <div class="form-group">
+            <label>客户行业与业务 *</label>
+            <input type="text" placeholder="例如：医疗行业，主营医院信息化系统" />
+          </div>
+        </div>
+
+        <button class="btn-generate" onclick="handleVisitPlan()">🎯 生成拜访计划</button>
+        <div class="form-group" style="margin-top:12px">
+          <label>选择AI模型（可多选对比）</label>
+          <div class="model-selector" id="visitModelSelector">
+            <label class="model-option">
+              <input type="checkbox" name="visitModel" value="turbo" checked />
+              <span class="model-chip">Qwen-Turbo <em>快速</em></span>
+            </label>
+            <label class="model-option">
+              <input type="checkbox" name="visitModel" value="plus" />
+              <span class="model-chip">Qwen-Plus <em>均衡</em></span>
+            </label>
+            <label class="model-option">
+              <input type="checkbox" name="visitModel" value="max" />
+              <span class="model-chip">Qwen-Max <em>旗舰</em></span>
+            </label>
+            <label class="model-option">
+              <input type="checkbox" name="visitModel" value="think" />
+              <span class="model-chip">QwQ-32B <em>深度思考</em></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div id="visitResults"></div>
+    </div>
+
+  </div>
+
+  <!-- ===== RANK TAB ===== -->
+  <div class="tab-panel" id="tab-rank">
+    <div class="section-title">
+      <span class="icon">🏆</span> 龙虎榜
+    </div>
+
+    <div class="rank-tabs" id="rankTabs">
+      <button class="rank-tab active" data-rank="token">🤖 Token调用</button>
+      <button class="rank-tab" data-rank="case">📝 案例贡献</button>
+      <button class="rank-tab" data-rank="study">📖 学习时长</button>
+      <button class="rank-tab" data-rank="cert">🎓 持证率</button>
+      <button class="rank-tab" data-rank="battle">⚔️ 项目战报</button>
+    </div>
+
+    <div class="rank-panel active" id="rank-token">
+      <div class="rank-list" id="tokenRankList"></div>
+    </div>
+    <div class="rank-panel" id="rank-case">
+      <div class="rank-list" id="caseRankList"></div>
+    </div>
+    <div class="rank-panel" id="rank-study">
+      <div class="rank-list" id="studyRankList"></div>
+    </div>
+    <div class="rank-panel" id="rank-cert">
+      <div class="rank-list" id="certRankList"></div>
+    </div>
+    <div class="rank-panel" id="rank-battle">
+      <div class="battle-list" id="battleList"></div>
+    </div>
+  </div>
+
+  <!-- ===== FEEDBACK TAB ===== -->
+  <div class="tab-panel" id="tab-feedback">
+    <div class="section-title">
+      <span class="icon">💬</span> 回音壁
+      <span class="badge">畅所欲言</span>
+    </div>
+
+    <div class="feedback-form">
+      <textarea id="feedbackContent" placeholder="说说你的想法、建议或需求...一句话也行！"></textarea>
+      <div class="form-row">
+        <input type="text" id="feedbackName" placeholder="你的称呼（选填）" />
+        <input type="text" id="feedbackCompany" placeholder="所属伙伴公司（选填）" />
+      </div>
+      <button class="btn-submit" onclick="handleFeedback()">📮 提交反馈</button>
+    </div>
+
+    <div class="sub-title" style="margin-top: 28px;">📨 伙伴心声</div>
+    <div class="msg-list" id="msgList"></div>
+  </div>
+
+</main>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <p>AI先锋·伙伴之家 — 阿里云西部大区伙伴赋能平台</p>
+  <p style="margin-top: 4px;">如有问题请联系管理员 | 数据仅供内部参考</p>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
