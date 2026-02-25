@@ -563,7 +563,7 @@ function renderWeapons() {
   const kbLink = document.getElementById('kbLink');
   if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
   
-  // Live Trainings
+  // Render Live Trainings (moved from Guide to Weapons)
   const liveGrid = document.getElementById('liveGrid');
   if (liveGrid) {
     (weapons.liveTrainings || []).forEach(item => {
@@ -775,7 +775,7 @@ function handleLike(btn, currentLikes) {
 
 // ===== AI API Call =====
 async function callAI(type, input) {
-  const resp = await fetch('/.netlify/functions/ai-proxy', {
+  const resp = await fetch('/api/ai-proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type, input })
