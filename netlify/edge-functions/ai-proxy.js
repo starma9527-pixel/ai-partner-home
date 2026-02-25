@@ -19,12 +19,40 @@ const MODEL_CONFIG = {
 };
 
 export default async (request, context) => {
-  // GET request for testing if Edge Function is deployed
+  // GET request for testing / diagnostics
   if (request.method === 'GET') {
-    return new Response(JSON.stringify({ 
-      status: 'Edge Function is working!',
-      timestamp: new Date().toISOString()
-    }), { status: 200, headers: CORS_HEADERS });
+    const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
+    const hasKey = !!API_KEY;
+    const diagnostics = { status: 'Edge Function is working!', hasApiKey: hasKey, timestamp: new Date().toISOString() };
+    
+    // Quick connectivity test to DashScope API
+    try {
+      const testCtrl = new AbortController();
+      const testTimeout = setTimeout(() => testCtrl.abort(), 8000);
+      const testResp = await fetch('https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models', {
+        headers: { 'Authorization': 'Bearer ' + (API_KEY || 'test') },
+        signal: testCtrl.signal
+      });
+      clearTimeout(testTimeout);
+      diagnostics.intlApi = { reachable: true, status: testResp.status };
+    } catch (e) {
+      diagnostics.intlApi = { reachable: false, error: e.name + ': ' + e.message };
+    }
+    
+    try {
+      const testCtrl2 = new AbortController();
+      const testTimeout2 = setTimeout(() => testCtrl2.abort(), 8000);
+      const testResp2 = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/models', {
+        headers: { 'Authorization': 'Bearer ' + (API_KEY || 'test') },
+        signal: testCtrl2.signal
+      });
+      clearTimeout(testTimeout2);
+      diagnostics.cnApi = { reachable: true, status: testResp2.status };
+    } catch (e) {
+      diagnostics.cnApi = { reachable: false, error: e.name + ': ' + e.message };
+    }
+    
+    return new Response(JSON.stringify(diagnostics, null, 2), { status: 200, headers: CORS_HEADERS });
   }
 
   if (request.method === 'OPTIONS') {
@@ -148,11 +176,14 @@ export default async (request, context) => {
   }
 
   try {
-    // 设置 45 秒超时，避免 Netlify Edge Function 超时返回非 JSON
+    // 设置 25 秒超时（Netlify Edge Function 限制约 30 秒）
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    const response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
+    // DashScope 国际版端点，海外节点访问更稳定
+    const API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
