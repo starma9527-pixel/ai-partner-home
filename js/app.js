@@ -15,7 +15,6 @@ const SITE_DATA = {
     "adminEmail": "admin@example.com"
   },
   "hotSearch": [
-    "医疗行业报价",
     "最新AI大单案例",
     "通义千问接入指南",
     "云服务器选型"
@@ -23,13 +22,13 @@ const SITE_DATA = {
   "announcements": [
     {
       "id": 1,
-      "text": "2025年Q1伙伴激励政策已发布，点击查看详情",
+      "text": "2026年Q1伙伴激励政策已发布，点击查看详情",
       "link": "#",
       "date": "2025-03-01"
     },
     {
       "id": 2,
-      "text": "本周五直播预告：大模型在政务场景的落地实践",
+      "text": "本周五直播预告：大模型在游戏场景的落地实践",
       "link": "#",
       "date": "2025-03-05"
     }
@@ -142,14 +141,15 @@ const SITE_DATA = {
         "title": "短剧/漫剧行业拓展一指禅",
         "type": "PDF",
         "date": "2025-03-01",
-        "link": "#",
+        "link": "https://alidocs.dingtalk.com/i/nodes/AR4GpnMqJzKpOoklFErwr23q8Ke0xjE3?corpId=dingd8e1123006514592&utm_medium=im_card&cid=284546643%3A2767829485&iframeQuery=utm_medium%3Dim_card%26utm_source%3Dim&utm_scene=person_space&utm_source=im",
         "size": "3.5MB"
       }
     ],
+    "knowledgeBaseLink": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview",
     "liveTrainings": [
       {
         "title": "AI短剧解决方案、AI Coding产品方案选型推荐",
-        "date": "2025-03-07 14:00",
+        "date": "2026-01-09",
         "speaker": "李阳(山樵)",
         "link": "https://n.dingtalk.com/dingding/live-room/index.html?roomId=MIzQRx84Yo&liveUuid=34080b76-8c46-45de-a7a6-8a8d11e501a6",
         "cover": ""
@@ -169,8 +169,7 @@ const SITE_DATA = {
         "cover": ""
       }
     ],
-    "moreLiveLink": "#",
-    "knowledgeBaseLink": "https://alidocs.dingtalk.com/i/nodes/YMyQA2dXW7gYo6MzcMgQzQQAWzlwrZgb"
+    "moreLiveLink": "#"
   },
   "guide": {},
   "maas": {
@@ -186,7 +185,11 @@ const SITE_DATA = {
           "税务风险AI预警",
           "智能记账与对账"
         ],
-        "products": ["通义千问API", "OCR文字识别", "智能对话机器人"],
+        "products": [
+          "通义千问API",
+          "OCR文字识别",
+          "智能对话机器人"
+        ],
         "cases": "已有3家伙伴落地财税AI项目，累计合同额超200万",
         "link": "#"
       },
@@ -201,7 +204,11 @@ const SITE_DATA = {
           "智能配音与语音合成",
           "AI视频剪辑与特效"
         ],
-        "products": ["通义万相", "CosyVoice语音合成", "通义千问API"],
+        "products": [
+          "通义万相",
+          "CosyVoice语音合成",
+          "通义千问API"
+        ],
         "cases": "AI短剧制作成本降低60%，单集产出效率提升5倍",
         "link": "#"
       },
@@ -216,7 +223,11 @@ const SITE_DATA = {
           "通话质检与合规分析",
           "语音转文字与会议纪要"
         ],
-        "products": ["语音识别ASR", "语音合成TTS", "通义千问API"],
+        "products": [
+          "语音识别ASR",
+          "语音合成TTS",
+          "通义千问API"
+        ],
         "cases": "智能语音客服替代率达70%，客户满意度提升25%",
         "link": "#"
       }
@@ -224,68 +235,169 @@ const SITE_DATA = {
   },
   "rank": {
     "tokenRank": [
-      { "rank": 1, "name": "重庆典名", "score": 128000 },
-      { "rank": 2, "name": "成都慕创", "score": 95000 },
-      { "rank": 3, "name": "重庆云之渝", "score": 87000 },
-      { "rank": 4, "name": "XXX", "score": 72000 },
-      { "rank": 5, "name": "XXX", "score": 65000 }
+      {
+        "rank": 1,
+        "name": "重庆典名",
+        "score": 128000
+      },
+      {
+        "rank": 2,
+        "name": "成都慕创",
+        "score": 95000
+      },
+      {
+        "rank": 3,
+        "name": "重庆云之渝",
+        "score": 87000
+      },
+      {
+        "rank": 4,
+        "name": "XXX",
+        "score": 72000
+      },
+      {
+        "rank": 5,
+        "name": "XXX",
+        "score": 65000
+      }
     ],
     "caseRank": [
-      { "rank": 1, "name": "锐智科技", "score": 23 },
-      { "rank": 2, "name": "数联创新", "score": 18 },
-      { "rank": 3, "name": "云翔信息", "score": 15 },
-      { "rank": 4, "name": "天行数据", "score": 12 },
-      { "rank": 5, "name": "智源网络", "score": 9 }
+      {
+        "rank": 1,
+        "name": "锐智科技",
+        "score": 23
+      },
+      {
+        "rank": 2,
+        "name": "数联创新",
+        "score": 18
+      },
+      {
+        "rank": 3,
+        "name": "云翔信息",
+        "score": 15
+      },
+      {
+        "rank": 4,
+        "name": "天行数据",
+        "score": 12
+      },
+      {
+        "rank": 5,
+        "name": "智源网络",
+        "score": 9
+      }
     ],
     "studyRank": [
-      { "rank": 1, "name": "云翔信息", "score": "42h" },
-      { "rank": 2, "name": "锐智科技", "score": "38h" },
-      { "rank": 3, "name": "智源网络", "score": "35h" },
-      { "rank": 4, "name": "数联创新", "score": "31h" },
-      { "rank": 5, "name": "天行数据", "score": "28h" }
+      {
+        "rank": 1,
+        "name": "云翔信息",
+        "score": "42h"
+      },
+      {
+        "rank": 2,
+        "name": "锐智科技",
+        "score": "38h"
+      },
+      {
+        "rank": 3,
+        "name": "智源网络",
+        "score": "35h"
+      },
+      {
+        "rank": 4,
+        "name": "数联创新",
+        "score": "31h"
+      },
+      {
+        "rank": 5,
+        "name": "天行数据",
+        "score": "28h"
+      }
     ],
     "certRank": [
-      { "rank": 1, "name": "锐智科技", "score": "92%" },
-      { "rank": 2, "name": "云翔信息", "score": "85%" },
-      { "rank": 3, "name": "天行数据", "score": "78%" },
-      { "rank": 4, "name": "数联创新", "score": "73%" },
-      { "rank": 5, "name": "智源网络", "score": "68%" }
+      {
+        "rank": 1,
+        "name": "锐智科技",
+        "score": "92%"
+      },
+      {
+        "rank": 2,
+        "name": "云翔信息",
+        "score": "85%"
+      },
+      {
+        "rank": 3,
+        "name": "天行数据",
+        "score": "78%"
+      },
+      {
+        "rank": 4,
+        "name": "数联创新",
+        "score": "73%"
+      },
+      {
+        "rank": 5,
+        "name": "智源网络",
+        "score": "68%"
+      }
     ],
     "battleReports": [
-      { "title": "锐智科技签约XX医院智慧医疗项目", "amount": "230万", "date": "2025-02-28" },
-      { "title": "云翔信息拿下XX教育局AI教学平台", "amount": "180万", "date": "2025-02-25" },
-      { "title": "数联创新交付XX银行智能风控系统", "amount": "350万", "date": "2025-02-20" }
+      {
+        "title": "锐智科技签约XX医院智慧医疗项目",
+        "amount": "230万",
+        "date": "2025-02-28"
+      },
+      {
+        "title": "云翔信息拿下XX教育局AI教学平台",
+        "amount": "180万",
+        "date": "2025-02-25"
+      },
+      {
+        "title": "数联创新交付XX银行智能风控系统",
+        "amount": "350万",
+        "date": "2025-02-20"
+      }
     ]
   },
   "feedback": {
     "messages": [
-      { "id": 1, "author": "张伟 · 锐智科技", "content": "希望能增加更多金融行业的案例资料", "date": "2025-02-28", "likes": 12 },
-      { "id": 2, "author": "李娜 · 云翔信息", "content": "周五培训非常实用，希望能有回放", "date": "2025-02-27", "likes": 8 },
-      { "id": 3, "author": "王磊 · 数联创新", "content": "报价工具建议增加批量导出功能", "date": "2025-02-26", "likes": 5 }
+      {
+        "id": 1,
+        "author": "张伟 · 锐智科技",
+        "content": "希望能增加更多金融行业的案例资料",
+        "date": "2025-02-28",
+        "likes": 12
+      },
+      {
+        "id": 2,
+        "author": "李娜 · 云翔信息",
+        "content": "周五培训非常实用，希望能有回放",
+        "date": "2025-02-27",
+        "likes": 8
+      },
+      {
+        "id": 3,
+        "author": "王磊 · 数联创新",
+        "content": "报价工具建议增加批量导出功能",
+        "date": "2025-02-26",
+        "likes": 5
+      }
     ]
   }
 };
 
-// ===== Model Display Names =====
-const MODEL_LABELS = {
-  'turbo': 'Qwen-Turbo (快速)',
-  'plus': 'Qwen-Plus (均衡)',
-  'max': 'Qwen-Max (旗舰)',
-  'think': 'QwQ-32B (深度思考)'
-};
-
 // ===== Global State =====
-var siteData = null;
+let siteData = null;
 
 // ===== Init =====
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async () => {
   await loadSiteData();
   initTabs();
   initRankTabs();
   initSceneSelector();
   renderHome();
   renderWeapons();
-  renderMaas();
   renderGuide();
   renderRank();
   renderFeedback();
@@ -294,22 +406,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 // ===== Load Data =====
 async function loadSiteData() {
   try {
-    var resp = await fetch('data/site-data.json');
-    if (resp.ok) { siteData = await resp.json(); return; }
+    const resp = await fetch('data/site-data.json');
+    if (resp.ok) {
+      siteData = await resp.json();
+      return;
+    }
   } catch (e) {}
   siteData = SITE_DATA;
 }
 
 // ===== Tab Navigation =====
 function initTabs() {
-  var nav = document.getElementById('pillNav');
-  nav.addEventListener('click', function(e) {
-    var btn = e.target.closest('.pill-btn');
+  const nav = document.getElementById('pillNav');
+  nav.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pill-btn');
     if (!btn) return;
-    var tab = btn.dataset.tab;
-    nav.querySelectorAll('.pill-btn').forEach(function(b) { b.classList.remove('active'); });
+    const tab = btn.dataset.tab;
+    nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     window.scrollTo({ top: document.querySelector('.search-bar-area').offsetTop - 60, behavior: 'smooth' });
   });
@@ -317,48 +432,48 @@ function initTabs() {
 
 // ===== Rank Sub-tabs =====
 function initRankTabs() {
-  var tabs = document.getElementById('rankTabs');
+  const tabs = document.getElementById('rankTabs');
   if (!tabs) return;
-  tabs.addEventListener('click', function(e) {
-    var btn = e.target.closest('.rank-tab');
+  tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.rank-tab');
     if (!btn) return;
-    var rank = btn.dataset.rank;
-    tabs.querySelectorAll('.rank-tab').forEach(function(b) { b.classList.remove('active'); });
+    const rank = btn.dataset.rank;
+    tabs.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.rank-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.rank-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('rank-' + rank).classList.add('active');
   });
 }
 
 // ===== Scene Selector (Visit Plan) =====
 function initSceneSelector() {
-  var sel = document.getElementById('sceneSelector');
+  const sel = document.getElementById('sceneSelector');
   if (!sel) return;
-  sel.addEventListener('click', function(e) {
-    var btn = e.target.closest('.scene-btn');
+  sel.addEventListener('click', (e) => {
+    const btn = e.target.closest('.scene-btn');
     if (!btn) return;
-    var scene = btn.dataset.scene;
-    sel.querySelectorAll('.scene-btn').forEach(function(b) { b.classList.remove('active'); });
+    const scene = btn.dataset.scene;
+    sel.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.scene-form').forEach(function(f) { f.classList.remove('active'); });
+    document.querySelectorAll('.scene-form').forEach(f => f.classList.remove('active'));
     document.getElementById('form-' + scene).classList.add('active');
   });
 }
 
 // ===== Render: Home =====
 function renderHome() {
-  var hotDiv = document.getElementById('hotSearch');
-  (siteData.hotSearch || []).forEach(function(tag) {
-    var a = document.createElement('a');
+  const hotDiv = document.getElementById('hotSearch');
+  (siteData.hotSearch || []).forEach(tag => {
+    const a = document.createElement('a');
     a.href = '#';
     a.textContent = '#' + tag;
-    a.onclick = function(e) { e.preventDefault(); document.getElementById('heroSearchInput').value = tag; handleSearch(); };
+    a.onclick = (e) => { e.preventDefault(); document.getElementById('heroSearchInput').value = tag; handleSearch(); };
     hotDiv.appendChild(a);
   });
-  var announcements = siteData.announcements || [];
+  const announcements = siteData.announcements || [];
   if (announcements.length > 0) {
-    var textEl = document.getElementById('announceText');
-    var idx = 0;
+    const textEl = document.getElementById('announceText');
+    let idx = 0;
     function showAnnounce() {
       textEl.textContent = announcements[idx].text;
       idx = (idx + 1) % announcements.length;
@@ -366,280 +481,232 @@ function renderHome() {
     showAnnounce();
     if (announcements.length > 1) setInterval(showAnnounce, 5000);
   }
-  var grid = document.getElementById('quickGrid');
-  (siteData.quickLinks || []).forEach(function(item) {
-    var div = document.createElement('div');
+  const grid = document.getElementById('quickGrid');
+  (siteData.quickLinks || []).forEach(item => {
+    const div = document.createElement('div');
     div.className = 'quick-card';
-    div.innerHTML =
-      '<div class="card-icon">' + item.icon + '</div>' +
-      '<div>' +
-        '<div class="card-title">' + item.title + '</div>' +
-        '<div class="card-desc">' + item.desc + '</div>' +
-      '</div>';
-    div.onclick = function() {
-      var btn = document.querySelector('.pill-btn[data-tab="' + item.tab + '"]');
+    div.innerHTML = `
+      <div class="card-icon">${item.icon}</div>
+      <div>
+        <div class="card-title">${item.title}</div>
+        <div class="card-desc">${item.desc}</div>
+      </div>
+    `;
+    div.onclick = () => {
+      const btn = document.querySelector(`.pill-btn[data-tab="${item.tab}"]`);
       if (btn) btn.click();
     };
     grid.appendChild(div);
   });
-  var recGrid = document.getElementById('recommendGrid');
-  var knowledge = (siteData.weapons && siteData.weapons.knowledge) || [];
-  knowledge.slice(0, 4).forEach(function(item) {
-    var isVideo = item.type === 'VIDEO';
-    var div = document.createElement('div');
+  const recGrid = document.getElementById('recommendGrid');
+  const knowledge = (siteData.weapons && siteData.weapons.knowledge) || [];
+  knowledge.slice(0, 4).forEach(item => {
+    const isVideo = item.type === 'VIDEO';
+    const div = document.createElement('div');
     div.className = 'rec-card';
-    div.innerHTML =
-      '<div class="rec-thumb">' + (isVideo ? '🎬' : '📄') + '</div>' +
-      '<div class="rec-info">' +
-        '<div class="rec-title">' + item.title + '</div>' +
-        '<div class="rec-meta">' +
-          '<span class="rec-type ' + (isVideo ? 'type-video' : 'type-pdf') + '">' + item.type + '</span>' +
-          (isVideo ? item.duration : item.size) + ' · ' + item.date +
-        '</div>' +
-        '<a href="' + item.link + '" class="btn-action" target="_blank">' + (isVideo ? '▶ 观看' : '📥 查看') + '</a>' +
-      '</div>';
+    div.innerHTML = `
+      <div class="rec-thumb">${isVideo ? '🎬' : '📄'}</div>
+      <div class="rec-info">
+        <div class="rec-title">${item.title}</div>
+        <div class="rec-meta">
+          <span class="rec-type ${isVideo ? 'type-video' : 'type-pdf'}">${item.type}</span>
+          ${isVideo ? item.duration : item.size} · ${item.date}
+        </div>
+        <a href="${item.link}" class="btn-action" target="_blank">${isVideo ? '▶ 观看' : '📥 查看'}</a>
+      </div>
+    `;
     recGrid.appendChild(div);
   });
 }
 
 // ===== Render: Weapons =====
 function renderWeapons() {
-  var weapons = siteData.weapons || {};
-  var rulesList = document.getElementById('rulesList');
-  (weapons.rules || []).forEach(function(item) {
-    rulesList.innerHTML +=
-      '<div class="doc-item">' +
-        '<div class="doc-icon">📋</div>' +
-        '<div class="doc-info"><div class="doc-name">' + item.title + '</div><div class="doc-meta">' + item.type + ' · ' + item.size + ' · ' + item.date + '</div></div>' +
-        '<a href="' + item.link + '" class="btn-dl" target="_blank">查看</a>' +
-      '</div>';
+  const weapons = siteData.weapons || {};
+  const rulesList = document.getElementById('rulesList');
+  (weapons.rules || []).forEach(item => {
+    rulesList.innerHTML += `
+      <div class="doc-item">
+        <div class="doc-icon">📋</div>
+        <div class="doc-info">
+          <div class="doc-name">${item.title}</div>
+          <div class="doc-meta">${item.type} · ${item.size} · ${item.date}</div>
+        </div>
+        <a href="${item.link}" class="btn-dl" target="_blank">查看</a>
+      </div>
+    `;
   });
-  var toolGrid = document.getElementById('toolGrid');
-  (weapons.tools || []).forEach(function(item) {
-    toolGrid.innerHTML +=
-      '<div class="tool-card" onclick="window.open(\'' + item.link + '\', \'_blank\')">' +
-        '<div class="tool-icon">' + item.icon + '</div>' +
-        '<div class="tool-name">' + item.title + '</div>' +
-        '<div class="tool-desc">' + item.desc + '</div>' +
-      '</div>';
+  const toolGrid = document.getElementById('toolGrid');
+  (weapons.tools || []).forEach(item => {
+    toolGrid.innerHTML += `
+      <div class="tool-card" onclick="window.open('${item.link}', '_blank')">
+        <div class="tool-icon">${item.icon}</div>
+        <div class="tool-name">${item.title}</div>
+        <div class="tool-desc">${item.desc}</div>
+      </div>
+    `;
   });
-  var knowledgeList = document.getElementById('knowledgeList');
-  (weapons.knowledge || []).forEach(function(item) {
-    var isVideo = item.type === 'VIDEO';
-    knowledgeList.innerHTML +=
-      '<div class="doc-item">' +
-        '<div class="doc-icon">' + (isVideo ? '🎬' : '📄') + '</div>' +
-        '<div class="doc-info"><div class="doc-name">' + item.title + '</div><div class="doc-meta">' + item.type + ' · ' + (isVideo ? item.duration : item.size) + ' · ' + item.date + '</div></div>' +
-        '<a href="' + item.link + '" class="btn-dl" target="_blank">' + (isVideo ? '观看' : '下载') + '</a>' +
-      '</div>';
+  const knowledgeList = document.getElementById('knowledgeList');
+  (weapons.knowledge || []).forEach(item => {
+    const isVideo = item.type === 'VIDEO';
+    knowledgeList.innerHTML += `
+      <div class="doc-item">
+        <div class="doc-icon">${isVideo ? '🎬' : '📄'}</div>
+        <div class="doc-info">
+          <div class="doc-name">${item.title}</div>
+          <div class="doc-meta">${item.type} · ${isVideo ? item.duration : item.size} · ${item.date}</div>
+        </div>
+        <a href="${item.link}" class="btn-dl" target="_blank">${isVideo ? '观看' : '下载'}</a>
+      </div>
+    `;
   });
-  var kbLink = document.getElementById('kbLink');
+  const kbLink = document.getElementById('kbLink');
   if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
-
-  // Live Training (moved from Guide)
-  var liveGrid = document.getElementById('liveGrid');
-  (weapons.liveTrainings || []).forEach(function(item) {
-    liveGrid.innerHTML +=
-      '<a href="' + item.link + '" class="live-card" target="_blank">' +
-        '<div class="live-thumb">🎓<span class="live-badge">直播</span></div>' +
-        '<div class="live-info"><div class="live-title">' + item.title + '</div><div class="live-meta">🕐 ' + item.date + ' · 讲师：' + item.speaker + '</div></div>' +
-      '</a>';
-  });
-  var moreLiveLink = document.getElementById('moreLiveLink');
-  if (weapons.moreLiveLink && moreLiveLink) moreLiveLink.href = weapons.moreLiveLink;
-}
-
-// ===== Render: MaaS =====
-function renderMaas() {
-  var maas = siteData.maas || {};
-  var trackGrid = document.getElementById('trackGrid');
-  if (!trackGrid) return;
-  (maas.tracks || []).forEach(function(track) {
-    var scenariosHtml = (track.scenarios || []).map(function(s) {
-      return '<li>' + s + '</li>';
-    }).join('');
-    var productsHtml = (track.products || []).map(function(p) {
-      return '<span class="product-tag">' + p + '</span>';
-    }).join('');
-    trackGrid.innerHTML +=
-      '<div class="track-card" id="track-' + track.id + '">' +
-        '<div class="track-header">' +
-          '<span class="track-icon">' + track.icon + '</span>' +
-          '<span class="track-name">' + track.name + '</span>' +
-        '</div>' +
-        '<div class="track-desc">' + track.desc + '</div>' +
-        '<div class="track-section">' +
-          '<div class="track-label">核心场景</div>' +
-          '<ul class="track-scenarios">' + scenariosHtml + '</ul>' +
-        '</div>' +
-        '<div class="track-section">' +
-          '<div class="track-label">推荐产品</div>' +
-          '<div class="track-products">' + productsHtml + '</div>' +
-        '</div>' +
-        '<div class="track-cases">' + track.cases + '</div>' +
-        '<a href="' + track.link + '" class="btn-track" target="_blank">了解详情 →</a>' +
-      '</div>';
-  });
 }
 
 // ===== Render: Guide =====
 function renderGuide() {
+  const guide = siteData.guide || {};
+  const liveGrid = document.getElementById('liveGrid');
+  (guide.liveTrainings || []).forEach(item => {
+    liveGrid.innerHTML += `
+      <a href="${item.link}" class="live-card" target="_blank">
+        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
+        <div class="live-info">
+          <div class="live-title">${item.title}</div>
+          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
+        </div>
+      </a>
+    `;
+  });
+  const moreLiveLink = document.getElementById('moreLiveLink');
+  if (guide.moreLiveLink && moreLiveLink) moreLiveLink.href = guide.moreLiveLink;
 }
 
 // ===== Render: Rank =====
 function renderRank() {
-  var rank = siteData.rank || {};
+  const rank = siteData.rank || {};
   function renderRankList(containerId, data, unit) {
-    var el = document.getElementById(containerId);
-    (data || []).forEach(function(item) {
-      el.innerHTML +=
-        '<div class="rank-item">' +
-          '<div class="rank-num">' + item.rank + '</div>' +
-          '<div class="rank-name">' + item.name + '</div>' +
-          '<div class="rank-score">' + (typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score) + '</div>' +
-        '</div>';
+    const el = document.getElementById(containerId);
+    (data || []).forEach(item => {
+      el.innerHTML += `
+        <div class="rank-item">
+          <div class="rank-num">${item.rank}</div>
+          <div class="rank-name">${item.name}</div>
+          <div class="rank-score">${typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score}</div>
+        </div>
+      `;
     });
   }
   renderRankList('tokenRankList', rank.tokenRank, ' tokens');
   renderRankList('caseRankList', rank.caseRank, ' 个案例');
   renderRankList('studyRankList', rank.studyRank);
   renderRankList('certRankList', rank.certRank);
-  var battleList = document.getElementById('battleList');
-  (rank.battleReports || []).forEach(function(item) {
-    battleList.innerHTML +=
-      '<div class="battle-item">' +
-        '<div class="battle-icon">🏅</div>' +
-        '<div class="battle-info"><div class="battle-title">' + item.title + '</div><div class="battle-meta">' + item.date + '</div></div>' +
-        '<div class="battle-amount">' + item.amount + '</div>' +
-      '</div>';
+  const battleList = document.getElementById('battleList');
+  (rank.battleReports || []).forEach(item => {
+    battleList.innerHTML += `
+      <div class="battle-item">
+        <div class="battle-icon">🏅</div>
+        <div class="battle-info">
+          <div class="battle-title">${item.title}</div>
+          <div class="battle-meta">${item.date}</div>
+        </div>
+        <div class="battle-amount">${item.amount}</div>
+      </div>
+    `;
   });
 }
 
 // ===== Render: Feedback =====
 function renderFeedback() {
-  var messages = (siteData.feedback && siteData.feedback.messages) || [];
-  var msgList = document.getElementById('msgList');
-  messages.forEach(function(item) {
-    msgList.innerHTML +=
-      '<div class="msg-item">' +
-        '<div class="msg-header"><span class="msg-author">' + item.author + '</span><span class="msg-date">' + item.date + '</span></div>' +
-        '<div class="msg-content">' + item.content + '</div>' +
-        '<div class="msg-footer"><button class="btn-like" onclick="handleLike(this, ' + item.likes + ')">❤️ ' + item.likes + '</button></div>' +
-      '</div>';
+  const messages = (siteData.feedback && siteData.feedback.messages) || [];
+  const msgList = document.getElementById('msgList');
+  messages.forEach(item => {
+    msgList.innerHTML += `
+      <div class="msg-item">
+        <div class="msg-header">
+          <span class="msg-author">${item.author}</span>
+          <span class="msg-date">${item.date}</span>
+        </div>
+        <div class="msg-content">${item.content}</div>
+        <div class="msg-footer">
+          <button class="btn-like" onclick="handleLike(this, ${item.likes})">❤️ ${item.likes}</button>
+        </div>
+      </div>
+    `;
   });
-}
-
-// ===== Get Selected Models =====
-function getSelectedModels(checkboxName) {
-  var checked = document.querySelectorAll('input[name="' + checkboxName + '"]:checked');
-  var models = [];
-  checked.forEach(function(cb) { models.push(cb.value); });
-  return models.length > 0 ? models : ['turbo'];
-}
-
-// ===== Build Comparison Grid =====
-function buildCompareGrid(containerId, models) {
-  var container = document.getElementById(containerId);
-  var colClass = models.length >= 3 ? 'cols-3' : (models.length === 2 ? 'cols-2' : 'cols-1');
-  var html = '<div class="compare-grid ' + colClass + '">';
-  models.forEach(function(m) {
-    html +=
-      '<div class="compare-card" id="card-' + containerId + '-' + m + '">' +
-        '<div class="compare-card-header">' +
-          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
-          '<span class="model-status" id="status-' + containerId + '-' + m + '">生成中...</span>' +
-        '</div>' +
-        '<div class="compare-card-body" id="body-' + containerId + '-' + m + '">' +
-          '<span class="spinner"></span>AI正在分析中，请稍候...' +
-        '</div>' +
-      '</div>';
-  });
-  html += '</div>';
-  container.innerHTML = html;
 }
 
 // ===== Action Handlers =====
 function handleSearch() {
-  var val = document.getElementById('heroSearchInput').value.trim();
+  const val = document.getElementById('heroSearchInput').value.trim();
   if (!val) { showToast('请输入搜索内容'); return; }
   showToast('AI搜索功能将在二期上线，敬请期待');
 }
 
 function handleCustomerAnalysis() {
-  var val = document.getElementById('customerInput').value.trim();
+  const val = document.getElementById('customerInput').value.trim();
   if (!val) { showToast('请输入客户名称'); return; }
-  var models = getSelectedModels('customerModel');
-  buildCompareGrid('customerResults', models);
-
-  models.forEach(function(m) {
-    callAI('customer_analysis', { customerName: val }, m)
-      .then(function(text) {
-        document.getElementById('body-customerResults-' + m).textContent = text;
-        var st = document.getElementById('status-customerResults-' + m);
-        st.textContent = '已完成'; st.className = 'model-status done';
-      })
-      .catch(function(err) {
-        document.getElementById('body-customerResults-' + m).textContent = '生成失败：' + err.message;
-        var st = document.getElementById('status-customerResults-' + m);
-        st.textContent = '失败'; st.className = 'model-status error';
-      });
-  });
+  const outputDiv = document.getElementById('customerOutput');
+  const contentDiv = document.getElementById('customerOutputContent');
+  outputDiv.classList.add('show');
+  contentDiv.innerHTML = '<span class="spinner"></span>AI正在深度分析中，请稍候（约15-30秒）...';
+  callAI('customer_analysis', { customerName: val })
+    .then(text => { contentDiv.textContent = text; })
+    .catch(err => {
+      contentDiv.textContent = '⚠ AI接口调用失败：' + err.message + '\n\n以下为离线模板报告：\n\n' + generateCustomerReport(val);
+    });
 }
 
 function handleVisitPlan() {
-  var activeScene = document.querySelector('.scene-btn.active');
+  const activeScene = document.querySelector('.scene-btn.active');
   if (!activeScene) return;
-  var scene = activeScene.dataset.scene;
-  var form = document.getElementById('form-' + scene);
-  var roleSelect = document.getElementById('visitRole');
-  var inputs = form.querySelectorAll('input, select');
-  var valid = true;
+  const scene = activeScene.dataset.scene;
+  const form = document.getElementById('form-' + scene);
+  const roleSelect = document.getElementById('visitRole');
+  const inputs = form.querySelectorAll('input, select');
+  let valid = true;
   if (!roleSelect.value.trim()) { valid = false; roleSelect.style.borderColor = '#f87171'; }
   else { roleSelect.style.borderColor = ''; }
-  inputs.forEach(function(inp) {
+  inputs.forEach(inp => {
     if (!inp.value.trim()) { valid = false; inp.style.borderColor = '#f87171'; }
     else { inp.style.borderColor = ''; }
   });
   if (!valid) { showToast('请填写所有必填项'); return; }
-
-  var details = Array.from(inputs).map(function(inp) {
-    var label = inp.closest('.form-group') ? inp.closest('.form-group').querySelector('label') : null;
-    var labelText = label ? label.textContent : '';
-    return labelText.replace(' *', '') + '：' + inp.value;
+  const outputDiv = document.getElementById('visitOutput');
+  const contentDiv = document.getElementById('visitOutputContent');
+  outputDiv.classList.add('show');
+  contentDiv.innerHTML = '<span class="spinner"></span>AI教练正在生成拜访计划，请稍候（约15-30秒）...';
+  const details = Array.from(inputs).map(inp => {
+    const label = inp.closest('.form-group')?.querySelector('label')?.textContent || '';
+    return label.replace(' *', '') + '：' + inp.value;
   }).join('\n');
-
-  var models = getSelectedModels('visitModel');
-  buildCompareGrid('visitResults', models);
-
-  models.forEach(function(m) {
-    callAI('visit_plan', { scene: scene, role: roleSelect.value, details: details }, m)
-      .then(function(text) {
-        document.getElementById('body-visitResults-' + m).textContent = text;
-        var st = document.getElementById('status-visitResults-' + m);
-        st.textContent = '已完成'; st.className = 'model-status done';
-      })
-      .catch(function(err) {
-        document.getElementById('body-visitResults-' + m).textContent = '生成失败：' + err.message;
-        var st = document.getElementById('status-visitResults-' + m);
-        st.textContent = '失败'; st.className = 'model-status error';
-      });
-  });
+  callAI('visit_plan', { scene, role: roleSelect.value, details })
+    .then(text => { contentDiv.textContent = text; })
+    .catch(err => {
+      contentDiv.textContent = '⚠ AI接口调用失败：' + err.message + '\n\n以下为离线模板计划：\n\n' + generateVisitPlan(scene, form, roleSelect.value);
+    });
 }
 
 function handleFeedback() {
-  var content = document.getElementById('feedbackContent').value.trim();
+  const content = document.getElementById('feedbackContent').value.trim();
   if (!content) { showToast('请输入反馈内容'); return; }
-  var name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
-  var company = document.getElementById('feedbackCompany').value.trim();
-  var author = company ? name + ' · ' + company : name;
-  var today = new Date().toISOString().split('T')[0];
-  var msgList = document.getElementById('msgList');
-  var newMsg = document.createElement('div');
+  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
+  const company = document.getElementById('feedbackCompany').value.trim();
+  const author = company ? name + ' · ' + company : name;
+  const today = new Date().toISOString().split('T')[0];
+  const msgList = document.getElementById('msgList');
+  const newMsg = document.createElement('div');
   newMsg.className = 'msg-item';
-  newMsg.innerHTML =
-    '<div class="msg-header"><span class="msg-author">' + author + '</span><span class="msg-date">' + today + '</span></div>' +
-    '<div class="msg-content">' + escapeHtml(content) + '</div>' +
-    '<div class="msg-footer"><button class="btn-like" onclick="handleLike(this, 0)">❤️ 0</button></div>';
+  newMsg.innerHTML = `
+    <div class="msg-header">
+      <span class="msg-author">${author}</span>
+      <span class="msg-date">${today}</span>
+    </div>
+    <div class="msg-content">${escapeHtml(content)}</div>
+    <div class="msg-footer">
+      <button class="btn-like" onclick="handleLike(this, 0)">❤️ 0</button>
+    </div>
+  `;
   msgList.insertBefore(newMsg, msgList.firstChild);
   document.getElementById('feedbackContent').value = '';
   document.getElementById('feedbackName').value = '';
@@ -655,35 +722,50 @@ function handleLike(btn, currentLikes) {
   btn.style.background = 'rgba(239,68,68,0.2)';
 }
 
-// ===== AI API Call (Edge Function for longer timeout) =====
-var AI_API_BASE = 'https://west-aipartner.netlify.app';
-function callAI(type, input, model) {
-  return fetch(AI_API_BASE + '/api/ai-proxy', {
+// ===== AI API Call =====
+async function callAI(type, input) {
+  const resp = await fetch('/.netlify/functions/ai-proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: type, input: input, model: model || 'turbo' })
-  }).then(function(resp) {
-    return resp.json().then(function(data) {
-      if (!resp.ok || data.error) throw new Error(data.error || 'HTTP ' + resp.status);
-      return data.content;
-    });
+    body: JSON.stringify({ type, input })
   });
+  const data = await resp.json();
+  if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
+  return data.content;
 }
 
 // ===== Helpers =====
 function showToast(msg) {
-  var toast = document.getElementById('toast');
+  const toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(function() { toast.classList.remove('show'); }, 2500);
+  setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
 function escapeHtml(str) {
-  var div = document.createElement('div');
+  const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
 function sendFeedbackToAdmin(author, content) {
   console.log('[Feedback]', author, content);
+}
+
+// ===== Offline AI Templates (fallback) =====
+function generateCustomerReport(name) {
+  return '📊 ' + name + ' — AI潜力评估报告（离线模板）\n\n' +
+    '一、客户业务概况\n  • 商业模式：待补充\n  • 核心客户群体：待调研\n\n' +
+    '二、关键行业趋势\n  1. AI大模型规模化落地\n  2. 云原生架构演进\n\n' +
+    '三、机会与挑战\n  机会：AI赋能业务流程\n  挑战：数字化人才储备\n\n' +
+    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成报告。';
+}
+
+function generateVisitPlan(scene, form, role) {
+  const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
+  return '🎯 ' + (sceneLabels[scene] || '客户拜访') + '计划（离线模板）\n\n' +
+    '一、拜访目标：认知塑造与教育\n\n' +
+    '二、用户行动承诺\n  最高：安排POC测试\n  最低：安排二次会议\n\n' +
+    '三、信息获取\n  1. 决策链路\n  2. 预算状况\n\n' +
+    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成拜访计划。';
 }
