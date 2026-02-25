@@ -398,6 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSceneSelector();
   renderHome();
   renderWeapons();
+  renderMaas();
   renderGuide();
   renderRank();
   renderFeedback();
@@ -561,6 +562,56 @@ function renderWeapons() {
   });
   const kbLink = document.getElementById('kbLink');
   if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
+  
+  // Live Trainings
+  const liveGrid = document.getElementById('liveGrid');
+  if (liveGrid) {
+    (weapons.liveTrainings || []).forEach(item => {
+      liveGrid.innerHTML += `
+        <a href="${item.link}" class="live-card" target="_blank">
+          <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
+          <div class="live-info">
+            <div class="live-title">${item.title}</div>
+            <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
+          </div>
+        </a>
+      `;
+    });
+  }
+  const moreLiveLink = document.getElementById('moreLiveLink');
+  if (weapons.moreLiveLink && moreLiveLink) moreLiveLink.href = weapons.moreLiveLink;
+}
+
+// ===== Render: MaaS =====
+function renderMaas() {
+  const maas = siteData.maas || {};
+  const trackGrid = document.getElementById('trackGrid');
+  if (!trackGrid) return;
+  
+  (maas.tracks || []).forEach(track => {
+    const scenariosHtml = (track.scenarios || []).map(s => `<li>${s}</li>`).join('');
+    const productsHtml = (track.products || []).map(p => `<span class="product-tag">${p}</span>`).join('');
+    
+    trackGrid.innerHTML += `
+      <div class="track-card">
+        <div class="track-header">
+          <span class="track-icon">${track.icon}</span>
+          <span class="track-name">${track.name}</span>
+        </div>
+        <div class="track-desc">${track.desc}</div>
+        <div class="track-section">
+          <div class="track-label">核心场景</div>
+          <ul class="track-scenarios">${scenariosHtml}</ul>
+        </div>
+        <div class="track-section">
+          <div class="track-label">推荐产品</div>
+          <div class="track-products">${productsHtml}</div>
+        </div>
+        <div class="track-cases">${track.cases}</div>
+        <a href="${track.link}" class="track-btn" target="_blank">了解详情 →</a>
+      </div>
+    `;
+  });
 }
 
 // ===== Render: Guide =====
