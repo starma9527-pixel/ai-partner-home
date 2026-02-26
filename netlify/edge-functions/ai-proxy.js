@@ -180,8 +180,8 @@ export default async (request, context) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    // DashScope 国际版端点，海外节点访问更稳定
-    const API_URL = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions';
+    // DashScope 中国区端点（用户 API Key 为中国区）
+    const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
     const response = await fetch(API_URL, {
       method: 'POST',
