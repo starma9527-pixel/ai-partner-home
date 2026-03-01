@@ -657,6 +657,7 @@ input, textarea, select { font-family: inherit; }
 .compare-grid.cols-1 { grid-template-columns: 1fr; }
 .compare-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 .compare-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.compare-grid.cols-4 { grid-template-columns: 1fr 1fr; }
 .compare-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -687,7 +688,8 @@ input, textarea, select { font-family: inherit; }
 
 @media (max-width: 900px) {
   .compare-grid.cols-2,
-  .compare-grid.cols-3 { grid-template-columns: 1fr; }
+  .compare-grid.cols-3,
+  .compare-grid.cols-4 { grid-template-columns: 1fr; }
 }
 
 /* ===== MaaS Tab (赢战MaaS) ===== */
