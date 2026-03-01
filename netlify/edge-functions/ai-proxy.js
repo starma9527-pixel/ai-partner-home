@@ -176,14 +176,23 @@ export default async (request, context) => {
   }
 
   try {
-    // 设置 25 秒超时（Netlify Edge Function 限制约 30 秒）
+    // 设置 50 秒超时（Netlify Edge Function 最大约 50 秒）
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 50000);
 
-    // DashScope 中国区端点（用户 API Key 为中国区）
-    const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    // 尝试国际端点优先（Netlify 服务器在海外，访问国际端点更快）
+    // 如果国际端点失败再回退到中国区端点
+    const API_URLS = [
+      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
+      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+    ];
 
-    const response = await fetch(API_URL, {
+    let response = null;
+    let lastError = null;
+    
+    for (const apiUrl of API_URLS) {
+      try {
+        response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -199,9 +208,28 @@ export default async (request, context) => {
         max_tokens: cfg.maxTokens
       }),
       signal: controller.signal
-    });
+        });
+        // 如果返回 401（key 不匹配此端点），尝试下一个
+        if (response.status === 401) {
+          lastError = 'AUTH_FAIL on ' + apiUrl;
+          response = null;
+          continue;
+        }
+        break; // 成功拿到非401响应，跳出循环
+      } catch (fetchErr) {
+        lastError = fetchErr.message;
+        response = null;
+        continue;
+      }
+    }
 
     clearTimeout(timeoutId);
+
+    if (!response) {
+      return new Response(JSON.stringify({
+        error: 'API_CONNECT_ERROR: 无法连接通义千问API，' + (lastError || '未知错误')
+      }), { status: 502, headers: CORS_HEADERS });
+    }
 
     if (!response.ok) {
       const errText = await response.text();
@@ -224,7 +252,7 @@ export default async (request, context) => {
 
   } catch (err) {
     const errorMsg = err.name === 'AbortError' 
-      ? '请求超时(45秒)，该模型响应较慢，建议使用 Qwen-Turbo'
+      ? '请求超时(50秒)，Netlify海外服务器访问阿里云较慢，建议使用 Qwen-Turbo 模型'
       : err.message;
     return new Response(JSON.stringify({
       error: 'ERROR: ' + errorMsg
