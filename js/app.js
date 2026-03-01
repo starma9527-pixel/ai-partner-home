@@ -775,7 +775,7 @@ function handleLike(btn, currentLikes) {
 
 // ===== AI API Call =====
 async function callAI(type, input) {
-  const resp = await fetch('/api/ai-proxy', {
+  const resp = await fetch('https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type, input })
