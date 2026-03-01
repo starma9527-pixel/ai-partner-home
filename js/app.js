@@ -697,15 +697,48 @@ function handleSearch() {
 function handleCustomerAnalysis() {
   const val = document.getElementById('customerInput').value.trim();
   if (!val) { showToast('请输入客户名称'); return; }
+
+  // 读取选中的模型
+  const checked = document.querySelectorAll('input[name="customerModel"]:checked');
+  const selectedModels = Array.from(checked).map(cb => cb.value);
+  if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
+
   const outputDiv = document.getElementById('customerOutput');
   const contentDiv = document.getElementById('customerOutputContent');
   outputDiv.classList.add('show');
-  contentDiv.innerHTML = '<span class="spinner"></span>AI正在深度分析中，请稍候（约15-30秒）...';
-  callAI('customer_analysis', { customerName: val })
-    .then(text => { contentDiv.textContent = text; })
-    .catch(err => {
-      contentDiv.textContent = '⚠ AI接口调用失败：' + err.message + '\n\n以下为离线模板报告：\n\n' + generateCustomerReport(val);
-    });
+
+  // 构建对比卡片布局
+  const colsClass = selectedModels.length >= 4 ? 'cols-4' : selectedModels.length === 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
+  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="customerCompareGrid">' +
+    selectedModels.map(m =>
+      '<div class="compare-card" id="card-customer-' + m + '">' +
+        '<div class="compare-card-header">' +
+          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
+          '<span class="model-status" id="status-customer-' + m + '">⏳ 生成中...</span>' +
+        '</div>' +
+        '<div class="compare-card-body" id="body-customer-' + m + '">' +
+          '<span class="spinner"></span> AI正在分析中，请稍候...' +
+        '</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+
+  // 并行调用所有选中的模型
+  selectedModels.forEach(m => {
+    callAI('customer_analysis', { customerName: val }, m)
+      .then(result => {
+        document.getElementById('body-customer-' + m).textContent = result.content;
+        const statusEl = document.getElementById('status-customer-' + m);
+        statusEl.textContent = '✅ 已完成';
+        statusEl.className = 'model-status done';
+      })
+      .catch(err => {
+        document.getElementById('body-customer-' + m).textContent = '⚠ 调用失败：' + err.message;
+        const statusEl = document.getElementById('status-customer-' + m);
+        statusEl.textContent = '❌ 失败';
+        statusEl.className = 'model-status error';
+      });
+  });
 }
 
 function handleVisitPlan() {
@@ -723,19 +756,53 @@ function handleVisitPlan() {
     else { inp.style.borderColor = ''; }
   });
   if (!valid) { showToast('请填写所有必填项'); return; }
+
+  // 读取选中的模型
+  const checked = document.querySelectorAll('input[name="visitModel"]:checked');
+  const selectedModels = Array.from(checked).map(cb => cb.value);
+  if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
+
   const outputDiv = document.getElementById('visitOutput');
   const contentDiv = document.getElementById('visitOutputContent');
   outputDiv.classList.add('show');
-  contentDiv.innerHTML = '<span class="spinner"></span>AI教练正在生成拜访计划，请稍候（约15-30秒）...';
+
   const details = Array.from(inputs).map(inp => {
     const label = inp.closest('.form-group')?.querySelector('label')?.textContent || '';
     return label.replace(' *', '') + '：' + inp.value;
   }).join('\n');
-  callAI('visit_plan', { scene, role: roleSelect.value, details })
-    .then(text => { contentDiv.textContent = text; })
-    .catch(err => {
-      contentDiv.textContent = '⚠ AI接口调用失败：' + err.message + '\n\n以下为离线模板计划：\n\n' + generateVisitPlan(scene, form, roleSelect.value);
-    });
+
+  // 构建对比卡片布局
+  const colsClass = selectedModels.length >= 4 ? 'cols-4' : selectedModels.length === 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
+  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="visitCompareGrid">' +
+    selectedModels.map(m =>
+      '<div class="compare-card" id="card-visit-' + m + '">' +
+        '<div class="compare-card-header">' +
+          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
+          '<span class="model-status" id="status-visit-' + m + '">⏳ 生成中...</span>' +
+        '</div>' +
+        '<div class="compare-card-body" id="body-visit-' + m + '">' +
+          '<span class="spinner"></span> AI教练正在生成计划...' +
+        '</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+
+  // 并行调用所有选中的模型
+  selectedModels.forEach(m => {
+    callAI('visit_plan', { scene, role: roleSelect.value, details }, m)
+      .then(result => {
+        document.getElementById('body-visit-' + m).textContent = result.content;
+        const statusEl = document.getElementById('status-visit-' + m);
+        statusEl.textContent = '✅ 已完成';
+        statusEl.className = 'model-status done';
+      })
+      .catch(err => {
+        document.getElementById('body-visit-' + m).textContent = '⚠ 调用失败：' + err.message;
+        const statusEl = document.getElementById('status-visit-' + m);
+        statusEl.textContent = '❌ 失败';
+        statusEl.className = 'model-status error';
+      });
+  });
 }
 
 function handleFeedback() {
@@ -774,15 +841,22 @@ function handleLike(btn, currentLikes) {
 }
 
 // ===== AI API Call =====
-async function callAI(type, input) {
+const MODEL_LABELS = {
+  turbo: 'Qwen-Turbo（快速）',
+  plus: 'Qwen-Plus（均衡）',
+  max: 'Qwen-Max（旗舰）',
+  think: 'QwQ-32B（深度思考）'
+};
+
+async function callAI(type, input, model) {
   const resp = await fetch('https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, input })
+    body: JSON.stringify({ type, input, model: model || 'turbo' })
   });
   const data = await resp.json();
   if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
-  return data.content;
+  return { content: data.content, model: data.model };
 }
 
 // ===== Helpers =====
