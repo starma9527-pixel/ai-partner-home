@@ -1,822 +1,597 @@
-/**
- * AI先锋·伙伴之家 - Main Application Logic
- * ====================================================
- * 【技术小白更新指南】
- *   要更新网站内容，请打开 admin.html 管理后台修改数据。
- *   或者直接修改下方 SITE_DATA 对象中的数据。
- * ====================================================
- */
-
-// ===== 网站数据（直接修改这里即可更新内容） =====
-const SITE_DATA = {
-  "site": {
-    "name": "AI先锋·伙伴之家",
-    "slogan": "西部大区伙伴赋能平台",
-    "adminEmail": "admin@example.com"
-  },
-  "hotSearch": [
-    "最新AI大单案例",
-    "通义千问接入指南",
-    "云服务器选型"
-  ],
-  "announcements": [
-    {
-      "id": 1,
-      "text": "2026年Q1伙伴激励政策已发布，点击查看详情",
-      "link": "#",
-      "date": "2025-03-01"
-    },
-    {
-      "id": 2,
-      "text": "本周五直播预告：大模型在游戏场景的落地实践",
-      "link": "#",
-      "date": "2025-03-05"
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>内容管理后台 - AI先锋·伙伴之家</title>
+  <style>
+    :root {
+      --purple: #7c3aed;
+      --green: #059669;
+      --bg: #f5f6fa;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #888;
+      --border: #e0e0e8;
+      --radius: 10px;
     }
-  ],
-  "quickLinks": [
-    {
-      "icon": "🧰",
-      "title": "打单兵器",
-      "desc": "业务规则·常用工具·生态知识库",
-      "tab": "weapons"
-    },
-    {
-      "icon": "🚀",
-      "title": "赢战MaaS",
-      "desc": "财税·AI短剧·智能语音赛道",
-      "tab": "maas"
-    },
-    {
-      "icon": "🎯",
-      "title": "拜访教练",
-      "desc": "甄选客户·拜访计划·AI助手",
-      "tab": "guide"
-    },
-    {
-      "icon": "🏆",
-      "title": "龙虎榜",
-      "desc": "Token排行·案例贡献·学习时长",
-      "tab": "rank"
-    },
-    {
-      "icon": "💬",
-      "title": "回音壁",
-      "desc": "留言反馈·建议吐槽·需求收集",
-      "tab": "feedback"
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
     }
-  ],
-  "weapons": {
-    "rules": [
-      {
-        "title": "伙伴返佣政策 2025版",
-        "size": "2.3MB",
-        "date": "2025-02-20",
-        "link": "#",
-        "type": "PDF"
-      },
-      {
-        "title": "AI大模型产品定价表",
-        "size": "1.1MB",
-        "date": "2025-02-15",
-        "link": "#",
-        "type": "PDF"
-      },
-      {
-        "title": "云产品折扣审批流程",
-        "size": "800KB",
-        "date": "2025-01-10",
-        "link": "#",
-        "type": "PDF"
-      }
-    ],
-    "tools": [
-      {
-        "title": "报价计算器",
-        "desc": "快速生成客户报价单",
-        "icon": "🧮",
-        "link": "#"
-      },
-      {
-        "title": "竞品对比工具",
-        "desc": "阿里云 vs 友商能力对比",
-        "icon": "⚔️",
-        "link": "#"
-      },
-      {
-        "title": "AI Demo体验",
-        "desc": "一键体验通义系列产品",
-        "icon": "🤖",
-        "link": "#"
-      },
-      {
-        "title": "方案模板库",
-        "desc": "行业解决方案PPT模板",
-        "icon": "📑",
-        "link": "#"
-      }
-    ],
-    "knowledge": [
-      {
-        "title": "教育行业大模型落地案例",
-        "type": "VIDEO",
-        "date": "2025-02-10",
-        "link": "#",
-        "duration": ""
-      },
-      {
-        "title": "制造业AI质检实战分享",
-        "type": "VIDEO",
-        "date": "2025-01-15",
-        "link": "#",
-        "duration": ""
-      },
-      {
-        "title": "零售行业智能客服部署手册",
-        "type": "PDF",
-        "date": "2025-01-08",
-        "link": "#",
-        "size": "2.7MB"
-      },
-      {
-        "title": "短剧/漫剧行业拓展一指禅",
-        "type": "PDF",
-        "date": "2025-03-01",
-        "link": "https://alidocs.dingtalk.com/i/nodes/AR4GpnMqJzKpOoklFErwr23q8Ke0xjE3?corpId=dingd8e1123006514592&utm_medium=im_card&cid=284546643%3A2767829485&iframeQuery=utm_medium%3Dim_card%26utm_source%3Dim&utm_scene=person_space&utm_source=im",
-        "size": "3.5MB"
-      }
-    ],
-    "knowledgeBaseLink": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview",
-    "liveTrainings": [
-      {
-        "title": "AI短剧解决方案、AI Coding产品方案选型推荐",
-        "date": "2026-01-09",
-        "speaker": "李阳(山樵)",
-        "link": "https://n.dingtalk.com/dingding/live-room/index.html?roomId=MIzQRx84Yo&liveUuid=34080b76-8c46-45de-a7a6-8a8d11e501a6",
-        "cover": ""
-      },
-      {
-        "title": "伙伴如何快速上手通义千问API",
-        "date": "2025-03-14 14:00",
-        "speaker": "李四",
-        "link": "#",
-        "cover": ""
-      },
-      {
-        "title": "云服务器选型与报价实战",
-        "date": "2025-03-21 14:00",
-        "speaker": "王五",
-        "link": "#",
-        "cover": ""
-      }
-    ],
-    "moreLiveLink": "#"
-  },
-  "guide": {},
-  "maas": {
-    "tracks": [
-      {
-        "id": "tax",
-        "icon": "💰",
-        "name": "赛道1 · 财税",
-        "desc": "面向财税行业的MaaS解决方案，助力伙伴快速拓展财税数字化市场",
-        "scenarios": [
-          "智能发票识别与录入",
-          "财务报表自动生成",
-          "税务风险AI预警",
-          "智能记账与对账"
-        ],
-        "products": [
-          "通义千问API",
-          "OCR文字识别",
-          "智能对话机器人"
-        ],
-        "cases": "已有3家伙伴落地财税AI项目，累计合同额超200万",
-        "link": "#"
-      },
-      {
-        "id": "drama",
-        "icon": "🎬",
-        "name": "赛道2 · AI短剧",
-        "desc": "AI驱动短剧/漫剧内容生产，从剧本到成片全链路赋能",
-        "scenarios": [
-          "AI剧本创作与改编",
-          "AI角色形象生成",
-          "智能配音与语音合成",
-          "AI视频剪辑与特效"
-        ],
-        "products": [
-          "通义万相",
-          "CosyVoice语音合成",
-          "通义千问API"
-        ],
-        "cases": "AI短剧制作成本降低60%，单集产出效率提升5倍",
-        "link": "#"
-      },
-      {
-        "id": "voice",
-        "icon": "🎙️",
-        "name": "赛道3 · 智能语音",
-        "desc": "基于大模型的智能语音解决方案，覆盖客服、外呼、质检等场景",
-        "scenarios": [
-          "智能客服语音机器人",
-          "AI外呼与营销",
-          "通话质检与合规分析",
-          "语音转文字与会议纪要"
-        ],
-        "products": [
-          "语音识别ASR",
-          "语音合成TTS",
-          "通义千问API"
-        ],
-        "cases": "智能语音客服替代率达70%，客户满意度提升25%",
-        "link": "#"
-      }
-    ]
-  },
-  "rank": {
-    "tokenRank": [
-      {
-        "rank": 1,
-        "name": "重庆典名",
-        "score": 128000
-      },
-      {
-        "rank": 2,
-        "name": "成都慕创",
-        "score": 95000
-      },
-      {
-        "rank": 3,
-        "name": "重庆云之渝",
-        "score": 87000
-      },
-      {
-        "rank": 4,
-        "name": "XXX",
-        "score": 72000
-      },
-      {
-        "rank": 5,
-        "name": "XXX",
-        "score": 65000
-      }
-    ],
-    "caseRank": [
-      {
-        "rank": 1,
-        "name": "锐智科技",
-        "score": 23
-      },
-      {
-        "rank": 2,
-        "name": "数联创新",
-        "score": 18
-      },
-      {
-        "rank": 3,
-        "name": "云翔信息",
-        "score": 15
-      },
-      {
-        "rank": 4,
-        "name": "天行数据",
-        "score": 12
-      },
-      {
-        "rank": 5,
-        "name": "智源网络",
-        "score": 9
-      }
-    ],
-    "studyRank": [
-      {
-        "rank": 1,
-        "name": "云翔信息",
-        "score": "42h"
-      },
-      {
-        "rank": 2,
-        "name": "锐智科技",
-        "score": "38h"
-      },
-      {
-        "rank": 3,
-        "name": "智源网络",
-        "score": "35h"
-      },
-      {
-        "rank": 4,
-        "name": "数联创新",
-        "score": "31h"
-      },
-      {
-        "rank": 5,
-        "name": "天行数据",
-        "score": "28h"
-      }
-    ],
-    "certRank": [
-      {
-        "rank": 1,
-        "name": "锐智科技",
-        "score": "92%"
-      },
-      {
-        "rank": 2,
-        "name": "云翔信息",
-        "score": "85%"
-      },
-      {
-        "rank": 3,
-        "name": "天行数据",
-        "score": "78%"
-      },
-      {
-        "rank": 4,
-        "name": "数联创新",
-        "score": "73%"
-      },
-      {
-        "rank": 5,
-        "name": "智源网络",
-        "score": "68%"
-      }
-    ],
-    "battleReports": [
-      {
-        "title": "锐智科技签约XX医院智慧医疗项目",
-        "amount": "230万",
-        "date": "2025-02-28"
-      },
-      {
-        "title": "云翔信息拿下XX教育局AI教学平台",
-        "amount": "180万",
-        "date": "2025-02-25"
-      },
-      {
-        "title": "数联创新交付XX银行智能风控系统",
-        "amount": "350万",
-        "date": "2025-02-20"
-      }
-    ]
-  },
-  "feedback": {
-    "messages": [
-      {
-        "id": 1,
-        "author": "张伟 · 锐智科技",
-        "content": "希望能增加更多金融行业的案例资料",
-        "date": "2025-02-28",
-        "likes": 12
-      },
-      {
-        "id": 2,
-        "author": "李娜 · 云翔信息",
-        "content": "周五培训非常实用，希望能有回放",
-        "date": "2025-02-27",
-        "likes": 8
-      },
-      {
-        "id": 3,
-        "author": "王磊 · 数联创新",
-        "content": "报价工具建议增加批量导出功能",
-        "date": "2025-02-26",
-        "likes": 5
-      }
-    ]
-  }
-};
+    .admin-header {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff; padding: 20px 24px;
+    }
+    .admin-header h1 { font-size: 1.3rem; }
+    .admin-header p { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+    .admin-tabs {
+      display: flex; gap: 4px; padding: 12px 24px; background: var(--card);
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .admin-tab {
+      padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--text); cursor: pointer;
+      font-size: 0.85rem; transition: all 0.2s;
+    }
+    .admin-tab:hover { border-color: var(--purple); color: var(--purple); }
+    .admin-tab.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+    .admin-body { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      border: 1px solid var(--border); padding: 24px; margin-bottom: 20px;
+    }
+    .card h3 { font-size: 1rem; margin-bottom: 16px; color: var(--purple); }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 0.9rem; color: var(--text);
+      background: var(--bg); transition: border-color 0.2s;
+    }
+    .field input:focus, .field textarea:focus { border-color: var(--purple); outline: none; }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .item-row {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px; margin-bottom: 10px; position: relative;
+    }
+    .item-row .field { margin-bottom: 10px; }
+    .item-row .field:last-child { margin-bottom: 0; }
+    .btn-remove {
+      position: absolute; top: 8px; right: 8px;
+      background: #fee2e2; color: #dc2626; border: none; border-radius: 6px;
+      padding: 4px 10px; font-size: 0.75rem; cursor: pointer;
+    }
+    .btn-remove:hover { background: #fecaca; }
+    .btn-add {
+      background: rgba(124,58,237,0.08); color: var(--purple); border: 1px dashed var(--purple);
+      border-radius: 8px; padding: 10px; width: 100%; cursor: pointer;
+      font-size: 0.85rem; margin-top: 8px; transition: background 0.2s;
+    }
+    .btn-add:hover { background: rgba(124,58,237,0.15); }
+    .actions {
+      position: sticky; bottom: 0; background: var(--card); border-top: 1px solid var(--border);
+      padding: 16px 24px; display: flex; gap: 12px; justify-content: center;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .btn-save {
+      color: #fff; border: none; border-radius: 8px;
+      padding: 12px 36px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-save:hover { opacity: 0.9; }
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff; padding: 10px 28px; border-radius: 20px;
+      font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+    .inline-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .inline-fields { grid-template-columns: 1fr; } }
+    .help-text { font-size: 0.78rem; color: var(--muted); margin-top: 16px; padding: 12px; background: #fffbeb; border-radius: 8px; border: 1px solid #fde68a; }
+    .help-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 0.85rem; line-height: 1.8; }
+    .help-box h4 { color: var(--green); margin-bottom: 8px; }
+    .help-box ol { padding-left: 20px; }
+    .help-box li { margin-bottom: 6px; }
+    .help-box code { background: #e0e7ff; padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
 
-// ===== Global State =====
-let siteData = null;
+<div class="admin-header">
+  <h1>📋 内容管理后台</h1>
+  <p>修改下方内容 → 点击「复制代码到剪贴板」→ 到 GitHub 粘贴替换 js/app.js → Netlify 自动部署</p>
+</div>
 
-// ===== Init =====
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadSiteData();
-  initTabs();
-  initRankTabs();
-  initSceneSelector();
-  renderHome();
-  renderWeapons();
-  renderMaas();
-  renderGuide();
-  renderRank();
-  renderFeedback();
+<div class="admin-tabs" id="adminTabs">
+  <button class="admin-tab active" data-panel="p-guide">📖 使用指南</button>
+  <button class="admin-tab" data-panel="p-weapons">🧰 打单兵器</button>
+  <button class="admin-tab" data-panel="p-maas">🚀 赢战MaaS</button>
+  <button class="admin-tab" data-panel="p-ai">🎯 拜访教练</button>
+  <button class="admin-tab" data-panel="p-rank">🏆 龙虎榜</button>
+  <button class="admin-tab" data-panel="p-feedback">💬 回音壁</button>
+</div>
+
+<div class="admin-body">
+
+  <!-- GUIDE -->
+  <div class="admin-panel active" id="p-guide">
+    <div class="help-box">
+      <h4>📖 技术小白运维指南</h4>
+      <p><strong>日常更新内容只需 3 步：</strong></p>
+      <ol>
+        <li><strong>打开本页面</strong>：在浏览器访问 <code>你的网站地址/admin.html</code></li>
+        <li><strong>修改内容</strong>：切换上方标签（打单兵器、赢战MaaS等），编辑表单内容</li>
+        <li><strong>发布更新</strong>：点击底部「📋 复制代码到剪贴板」按钮，然后：
+          <ol style="list-style-type: lower-alpha;">
+            <li>打开 <a href="https://github.com/starma9527-pixel/ai-partner-home/blob/main/js/app.js" target="_blank">GitHub 上的 app.js 文件</a></li>
+            <li>点击 <strong>铅笔图标</strong>（编辑）</li>
+            <li><code>Ctrl+A</code> 全选 → <code>Delete</code> 删除旧内容</li>
+            <li><code>Ctrl+V</code> 粘贴新内容</li>
+            <li>点击绿色按钮 <strong>Commit changes</strong></li>
+            <li>等待 1-2 分钟，Netlify 自动部署完成</li>
+          </ol>
+        </li>
+      </ol>
+      <br>
+      <p><strong>常见操作场景：</strong></p>
+      <ul style="padding-left: 20px;">
+        <li>🔄 <strong>更新龙虎榜数据</strong>：切换到「龙虎榜」标签，修改排名、分数</li>
+        <li>🎬 <strong>添加直播培训</strong>：切换到「打单兵器」标签，在「直播培训」区域添加</li>
+        <li>🚀 <strong>增减赛道</strong>：切换到「赢战MaaS」标签，添加或删除赛道卡片</li>
+        <li>📄 <strong>添加知识库文档</strong>：切换到「打单兵器」标签，在「知识库」区域添加</li>
+        <li>💬 <strong>管理留言</strong>：切换到「回音壁」标签，添加或删除留言</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- WEAPONS -->
+  <div class="admin-panel" id="p-weapons">
+    <div class="card">
+      <h3>📋 业务规则文档</h3>
+      <div id="list-rules"></div>
+      <button class="btn-add" onclick="addRule()">+ 添加文档</button>
+    </div>
+    <div class="card">
+      <h3>🔧 常用工具</h3>
+      <div id="list-tools"></div>
+      <button class="btn-add" onclick="addTool()">+ 添加工具</button>
+    </div>
+    <div class="card">
+      <h3>📖 生态知识库</h3>
+      <div id="list-knowledge"></div>
+      <button class="btn-add" onclick="addKnowledge()">+ 添加资料</button>
+      <div class="field" style="margin-top:14px;">
+        <label>钉钉知识库链接（西区AI生态伙伴知识库）</label>
+        <input type="text" id="f-kbLink" placeholder="https://alidocs.dingtalk.com/..." />
+      </div>
+    </div>
+    <div class="card">
+      <h3>🎬 周五上干货：钉钉直播培训</h3>
+      <div id="list-trainings"></div>
+      <button class="btn-add" onclick="addTraining()">+ 添加培训</button>
+      <div class="field" style="margin-top:14px;">
+        <label>钉钉群邀约链接（加入战役群，回放学习更多内容）</label>
+        <input type="text" id="f-moreLiveLink" placeholder="https://qr.dingtalk.com/..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- MAAS -->
+  <div class="admin-panel" id="p-maas">
+    <div class="card">
+      <h3>🚀 赢战MaaS - 赛道管理</h3>
+      <div id="list-tracks"></div>
+      <button class="btn-add" onclick="addTrack()">+ 添加赛道</button>
+    </div>
+    <div class="help-text">
+      💡 每个赛道可配置：图标、名称、描述、核心场景（多个）、推荐产品（多个）、案例说明、详情链接
+    </div>
+  </div>
+
+  <!-- AI / GUIDE -->
+  <div class="admin-panel" id="p-ai">
+    <div class="help-text">
+      💡 「🔍 甄选客户：AI潜力评估」和「🎯 拜访客户：生成拜访计划」功能由 AI 实时生成，无需手动配置数据。<br><br>
+      用户在前台页面输入客户信息后，AI 会自动调用多个大模型（Qwen-Max、MiniMax 等）并行生成分析报告和拜访计划，支持模型对比展示。
+    </div>
+  </div>
+
+  <!-- RANK -->
+  <div class="admin-panel" id="p-rank">
+    <div class="card">
+      <h3>📊 MaaS渗透率排行</h3>
+      <div id="list-tokenRank"></div>
+      <button class="btn-add" onclick="addRankItem('tokenRank')">+ 添加</button>
+    </div>
+    <div class="card">
+      <h3>📝 案例贡献排行</h3>
+      <div id="list-caseRank"></div>
+      <button class="btn-add" onclick="addRankItem('caseRank')">+ 添加</button>
+    </div>
+    <div class="card">
+      <h3>📖 学习时长排行</h3>
+      <div id="list-studyRank"></div>
+      <button class="btn-add" onclick="addRankItem('studyRank')">+ 添加</button>
+    </div>
+    <div class="card">
+      <h3>🎓 持证率排行</h3>
+      <div id="list-certRank"></div>
+      <button class="btn-add" onclick="addRankItem('certRank')">+ 添加</button>
+    </div>
+    <div class="card">
+      <h3>⚔️ 项目战报</h3>
+      <div id="list-battles"></div>
+      <button class="btn-add" onclick="addBattle()">+ 添加战报</button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div class="admin-panel" id="p-feedback">
+    <div class="card">
+      <h3>📨 精选留言</h3>
+      <div id="list-messages"></div>
+      <button class="btn-add" onclick="addMessage()">+ 添加留言</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="actions">
+  <button class="btn-save" onclick="copyToClipboard()" style="background:#7c3aed;">📋 复制代码到剪贴板</button>
+  <button class="btn-save" onclick="saveAndDownload()" style="background:linear-gradient(135deg,#10b981,#059669);">💾 保存并下载 app.js</button>
+</div>
+
+<div class="toast" id="adminToast"></div>
+
+<script>
+// ===== Load existing data from app.js =====
+let editData = {};
+
+function loadCurrentData() {
+  const script = document.createElement('script');
+  script.src = 'js/app.js';
+  script.onload = () => {
+    if (typeof SITE_DATA !== 'undefined') {
+      editData = JSON.parse(JSON.stringify(SITE_DATA));
+    }
+    populateForms();
+  };
+  script.onerror = () => {
+    editData = getDefaultData();
+    populateForms();
+  };
+  document.head.appendChild(script);
+}
+
+function getDefaultData() {
+  return {
+    site: { name: "AI先锋·伙伴之家", slogan: "西部大区伙伴赋能平台", adminEmail: "admin@example.com" },
+    hotSearch: [],
+    announcements: [],
+    quickLinks: [],
+    weapons: { rules: [], tools: [], knowledge: [], knowledgeBaseLink: "", liveTrainings: [], moreLiveLink: "#" },
+    guide: {},
+    maas: { tracks: [] },
+    rank: { tokenRank: [], caseRank: [], studyRank: [], certRank: [], battleReports: [] },
+    feedback: { messages: [] }
+  };
+}
+
+// ===== Tab Switching =====
+document.getElementById('adminTabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.admin-tab');
+  if (!btn) return;
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(btn.dataset.panel).classList.add('active');
 });
 
-// ===== Load Data =====
-async function loadSiteData() {
-  try {
-    const resp = await fetch('data/site-data.json');
-    if (resp.ok) {
-      siteData = await resp.json();
-      return;
-    }
-  } catch (e) {}
-  siteData = SITE_DATA;
+// ===== Populate Forms =====
+function populateForms() {
+  (editData.weapons?.rules || []).forEach(r => addRule(r));
+  (editData.weapons?.tools || []).forEach(t => addTool(t));
+  (editData.weapons?.knowledge || []).forEach(k => addKnowledge(k));
+  document.getElementById('f-kbLink').value = editData.weapons?.knowledgeBaseLink || '';
+  (editData.weapons?.liveTrainings || []).forEach(t => addTraining(t));
+  document.getElementById('f-moreLiveLink').value = editData.weapons?.moreLiveLink || '';
+  (editData.maas?.tracks || []).forEach(t => addTrack(t));
+  (editData.rank?.tokenRank || []).forEach(r => addRankItem('tokenRank', r));
+  (editData.rank?.caseRank || []).forEach(r => addRankItem('caseRank', r));
+  (editData.rank?.studyRank || []).forEach(r => addRankItem('studyRank', r));
+  (editData.rank?.certRank || []).forEach(r => addRankItem('certRank', r));
+  (editData.rank?.battleReports || []).forEach(b => addBattle(b));
+  (editData.feedback?.messages || []).forEach(m => addMessage(m));
 }
 
-// ===== Tab Navigation =====
-function initTabs() {
-  const nav = document.getElementById('pillNav');
-  nav.addEventListener('click', (e) => {
-    const btn = e.target.closest('.pill-btn');
-    if (!btn) return;
-    const tab = btn.dataset.tab;
-    nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    window.scrollTo({ top: document.querySelector('.search-bar-area').offsetTop - 60, behavior: 'smooth' });
-  });
-}
-
-// ===== Rank Sub-tabs =====
-function initRankTabs() {
-  const tabs = document.getElementById('rankTabs');
-  if (!tabs) return;
-  tabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.rank-tab');
-    if (!btn) return;
-    const rank = btn.dataset.rank;
-    tabs.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.rank-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('rank-' + rank).classList.add('active');
-  });
-}
-
-// ===== Scene Selector (Visit Plan) =====
-function initSceneSelector() {
-  const sel = document.getElementById('sceneSelector');
-  if (!sel) return;
-  sel.addEventListener('click', (e) => {
-    const btn = e.target.closest('.scene-btn');
-    if (!btn) return;
-    const scene = btn.dataset.scene;
-    sel.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.scene-form').forEach(f => f.classList.remove('active'));
-    document.getElementById('form-' + scene).classList.add('active');
-  });
-}
-
-// ===== Render: Home =====
-function renderHome() {
-  const hotDiv = document.getElementById('hotSearch');
-  (siteData.hotSearch || []).forEach(tag => {
-    const a = document.createElement('a');
-    a.href = '#';
-    a.textContent = '#' + tag;
-    a.onclick = (e) => { e.preventDefault(); document.getElementById('heroSearchInput').value = tag; handleSearch(); };
-    hotDiv.appendChild(a);
-  });
-  const announcements = siteData.announcements || [];
-  if (announcements.length > 0) {
-    const textEl = document.getElementById('announceText');
-    let idx = 0;
-    function showAnnounce() {
-      textEl.textContent = announcements[idx].text;
-      idx = (idx + 1) % announcements.length;
-    }
-    showAnnounce();
-    if (announcements.length > 1) setInterval(showAnnounce, 5000);
-  }
-  const grid = document.getElementById('quickGrid');
-  (siteData.quickLinks || []).forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'quick-card';
-    div.innerHTML = `
-      <div class="card-icon">${item.icon}</div>
-      <div>
-        <div class="card-title">${item.title}</div>
-        <div class="card-desc">${item.desc}</div>
-      </div>
-    `;
-    div.onclick = () => {
-      const btn = document.querySelector(`.pill-btn[data-tab="${item.tab}"]`);
-      if (btn) btn.click();
-    };
-    grid.appendChild(div);
-  });
-  const recGrid = document.getElementById('recommendGrid');
-  const knowledge = (siteData.weapons && siteData.weapons.knowledge) || [];
-  knowledge.slice(0, 4).forEach(item => {
-    const isVideo = item.type === 'VIDEO';
-    const div = document.createElement('div');
-    div.className = 'rec-card';
-    div.innerHTML = `
-      <div class="rec-thumb">${isVideo ? '🎬' : '📄'}</div>
-      <div class="rec-info">
-        <div class="rec-title">${item.title}</div>
-        <div class="rec-meta">
-          <span class="rec-type ${isVideo ? 'type-video' : 'type-pdf'}">${item.type}</span>
-          ${isVideo ? item.duration : item.size} · ${item.date}
-        </div>
-        <a href="${item.link}" class="btn-action" target="_blank">${isVideo ? '▶ 观看' : '📥 查看'}</a>
-      </div>
-    `;
-    recGrid.appendChild(div);
-  });
-}
-
-// ===== Render: Weapons =====
-function renderWeapons() {
-  const weapons = siteData.weapons || {};
-  const rulesList = document.getElementById('rulesList');
-  (weapons.rules || []).forEach(item => {
-    rulesList.innerHTML += `
-      <div class="doc-item">
-        <div class="doc-icon">📋</div>
-        <div class="doc-info">
-          <div class="doc-name">${item.title}</div>
-          <div class="doc-meta">${item.type} · ${item.size} · ${item.date}</div>
-        </div>
-        <a href="${item.link}" class="btn-dl" target="_blank">查看</a>
-      </div>
-    `;
-  });
-  const toolGrid = document.getElementById('toolGrid');
-  (weapons.tools || []).forEach(item => {
-    toolGrid.innerHTML += `
-      <div class="tool-card" onclick="window.open('${item.link}', '_blank')">
-        <div class="tool-icon">${item.icon}</div>
-        <div class="tool-name">${item.title}</div>
-        <div class="tool-desc">${item.desc}</div>
-      </div>
-    `;
-  });
-  const knowledgeList = document.getElementById('knowledgeList');
-  (weapons.knowledge || []).forEach(item => {
-    const isVideo = item.type === 'VIDEO';
-    knowledgeList.innerHTML += `
-      <div class="doc-item">
-        <div class="doc-icon">${isVideo ? '🎬' : '📄'}</div>
-        <div class="doc-info">
-          <div class="doc-name">${item.title}</div>
-          <div class="doc-meta">${item.type} · ${isVideo ? item.duration : item.size} · ${item.date}</div>
-        </div>
-        <a href="${item.link}" class="btn-dl" target="_blank">${isVideo ? '观看' : '下载'}</a>
-      </div>
-    `;
-  });
-  const kbLink = document.getElementById('kbLink');
-  if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
-  
-  // Live Trainings
-  const liveGrid = document.getElementById('liveGrid');
-  if (liveGrid) {
-    (weapons.liveTrainings || []).forEach(item => {
-      liveGrid.innerHTML += `
-        <a href="${item.link}" class="live-card" target="_blank">
-          <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
-          <div class="live-info">
-            <div class="live-title">${item.title}</div>
-            <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
-          </div>
-        </a>
-      `;
-    });
-  }
-  const moreLiveLink = document.getElementById('moreLiveLink');
-  if (weapons.moreLiveLink && moreLiveLink) moreLiveLink.href = weapons.moreLiveLink;
-}
-
-// ===== Render: MaaS =====
-function renderMaas() {
-  const maas = siteData.maas || {};
-  const trackGrid = document.getElementById('trackGrid');
-  if (!trackGrid) return;
-  
-  (maas.tracks || []).forEach(track => {
-    const scenariosHtml = (track.scenarios || []).map(s => `<li>${s}</li>`).join('');
-    const productsHtml = (track.products || []).map(p => `<span class="product-tag">${p}</span>`).join('');
-    
-    trackGrid.innerHTML += `
-      <div class="track-card">
-        <div class="track-header">
-          <span class="track-icon">${track.icon}</span>
-          <span class="track-name">${track.name}</span>
-        </div>
-        <div class="track-desc">${track.desc}</div>
-        <div class="track-section">
-          <div class="track-label">核心场景</div>
-          <ul class="track-scenarios">${scenariosHtml}</ul>
-        </div>
-        <div class="track-section">
-          <div class="track-label">推荐产品</div>
-          <div class="track-products">${productsHtml}</div>
-        </div>
-        <div class="track-cases">${track.cases}</div>
-        <a href="${track.link}" class="track-btn" target="_blank">了解详情 →</a>
-      </div>
-    `;
-  });
-}
-
-// ===== Render: Guide =====
-function renderGuide() {
-  const guide = siteData.guide || {};
-  const liveGrid = document.getElementById('liveGrid');
-  (guide.liveTrainings || []).forEach(item => {
-    liveGrid.innerHTML += `
-      <a href="${item.link}" class="live-card" target="_blank">
-        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
-        <div class="live-info">
-          <div class="live-title">${item.title}</div>
-          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
-        </div>
-      </a>
-    `;
-  });
-  const moreLiveLink = document.getElementById('moreLiveLink');
-  if (guide.moreLiveLink && moreLiveLink) moreLiveLink.href = guide.moreLiveLink;
-}
-
-// ===== Render: Rank =====
-function renderRank() {
-  const rank = siteData.rank || {};
-  function renderRankList(containerId, data, unit) {
-    const el = document.getElementById(containerId);
-    (data || []).forEach(item => {
-      el.innerHTML += `
-        <div class="rank-item">
-          <div class="rank-num">${item.rank}</div>
-          <div class="rank-name">${item.name}</div>
-          <div class="rank-score">${typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score}</div>
-        </div>
-      `;
-    });
-  }
-  renderRankList('tokenRankList', rank.tokenRank, ' tokens');
-  renderRankList('caseRankList', rank.caseRank, ' 个案例');
-  renderRankList('studyRankList', rank.studyRank);
-  renderRankList('certRankList', rank.certRank);
-  const battleList = document.getElementById('battleList');
-  (rank.battleReports || []).forEach(item => {
-    battleList.innerHTML += `
-      <div class="battle-item">
-        <div class="battle-icon">🏅</div>
-        <div class="battle-info">
-          <div class="battle-title">${item.title}</div>
-          <div class="battle-meta">${item.date}</div>
-        </div>
-        <div class="battle-amount">${item.amount}</div>
-      </div>
-    `;
-  });
-}
-
-// ===== Render: Feedback =====
-function renderFeedback() {
-  const messages = (siteData.feedback && siteData.feedback.messages) || [];
-  const msgList = document.getElementById('msgList');
-  messages.forEach(item => {
-    msgList.innerHTML += `
-      <div class="msg-item">
-        <div class="msg-header">
-          <span class="msg-author">${item.author}</span>
-          <span class="msg-date">${item.date}</span>
-        </div>
-        <div class="msg-content">${item.content}</div>
-        <div class="msg-footer">
-          <button class="btn-like" onclick="handleLike(this, ${item.likes})">❤️ ${item.likes}</button>
-        </div>
-      </div>
-    `;
-  });
-}
-
-// ===== Action Handlers =====
-function handleSearch() {
-  const val = document.getElementById('heroSearchInput').value.trim();
-  if (!val) { showToast('请输入搜索内容'); return; }
-  showToast('AI搜索功能将在二期上线，敬请期待');
-}
-
-function handleCustomerAnalysis() {
-  const val = document.getElementById('customerInput').value.trim();
-  if (!val) { showToast('请输入客户名称'); return; }
-  const outputDiv = document.getElementById('customerOutput');
-  const contentDiv = document.getElementById('customerOutputContent');
-  outputDiv.classList.add('show');
-  contentDiv.innerHTML = '<span class="spinner"></span>AI正在深度分析中，请稍候（约15-30秒）...';
-  callAI('customer_analysis', { customerName: val })
-    .then(text => { contentDiv.textContent = text; })
-    .catch(err => {
-      contentDiv.textContent = '⚠ AI接口调用失败：' + err.message + '\n\n以下为离线模板报告：\n\n' + generateCustomerReport(val);
-    });
-}
-
-function handleVisitPlan() {
-  const activeScene = document.querySelector('.scene-btn.active');
-  if (!activeScene) return;
-  const scene = activeScene.dataset.scene;
-  const form = document.getElementById('form-' + scene);
-  const roleSelect = document.getElementById('visitRole');
-  const inputs = form.querySelectorAll('input, select');
-  let valid = true;
-  if (!roleSelect.value.trim()) { valid = false; roleSelect.style.borderColor = '#f87171'; }
-  else { roleSelect.style.borderColor = ''; }
-  inputs.forEach(inp => {
-    if (!inp.value.trim()) { valid = false; inp.style.borderColor = '#f87171'; }
-    else { inp.style.borderColor = ''; }
-  });
-  if (!valid) { showToast('请填写所有必填项'); return; }
-  const outputDiv = document.getElementById('visitOutput');
-  const contentDiv = document.getElementById('visitOutputContent');
-  outputDiv.classList.add('show');
-  contentDiv.innerHTML = '<span class="spinner"></span>AI教练正在生成拜访计划，请稍候（约15-30秒）...';
-  const details = Array.from(inputs).map(inp => {
-    const label = inp.closest('.form-group')?.querySelector('label')?.textContent || '';
-    return label.replace(' *', '') + '：' + inp.value;
-  }).join('\n');
-  callAI('visit_plan', { scene, role: roleSelect.value, details })
-    .then(text => { contentDiv.textContent = text; })
-    .catch(err => {
-      contentDiv.textContent = '⚠ AI接口调用失败：' + err.message + '\n\n以下为离线模板计划：\n\n' + generateVisitPlan(scene, form, roleSelect.value);
-    });
-}
-
-function handleFeedback() {
-  const content = document.getElementById('feedbackContent').value.trim();
-  if (!content) { showToast('请输入反馈内容'); return; }
-  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
-  const company = document.getElementById('feedbackCompany').value.trim();
-  const author = company ? name + ' · ' + company : name;
-  const today = new Date().toISOString().split('T')[0];
-  const msgList = document.getElementById('msgList');
-  const newMsg = document.createElement('div');
-  newMsg.className = 'msg-item';
-  newMsg.innerHTML = `
-    <div class="msg-header">
-      <span class="msg-author">${author}</span>
-      <span class="msg-date">${today}</span>
-    </div>
-    <div class="msg-content">${escapeHtml(content)}</div>
-    <div class="msg-footer">
-      <button class="btn-like" onclick="handleLike(this, 0)">❤️ 0</button>
-    </div>
-  `;
-  msgList.insertBefore(newMsg, msgList.firstChild);
-  document.getElementById('feedbackContent').value = '';
-  document.getElementById('feedbackName').value = '';
-  document.getElementById('feedbackCompany').value = '';
-  showToast('感谢反馈！已通知管理员');
-  sendFeedbackToAdmin(author, content);
-}
-
-function handleLike(btn, currentLikes) {
-  if (btn.dataset.liked) return;
-  btn.dataset.liked = '1';
-  btn.textContent = '❤️ ' + (currentLikes + 1);
-  btn.style.background = 'rgba(239,68,68,0.2)';
-}
-
-// ===== AI API Call =====
-async function callAI(type, input) {
-  const resp = await fetch('/api/ai-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, input })
-  });
-  const data = await resp.json();
-  if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
-  return data.content;
-}
-
-// ===== Helpers =====
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
-}
-
-function escapeHtml(str) {
+// ===== Add Item Functions =====
+function createItemRow(container, fields, data) {
   const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  div.className = 'item-row';
+  let html = '<button class="btn-remove" onclick="this.parentElement.remove()">删除</button>';
+  fields.forEach(f => {
+    const val = data ? (data[f.key] || '') : '';
+    if (f.type === 'textarea') {
+      html += '<div class="field"><label>' + f.label + '</label><textarea data-key="' + f.key + '" placeholder="' + (f.placeholder || '') + '">' + val + '</textarea></div>';
+    } else {
+      html += '<div class="field"><label>' + f.label + '</label><input type="text" data-key="' + f.key + '" value="' + val + '" placeholder="' + (f.placeholder || '') + '" /></div>';
+    }
+  });
+  div.innerHTML = html;
+  document.getElementById(container).appendChild(div);
 }
 
-function sendFeedbackToAdmin(author, content) {
-  console.log('[Feedback]', author, content);
+function addRule(data) {
+  createItemRow('list-rules', [
+    { key: 'title', label: '文档名称', placeholder: '阿里云生态伙伴平台-信息公告' },
+    { key: 'size', label: '文件大小（选填）', placeholder: '2.3MB' },
+    { key: 'date', label: '日期（选填）', placeholder: '2025-03-01' },
+    { key: 'link', label: '链接', placeholder: 'https://aps.aliyun.com' }
+  ], data);
 }
 
-// ===== Offline AI Templates (fallback) =====
-function generateCustomerReport(name) {
-  return '📊 ' + name + ' — AI潜力评估报告（离线模板）\n\n' +
-    '一、客户业务概况\n  • 商业模式：待补充\n  • 核心客户群体：待调研\n\n' +
-    '二、关键行业趋势\n  1. AI大模型规模化落地\n  2. 云原生架构演进\n\n' +
-    '三、机会与挑战\n  机会：AI赋能业务流程\n  挑战：数字化人才储备\n\n' +
-    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成报告。';
+function addTool(data) {
+  createItemRow('list-tools', [
+    { key: 'title', label: '工具名称', placeholder: 'MaaS价格核算' },
+    { key: 'desc', label: '工具描述', placeholder: '快速核算MaaS产品价格' },
+    { key: 'icon', label: '图标（emoji）', placeholder: '🧮' },
+    { key: 'link', label: '链接', placeholder: 'http://47.109.203.32/' }
+  ], data);
 }
 
-function generateVisitPlan(scene, form, role) {
-  const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
-  return '🎯 ' + (sceneLabels[scene] || '客户拜访') + '计划（离线模板）\n\n' +
-    '一、拜访目标：认知塑造与教育\n\n' +
-    '二、用户行动承诺\n  最高：安排POC测试\n  最低：安排二次会议\n\n' +
-    '三、信息获取\n  1. 决策链路\n  2. 预算状况\n\n' +
-    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成拜访计划。';
+function addKnowledge(data) {
+  createItemRow('list-knowledge', [
+    { key: 'title', label: '资料名称', placeholder: '医疗行业云+AI解决方案' },
+    { key: 'type', label: '类型（PDF 或 VIDEO）', placeholder: 'PDF' },
+    { key: 'size', label: '大小（PDF填大小，视频填时长）', placeholder: '5.2MB 或 12:30' },
+    { key: 'date', label: '日期', placeholder: '2025-02-18' },
+    { key: 'link', label: '链接', placeholder: 'https://...' }
+  ], data);
 }
+
+function addTraining(data) {
+  createItemRow('list-trainings', [
+    { key: 'title', label: '培训主题', placeholder: '大模型在政务场景的落地实践' },
+    { key: 'date', label: '直播时间', placeholder: '2025-03-07 14:00' },
+    { key: 'speaker', label: '讲师', placeholder: '张三' },
+    { key: 'link', label: '直播链接', placeholder: 'https://...' }
+  ], data);
+}
+
+function addRankItem(type, data) {
+  const container = 'list-' + type;
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  const rank = data ? data.rank : '';
+  const name = data ? data.name : '';
+  const score = data ? data.score : '';
+  div.innerHTML =
+    '<button class="btn-remove" onclick="this.parentElement.remove()">删除</button>' +
+    '<div class="inline-fields">' +
+      '<div class="field"><label>排名</label><input type="text" data-key="rank" value="' + rank + '" placeholder="1" /></div>' +
+      '<div class="field"><label>公司名</label><input type="text" data-key="name" value="' + name + '" placeholder="锐智科技" /></div>' +
+    '</div>' +
+    '<div class="field"><label>分数/数值</label><input type="text" data-key="score" value="' + score + '" placeholder="92% 或 128000" /></div>';
+  document.getElementById(container).appendChild(div);
+}
+
+function addBattle(data) {
+  createItemRow('list-battles', [
+    { key: 'title', label: '项目描述', placeholder: '锐智科技签约XX医院智慧医疗项目' },
+    { key: 'amount', label: '金额', placeholder: '230万' },
+    { key: 'date', label: '日期', placeholder: '2025-02-28' }
+  ], data);
+}
+
+function addTrack(data) {
+  const container = document.getElementById('list-tracks');
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  const id = data ? data.id : 'track' + Date.now();
+  const icon = data ? data.icon : '';
+  const name = data ? data.name : '';
+  const desc = data ? data.desc : '';
+  const scenarios = data ? (data.scenarios || []).join('\n') : '';
+  const products = data ? (data.products || []).join(', ') : '';
+  const cases = data ? data.cases : '';
+  const link = data ? data.link : '';
+  div.innerHTML =
+    '<button class="btn-remove" onclick="this.parentElement.remove()">删除</button>' +
+    '<div class="inline-fields">' +
+      '<div class="field"><label>赛道ID</label><input type="text" data-key="id" value="' + id + '" placeholder="tax" /></div>' +
+      '<div class="field"><label>图标（emoji）</label><input type="text" data-key="icon" value="' + icon + '" placeholder="💰" /></div>' +
+    '</div>' +
+    '<div class="field"><label>赛道名称</label><input type="text" data-key="name" value="' + name + '" placeholder="赛道1 · 财税" /></div>' +
+    '<div class="field"><label>赛道描述</label><textarea data-key="desc" placeholder="面向财税行业的MaaS解决方案...">' + desc + '</textarea></div>' +
+    '<div class="field"><label>核心场景（每行一个）</label><textarea data-key="scenarios" placeholder="智能发票识别与录入\n财务报表自动生成">' + scenarios + '</textarea></div>' +
+    '<div class="field"><label>推荐产品（逗号分隔）</label><input type="text" data-key="products" value="' + products + '" placeholder="通义千问API, OCR文字识别" /></div>' +
+    '<div class="field"><label>案例说明</label><input type="text" data-key="cases" value="' + cases + '" placeholder="已有3家伙伴落地..." /></div>' +
+    '<div class="field"><label>详情链接</label><input type="text" data-key="link" value="' + link + '" placeholder="https://alidocs.dingtalk.com/..." /></div>';
+  container.appendChild(div);
+}
+
+function addMessage(data) {
+  createItemRow('list-messages', [
+    { key: 'author', label: '作者', placeholder: '张伟 · 锐智科技' },
+    { key: 'content', label: '留言内容', placeholder: '希望能增加更多金融行业的案例资料' },
+    { key: 'date', label: '日期', placeholder: '2025-02-28' },
+    { key: 'likes', label: '点赞数', placeholder: '12' }
+  ], data);
+}
+
+// ===== Collect Data from Forms =====
+function collectData() {
+  const data = JSON.parse(JSON.stringify(getDefaultData()));
+
+  // Preserve existing hotSearch / announcements / quickLinks from loaded data
+  data.hotSearch = editData.hotSearch || [];
+  data.announcements = editData.announcements || [];
+  data.quickLinks = editData.quickLinks || [];
+
+  // Weapons
+  data.weapons.rules = collectList('list-rules', ['title', 'size', 'date', 'link']).map(r => ({ ...r, type: r.size ? 'PDF' : '' }));
+  data.weapons.tools = collectList('list-tools', ['title', 'desc', 'icon', 'link']);
+  data.weapons.knowledge = collectList('list-knowledge', ['title', 'type', 'size', 'date', 'link']).map(k => {
+    const isVideo = (k.type || '').toUpperCase() === 'VIDEO';
+    const item = { title: k.title, type: isVideo ? 'VIDEO' : 'PDF', date: k.date, link: k.link };
+    if (isVideo) item.duration = k.size; else item.size = k.size;
+    return item;
+  });
+  data.weapons.knowledgeBaseLink = document.getElementById('f-kbLink').value.trim();
+  data.weapons.liveTrainings = collectList('list-trainings', ['title', 'date', 'speaker', 'link']).map(t => ({ ...t, cover: '' }));
+  data.weapons.moreLiveLink = document.getElementById('f-moreLiveLink').value.trim() || '#';
+
+  // Guide (AI-generated, no manual data)
+  data.guide = {};
+
+  // MaaS
+  data.maas = { tracks: collectTrackList() };
+
+  // Rank
+  data.rank.tokenRank = collectRankList('list-tokenRank');
+  data.rank.caseRank = collectRankList('list-caseRank');
+  data.rank.studyRank = collectRankList('list-studyRank');
+  data.rank.certRank = collectRankList('list-certRank');
+  data.rank.battleReports = collectList('list-battles', ['title', 'amount', 'date']);
+
+  // Feedback
+  data.feedback.messages = collectList('list-messages', ['author', 'content', 'date', 'likes']).map((m, i) => ({
+    id: i + 1, author: m.author, content: m.content, date: m.date, likes: parseInt(m.likes) || 0
+  }));
+
+  return data;
+}
+
+function collectList(containerId, keys) {
+  const rows = document.getElementById(containerId).querySelectorAll('.item-row');
+  return Array.from(rows).map(row => {
+    const obj = {};
+    keys.forEach(key => {
+      const el = row.querySelector('[data-key="' + key + '"]');
+      obj[key] = el ? el.value.trim() : '';
+    });
+    return obj;
+  });
+}
+
+function collectRankList(containerId) {
+  const rows = document.getElementById(containerId).querySelectorAll('.item-row');
+  return Array.from(rows).map(row => {
+    const rank = parseInt(row.querySelector('[data-key="rank"]')?.value) || 0;
+    const name = row.querySelector('[data-key="name"]')?.value.trim() || '';
+    let score = row.querySelector('[data-key="score"]')?.value.trim() || '';
+    const num = Number(score);
+    if (!isNaN(num) && score !== '' && !/[%h]/.test(score)) score = num;
+    return { rank, name, score };
+  });
+}
+
+function collectTrackList() {
+  const rows = document.getElementById('list-tracks').querySelectorAll('.item-row');
+  return Array.from(rows).map(row => {
+    const id = row.querySelector('[data-key="id"]')?.value.trim() || '';
+    const icon = row.querySelector('[data-key="icon"]')?.value.trim() || '';
+    const name = row.querySelector('[data-key="name"]')?.value.trim() || '';
+    const desc = row.querySelector('[data-key="desc"]')?.value.trim() || '';
+    const scenariosRaw = row.querySelector('[data-key="scenarios"]')?.value.trim() || '';
+    const scenarios = scenariosRaw ? scenariosRaw.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    const productsRaw = row.querySelector('[data-key="products"]')?.value.trim() || '';
+    const products = productsRaw ? productsRaw.split(/[,，]/).map(s => s.trim()).filter(Boolean) : [];
+    const cases = row.querySelector('[data-key="cases"]')?.value.trim() || '';
+    const link = row.querySelector('[data-key="link"]')?.value.trim() || '#';
+    return { id, icon, name, desc, scenarios, products, cases, link };
+  });
+}
+
+// ===== Generate app.js content =====
+function generateAppJS(data) {
+  const jsonStr = JSON.stringify(data, null, 2);
+  return '/**\n' +
+    ' * AI先锋·伙伴之家 - Main Application Logic\n' +
+    ' * ====================================================\n' +
+    ' * 【技术小白更新指南】\n' +
+    ' *   要更新网站内容，请打开 admin.html 管理后台修改数据。\n' +
+    ' *   或者直接修改下方 SITE_DATA 对象中的数据。\n' +
+    ' * ====================================================\n' +
+    ' */\n\n' +
+    '// ===== 网站数据（直接修改这里即可更新内容） =====\n' +
+    'const SITE_DATA = ' + jsonStr + ';\n\n' +
+    appCodePart;
+}
+
+// Store the code portion - loaded dynamically from current app.js
+let appCodePart = '';
+
+function extractCodeFromAppJS() {
+  fetch('js/app.js')
+    .then(r => r.text())
+    .then(text => {
+      const marker = '// ===== Global State =====';
+      const idx = text.indexOf(marker);
+      if (idx > 0) {
+        appCodePart = text.substring(idx);
+      } else {
+        const re = /^const SITE_DATA\s*=\s*/m;
+        const match = re.exec(text);
+        if (match) {
+          let braceCount = 0;
+          let startIdx = match.index + match[0].length;
+          for (let i = startIdx; i < text.length; i++) {
+            if (text[i] === '{') braceCount++;
+            if (text[i] === '}') { braceCount--; if (braceCount === 0) { appCodePart = text.substring(i + 2).replace(/^\s*;\s*\n*/, ''); break; } }
+          }
+        }
+      }
+    })
+    .catch(() => {
+      appCodePart = '// Code part could not be loaded. Please paste the full app.js manually.';
+    });
+}
+
+// ===== Save & Download =====
+function saveAndDownload() {
+  const data = collectData();
+  const content = generateAppJS(data);
+  const blob = new Blob([content], { type: 'application/javascript;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'app.js';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showAdminToast('app.js 已下载！请到 GitHub 替换 js/app.js 文件');
+}
+
+// ===== Copy to Clipboard =====
+function copyToClipboard() {
+  const data = collectData();
+  const content = generateAppJS(data);
+  navigator.clipboard.writeText(content).then(() => {
+    showAdminToast('✅ 代码已复制！请到 GitHub 粘贴替换 js/app.js');
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = content;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showAdminToast('✅ 代码已复制！请到 GitHub 粘贴替换 js/app.js');
+  });
+}
+
+function showAdminToast(msg) {
+  const t = document.getElementById('adminToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== Init =====
+extractCodeFromAppJS();
+loadCurrentData();
+</script>
+
+</body>
+</html>
