@@ -878,72 +878,91 @@ const MODEL_LABELS = {
 
 // 格式化AI输出内容
 // 规则：
-// - 去掉 markdown 符号（#, *, -, 等）
-// - 客户分析报告：一级目录(客户AI潜力评估报告)、二级目录(输出1/输出2)、三级目录(5个章节) 加大加粗，其余正文
-// - 拜访计划：6个二级目录(一~六) 加大加粗，其余正文
-function formatAIOutput(content, type) {
+// 1. 去掉所有 markdown 符号（#, **, __, >, ---）
+// 2. 客户分析报告：一级/二级/三级目录 加大加粗，其余正文
+// 3. 拜访计划：6个二级目录 加大加粗，其余正文
+function formatAIOutput(content) {
   if (!content) return '';
 
-  // 先清除 markdown 符号
-  let text = content;
-  // 去掉 markdown 标题符号 ### ## # 
+  // Step 1: 清除 markdown 符号
+  var text = content;
+  // 去掉标题符号 ### ## #（行首）
   text = text.replace(/^#{1,6}\s*/gm, '');
-  // 去掉加粗 **text** 或 __text__
-  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
-  text = text.replace(/__(.+?)__/g, '$1');
-  // 去掉斜体 *text* 或 _text_（但不影响已处理的加粗）
-  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1');
-  // 去掉列表符号 - 或 • 开头（保留内容）
-  text = text.replace(/^[\-\•]\s+/gm, '');
-  // 去掉有序列表中多余的点号格式如 1. **xxx**：已去掉**
-  // 去掉 --- 分隔线
-  text = text.replace(/^-{3,}$/gm, '');
-  // 去掉 > 引用符号
+  // 去掉加粗 **text**
+  text = text.replace(/\*\*([\s\S]*?)\*\*/g, '$1');
+  // 去掉加粗 __text__
+  text = text.replace(/__([\s\S]*?)__/g, '$1');
+  // 去掉剩余单个 * 包裹的斜体（简单处理：行内成对的 *x*）
+  text = text.replace(/\*([^\*\n]+)\*/g, '$1');
+  // 去掉 --- 或 === 分隔线
+  text = text.replace(/^[\-=]{3,}\s*$/gm, '');
+  // 去掉引用符号 >
   text = text.replace(/^>\s*/gm, '');
+  // 去掉行首的列表符号 - 或 • 或 *（但不去掉数字编号如 1. 2.）
+  text = text.replace(/^[\-\u2022\*\+]\s+/gm, '');
 
-  let lines = text.split('\n');
-  let html = [];
+  // Step 2: 按行解析，分配样式
+  var lines = text.split('\n');
+  var html = [];
 
-  for (let line of lines) {
-    let trimmed = line.trim();
-    if (!trimmed) {
-      continue; // 跳过空行，不额外加间距
-    }
+  for (var i = 0; i < lines.length; i++) {
+    var trimmed = lines[i].trim();
+    if (!trimmed) continue;
 
-    // === 客户分析报告的目录层级 ===
-    // 一级目录：包含"客户AI潜力评估报告"
+    // ======= 客户分析报告：一级目录 =======
+    // 匹配 "客户AI潜力评估报告" / "客户 AI 潜力评估报告"
     if (/客户\s*AI\s*潜力评估报告/.test(trimmed)) {
       html.push('<div class="ai-title-1">' + trimmed + '</div>');
       continue;
     }
 
-    // 二级目录：输出1 / 输出2 / 云计算+AI年度预算 / 客户分析报告
-    if (/^输出\s*[12]\s*[：:]/.test(trimmed) || 
-        /^输出\s*[12]\s*/.test(trimmed) && /(云计算|年度预算|客户分析报告)/.test(trimmed)) {
+    // ======= 客户分析报告：二级目录 =======
+    // "输出1：xxx" / "输出2：xxx"
+    if (/^输出\s*[12]\s*[：:]/i.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
-    // 单独匹配"云计算+AI年度预算"或"客户分析报告"作为标题行
-    if (/^(用户)?[【\[]?云计算\s*[\+\+]\s*AI[】\]]?\s*年度预算/.test(trimmed) ||
-        /^客户分析报告$/.test(trimmed)) {
+    // "用户【云计算+AI】年度预算" / "云计算+AI年度预算"
+    if (/云计算[\s\+\＋]*AI[\s】\]]*\s*年度预算/.test(trimmed)) {
+      html.push('<div class="ai-title-2">' + trimmed + '</div>');
+      continue;
+    }
+    // 单独 "客户分析报告"
+    if (/^客户分析报告\s*$/.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
 
-    // 三级目录：客户分析的5个章节标题
-    if (/^[1-5]\s*[\.、]\s*(客户业务概况|影响客户业务的关键行业趋势|从客户视角分析的机会与挑战|从"?用户结果"?反推关键举措|公共云与生成式\s*AI)/.test(trimmed)) {
+    // ======= 客户分析报告：三级目录（5个章节）=======
+    // 匹配 "1. 客户业务概况" 或 "1、客户业务概况" 或直接 "客户业务概况"
+    if (/^([1-5]\s*[\.\、\)）]\s*)?(客户业务概况)/.test(trimmed)) {
+      html.push('<div class="ai-title-3">' + trimmed + '</div>');
+      continue;
+    }
+    if (/^([1-5]\s*[\.\、\)）]\s*)?(影响客户业务的关键行业趋势)/.test(trimmed)) {
+      html.push('<div class="ai-title-3">' + trimmed + '</div>');
+      continue;
+    }
+    if (/^([1-5]\s*[\.\、\)）]\s*)?(从客户视角分析的机会与挑战)/.test(trimmed)) {
+      html.push('<div class="ai-title-3">' + trimmed + '</div>');
+      continue;
+    }
+    if (/^([1-5]\s*[\.\、\)）]\s*)?(从.{0,4}用户结果.{0,4}反推关键举措)/.test(trimmed)) {
+      html.push('<div class="ai-title-3">' + trimmed + '</div>');
+      continue;
+    }
+    if (/^([1-5]\s*[\.\、\)）]\s*)?(公共云与生成式\s*AI)/.test(trimmed)) {
       html.push('<div class="ai-title-3">' + trimmed + '</div>');
       continue;
     }
 
-    // === 拜访计划的目录层级 ===
-    // 拜访计划6个二级目录
-    if (/^[一二三四五六]\s*[、\.]\s*(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
+    // ======= 拜访计划：二级目录（6个章节）=======
+    if (/^[一二三四五六]\s*[、\.\,，]\s*(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
 
-    // 其余全部按正文输出
+    // ======= 其余全部按正文输出 =======
     html.push('<div class="ai-text">' + trimmed + '</div>');
   }
 
