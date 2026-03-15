@@ -411,4 +411,590 @@ const SITE_DATA = {
   }
 };
 
-// Code part could not be loaded. Please paste the full app.js manually.
+
+// ===== Global State =====
+let siteData = null;
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSiteData();
+  initTabs();
+  initRankTabs();
+  initSceneSelector();
+  renderWeapons();
+  renderMaas();
+  renderRank();
+  renderFeedback();
+});
+
+// ===== Load Data =====
+async function loadSiteData() {
+  try {
+    const resp = await fetch('data/site-data.json');
+    if (resp.ok) {
+      siteData = await resp.json();
+      return;
+    }
+  } catch (e) {}
+  siteData = SITE_DATA;
+}
+
+// ===== Tab Navigation =====
+function initTabs() {
+  const nav = document.getElementById('pillNav');
+  nav.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pill-btn');
+    if (!btn) return;
+    const tab = btn.dataset.tab;
+    nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// ===== Rank Sub-tabs =====
+function initRankTabs() {
+  const tabs = document.getElementById('rankTabs');
+  if (!tabs) return;
+  tabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.rank-tab');
+    if (!btn) return;
+    const rank = btn.dataset.rank;
+    tabs.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.rank-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('rank-' + rank).classList.add('active');
+  });
+}
+
+// ===== Scene Selector (Visit Plan) =====
+function initSceneSelector() {
+  const sel = document.getElementById('sceneSelector');
+  if (!sel) return;
+  sel.addEventListener('click', (e) => {
+    const btn = e.target.closest('.scene-btn');
+    if (!btn) return;
+    const scene = btn.dataset.scene;
+    sel.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.scene-form').forEach(f => f.classList.remove('active'));
+    document.getElementById('form-' + scene).classList.add('active');
+  });
+}
+
+// ===== Render: Home =====
+function renderHome() {
+  const announcements = siteData.announcements || [];
+  if (announcements.length > 0) {
+    const textEl = document.getElementById('announceText');
+    let idx = 0;
+    function showAnnounce() {
+      textEl.textContent = announcements[idx].text;
+      idx = (idx + 1) % announcements.length;
+    }
+    showAnnounce();
+    if (announcements.length > 1) setInterval(showAnnounce, 5000);
+  }
+  const grid = document.getElementById('quickGrid');
+  (siteData.quickLinks || []).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'quick-card';
+    div.innerHTML = `
+      <div class="card-icon">${item.icon}</div>
+      <div>
+        <div class="card-title">${item.title}</div>
+        <div class="card-desc">${item.desc}</div>
+      </div>
+    `;
+    div.onclick = () => {
+      const btn = document.querySelector(`.pill-btn[data-tab="${item.tab}"]`);
+      if (btn) btn.click();
+    };
+    grid.appendChild(div);
+  });
+  const recGrid = document.getElementById('recommendGrid');
+  const knowledge = (siteData.weapons && siteData.weapons.knowledge) || [];
+  knowledge.slice(0, 4).forEach(item => {
+    const isVideo = item.type === 'VIDEO';
+    const div = document.createElement('div');
+    div.className = 'rec-card';
+    div.innerHTML = `
+      <div class="rec-thumb">${isVideo ? '🎬' : '📄'}</div>
+      <div class="rec-info">
+        <div class="rec-title">${item.title}</div>
+        <div class="rec-meta">
+          <span class="rec-type ${isVideo ? 'type-video' : 'type-pdf'}">${item.type}</span>
+          ${isVideo ? item.duration : item.size} · ${item.date}
+        </div>
+        <a href="${item.link}" class="btn-action" target="_blank">${isVideo ? '▶ 观看' : '📥 查看'}</a>
+      </div>
+    `;
+    recGrid.appendChild(div);
+  });
+}
+
+// ===== Render: Weapons =====
+function renderWeapons() {
+  const weapons = siteData.weapons || {};
+  const rulesList = document.getElementById('rulesList');
+  (weapons.rules || []).forEach(item => {
+    rulesList.innerHTML += `
+      <div class="doc-item">
+        <div class="doc-icon">📋</div>
+        <div class="doc-info">
+          <div class="doc-name">${item.title}</div>
+          <div class="doc-meta">${[item.type, item.size, item.date].filter(Boolean).join(' · ')}</div>
+        </div>
+        <a href="${item.link}" class="btn-dl" target="_blank">查看</a>
+      </div>
+    `;
+  });
+  const toolGrid = document.getElementById('toolGrid');
+  (weapons.tools || []).forEach(item => {
+    toolGrid.innerHTML += `
+      <div class="tool-card" onclick="window.open('${item.link}', '_blank')">
+        <div class="tool-icon">${item.icon}</div>
+        <div class="tool-name">${item.title}</div>
+        <div class="tool-desc">${item.desc}</div>
+      </div>
+    `;
+  });
+  const knowledgeList = document.getElementById('knowledgeList');
+  (weapons.knowledge || []).forEach(item => {
+    const isVideo = item.type === 'VIDEO';
+    knowledgeList.innerHTML += `
+      <div class="doc-item">
+        <div class="doc-icon">${isVideo ? '🎬' : '📄'}</div>
+        <div class="doc-info">
+          <div class="doc-name">${item.title}</div>
+          <div class="doc-meta">${item.type} · ${isVideo ? item.duration : item.size} · ${item.date}</div>
+        </div>
+        <a href="${item.link}" class="btn-dl" target="_blank">${isVideo ? '观看' : '下载'}</a>
+      </div>
+    `;
+  });
+  const kbLink = document.getElementById('kbLink');
+  if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
+
+  // Render Live Trainings (moved from Guide to Weapons)
+  const liveGrid = document.getElementById('liveGrid');
+  if (liveGrid) {
+    (weapons.liveTrainings || []).forEach(item => {
+      liveGrid.innerHTML += `
+        <a href="${item.link}" class="live-card" target="_blank">
+          <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
+          <div class="live-info">
+            <div class="live-title">${item.title}</div>
+            <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
+          </div>
+        </a>
+      `;
+    });
+  }
+  const moreLiveLink = document.getElementById('moreLiveLink');
+  if (weapons.moreLiveLink && moreLiveLink) moreLiveLink.href = weapons.moreLiveLink;
+}
+
+// ===== Render: MaaS =====
+function renderMaas() {
+  const maas = siteData.maas || {};
+  const trackGrid = document.getElementById('trackGrid');
+  if (!trackGrid) return;
+
+  (maas.tracks || []).forEach(track => {
+    const scenariosHtml = (track.scenarios || []).map(s => `<li>${s}</li>`).join('');
+    const productsHtml = (track.products || []).map(p => `<span class="product-tag">${p}</span>`).join('');
+
+    trackGrid.innerHTML += `
+      <div class="track-card">
+        <div class="track-header">
+          <span class="track-icon">${track.icon}</span>
+          <span class="track-name">${track.name}</span>
+        </div>
+        <div class="track-desc">${track.desc}</div>
+        <div class="track-section">
+          <div class="track-label">核心场景</div>
+          <ul class="track-scenarios">${scenariosHtml}</ul>
+        </div>
+        <div class="track-section">
+          <div class="track-label">推荐产品</div>
+          <div class="track-products">${productsHtml}</div>
+        </div>
+        <div class="track-cases">${track.cases}</div>
+        <a href="${track.link}" class="track-btn" target="_blank">了解详情 →</a>
+      </div>
+    `;
+  });
+}
+
+// ===== Render: Guide =====
+function renderGuide() {
+  const guide = siteData.guide || {};
+  const liveGrid = document.getElementById('liveGrid');
+  (guide.liveTrainings || []).forEach(item => {
+    liveGrid.innerHTML += `
+      <a href="${item.link}" class="live-card" target="_blank">
+        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
+        <div class="live-info">
+          <div class="live-title">${item.title}</div>
+          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
+        </div>
+      </a>
+    `;
+  });
+  const moreLiveLink = document.getElementById('moreLiveLink');
+  if (guide.moreLiveLink && moreLiveLink) moreLiveLink.href = guide.moreLiveLink;
+}
+
+// ===== Render: Rank =====
+function renderRank() {
+  const rank = siteData.rank || {};
+  function renderRankList(containerId, data, unit) {
+    const el = document.getElementById(containerId);
+    (data || []).forEach(item => {
+      el.innerHTML += `
+        <div class="rank-item">
+          <div class="rank-num">${item.rank}</div>
+          <div class="rank-name">${item.name}</div>
+          <div class="rank-score">${typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score}</div>
+        </div>
+      `;
+    });
+  }
+  renderRankList('tokenRankList', rank.tokenRank, '');
+  renderRankList('caseRankList', rank.caseRank, ' 个案例');
+  renderRankList('studyRankList', rank.studyRank);
+  renderRankList('certRankList', rank.certRank);
+  const battleList = document.getElementById('battleList');
+  (rank.battleReports || []).forEach(item => {
+    battleList.innerHTML += `
+      <div class="battle-item">
+        <div class="battle-icon">🏅</div>
+        <div class="battle-info">
+          <div class="battle-title">${item.title}</div>
+          <div class="battle-meta">${item.date}</div>
+        </div>
+        <div class="battle-amount">${item.amount}</div>
+      </div>
+    `;
+  });
+}
+
+// ===== Render: Feedback =====
+function renderFeedback() {
+  const messages = (siteData.feedback && siteData.feedback.messages) || [];
+  const msgList = document.getElementById('msgList');
+  messages.forEach(item => {
+    msgList.innerHTML += `
+      <div class="msg-item">
+        <div class="msg-header">
+          <span class="msg-author">${item.author}</span>
+          <span class="msg-date">${item.date}</span>
+        </div>
+        <div class="msg-content">${item.content}</div>
+        <div class="msg-footer">
+          <button class="btn-like" onclick="handleLike(this, ${item.likes})">❤️ ${item.likes}</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// ===== Mobile Navigation =====
+function toggleMobileNav() {
+  const nav = document.getElementById('mobileNav');
+  const overlay = document.getElementById('mobileNavOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  nav.classList.toggle('show');
+  overlay.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+
+function mobileNavTo(tab) {
+  const btn = document.querySelector('.pill-btn[data-tab="' + tab + '"]');
+  if (btn) btn.click();
+  // Update mobile nav active state
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.mobile-nav-btn[data-tab="' + tab + '"]').classList.add('active');
+  toggleMobileNav();
+}
+
+// ===== 客户分析报告（多模型对比）=====
+function handleCustomerAnalysis() {
+  const val = document.getElementById('analysisInput').value.trim();
+  if (!val) { showToast('请输入客户名称'); return; }
+
+  // 读取选中的模型
+  const checked = document.querySelectorAll('input[name="analysisModel"]:checked');
+  const selectedModels = Array.from(checked).map(cb => cb.value);
+  if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
+
+  const outputDiv = document.getElementById('customerOutput');
+  const contentDiv = document.getElementById('customerOutputContent');
+  outputDiv.classList.add('show');
+
+  // 构建对比卡片布局
+  const colsClass = selectedModels.length >= 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
+  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="customerCompareGrid">' +
+    selectedModels.map(m =>
+      '<div class="compare-card" id="card-customer-' + m + '">' +
+        '<div class="compare-card-header">' +
+          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
+          '<span class="model-status" id="status-customer-' + m + '">⏳ 生成中...</span>' +
+        '</div>' +
+        '<div class="compare-card-body" id="body-customer-' + m + '">' +
+          '<span class="spinner"></span> AI正在分析中，请稍候...' +
+        '</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+
+  // 并行调用所有选中的模型
+  selectedModels.forEach(m => {
+    callAI('customer_analysis', { customerName: val }, m)
+      .then(result => {
+        document.getElementById('body-customer-' + m).innerHTML = formatAIOutput(result.content);
+        const statusEl = document.getElementById('status-customer-' + m);
+        statusEl.textContent = '✅ 已完成';
+        statusEl.className = 'model-status done';
+      })
+      .catch(err => {
+        document.getElementById('body-customer-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+        const statusEl = document.getElementById('status-customer-' + m);
+        statusEl.textContent = '❌ 失败';
+        statusEl.className = 'model-status error';
+      });
+  });
+}
+
+function handleVisitPlan() {
+  const activeScene = document.querySelector('.scene-btn.active');
+  if (!activeScene) return;
+  const scene = activeScene.dataset.scene;
+  const form = document.getElementById('form-' + scene);
+  const roleSelect = document.getElementById('visitRole');
+  const inputs = form.querySelectorAll('input, select');
+  let valid = true;
+  if (!roleSelect.value.trim()) { valid = false; roleSelect.style.borderColor = '#f87171'; }
+  else { roleSelect.style.borderColor = ''; }
+  inputs.forEach(inp => {
+    if (!inp.value.trim()) { valid = false; inp.style.borderColor = '#f87171'; }
+    else { inp.style.borderColor = ''; }
+  });
+  if (!valid) { showToast('请填写所有必填项'); return; }
+
+  // 读取选中的模型
+  const checked = document.querySelectorAll('input[name="visitModel"]:checked');
+  const selectedModels = Array.from(checked).map(cb => cb.value);
+  if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
+
+  const outputDiv = document.getElementById('visitOutput');
+  const contentDiv = document.getElementById('visitOutputContent');
+  outputDiv.classList.add('show');
+
+  const details = Array.from(inputs).map(inp => {
+    const label = inp.closest('.form-group')?.querySelector('label')?.textContent || '';
+    return label.replace(' *', '') + '：' + inp.value;
+  }).join('\n');
+
+  // 构建对比卡片布局
+  const colsClass = selectedModels.length >= 4 ? 'cols-4' : selectedModels.length === 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
+  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="visitCompareGrid">' +
+    selectedModels.map(m =>
+      '<div class="compare-card" id="card-visit-' + m + '">' +
+        '<div class="compare-card-header">' +
+          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
+          '<span class="model-status" id="status-visit-' + m + '">⏳ 生成中...</span>' +
+        '</div>' +
+        '<div class="compare-card-body" id="body-visit-' + m + '">' +
+          '<span class="spinner"></span> AI教练正在生成计划...' +
+        '</div>' +
+      '</div>'
+    ).join('') +
+    '</div>';
+
+  // 并行调用所有选中的模型
+  selectedModels.forEach(m => {
+    callAI('visit_plan', { scene, role: roleSelect.value, details }, m)
+      .then(result => {
+        document.getElementById('body-visit-' + m).innerHTML = formatAIOutput(result.content);
+        const statusEl = document.getElementById('status-visit-' + m);
+        statusEl.textContent = '✅ 已完成';
+        statusEl.className = 'model-status done';
+      })
+      .catch(err => {
+        document.getElementById('body-visit-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+        const statusEl = document.getElementById('status-visit-' + m);
+        statusEl.textContent = '❌ 失败';
+        statusEl.className = 'model-status error';
+      });
+  });
+}
+
+function handleFeedback() {
+  const content = document.getElementById('feedbackContent').value.trim();
+  if (!content) { showToast('请输入反馈内容'); return; }
+  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
+  const company = document.getElementById('feedbackCompany').value.trim();
+  const author = company ? name + ' · ' + company : name;
+  const today = new Date().toISOString().split('T')[0];
+  const msgList = document.getElementById('msgList');
+  const newMsg = document.createElement('div');
+  newMsg.className = 'msg-item';
+  newMsg.innerHTML = `
+    <div class="msg-header">
+      <span class="msg-author">${author}</span>
+      <span class="msg-date">${today}</span>
+    </div>
+    <div class="msg-content">${escapeHtml(content)}</div>
+    <div class="msg-footer">
+      <button class="btn-like" onclick="handleLike(this, 0)">❤️ 0</button>
+    </div>
+  `;
+  msgList.insertBefore(newMsg, msgList.firstChild);
+  document.getElementById('feedbackContent').value = '';
+  document.getElementById('feedbackName').value = '';
+  document.getElementById('feedbackCompany').value = '';
+  showToast('感谢反馈！已通知管理员');
+  sendFeedbackToAdmin(author, content);
+}
+
+function handleLike(btn, currentLikes) {
+  if (btn.dataset.liked) return;
+  btn.dataset.liked = '1';
+  btn.textContent = '❤️ ' + (currentLikes + 1);
+  btn.style.background = 'rgba(239,68,68,0.2)';
+}
+
+// ===== AI API Call =====
+const MODEL_LABELS = {
+  qwen35plus: 'Qwen3.5-Plus',
+  qwenmax:    'Qwen-Max',
+  kimi:       'Kimi-K2.5',
+  minimax:    'MiniMax-M2.5',
+};
+
+// 格式化AI输出内容（添加目录、表格等结构）
+function formatAIOutput(content) {
+  if (!content) return '';
+
+  // 将内容按行分割
+  let lines = content.split('\n');
+  let formatted = [];
+  let inTable = false;
+  let tableLines = [];
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) {
+      if (inTable) {
+        formatted.push('</table>');
+        inTable = false;
+      }
+      formatted.push('<br>');
+      continue;
+    }
+
+    // 检测一级标题（一、二、三等）
+    if (/^[一二三四五六七八九十]+、/.test(line)) {
+      if (inTable) {
+        formatted.push('</table>');
+        inTable = false;
+      }
+      formatted.push(`<h3 class="ai-h1">${line}</h3>`);
+    }
+    // 检测二级标题（1. 2. 或 (1) (2) 等）
+    else if (/^(\d+\.\s+|\(\d+\)\s+|\d+\)\s+)/.test(line)) {
+      if (inTable) {
+        formatted.push('</table>');
+        inTable = false;
+      }
+      formatted.push(`<h4 class="ai-h2">${line}</h4>`);
+    }
+    // 检测列表项（• 或 - 开头）
+    else if (/^[\-\•]\s+/.test(line)) {
+      if (inTable) {
+        formatted.push('</table>');
+        inTable = false;
+      }
+      formatted.push(`<div class="ai-li">${line}</div>`);
+    }
+    // 检测表格行（包含多个|或制表符分隔）
+    else if (line.includes('|') || line.includes('：') && line.includes('；')) {
+      if (!inTable) {
+        inTable = true;
+        formatted.push('<table class="ai-table">');
+      }
+      // 将内容转换为表格行
+      let cells = line.split(/[|：；]/).filter(c => c.trim());
+      if (cells.length >= 2) {
+        formatted.push('<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>');
+      } else {
+        formatted.push(`<div class="ai-p">${line}</div>`);
+      }
+    }
+    // 普通段落
+    else {
+      if (inTable) {
+        formatted.push('</table>');
+        inTable = false;
+      }
+      formatted.push(`<div class="ai-p">${line}</div>`);
+    }
+  }
+
+  if (inTable) {
+    formatted.push('</table>');
+  }
+
+  return formatted.join('\n');
+}
+
+async function callAI(type, input, model) {
+  const resp = await fetch('https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, input, model: model || 'turbo' })
+  });
+  const data = await resp.json();
+  if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
+  return { content: data.content, model: data.model };
+}
+
+// ===== Helpers =====
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function sendFeedbackToAdmin(author, content) {
+  console.log('[Feedback]', author, content);
+}
+
+// ===== Offline AI Templates (fallback) =====
+function generateCustomerReport(name) {
+  return '📊 ' + name + ' — AI潜力评估报告（离线模板）\n\n' +
+    '一、客户业务概况\n  • 商业模式：待补充\n  • 核心客户群体：待调研\n\n' +
+    '二、关键行业趋势\n  1. AI大模型规模化落地\n  2. 云原生架构演进\n\n' +
+    '三、机会与挑战\n  机会：AI赋能业务流程\n  挑战：数字化人才储备\n\n' +
+    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成报告。';
+}
+
+function generateVisitPlan(scene, form, role) {
+  const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
+  return '🎯 ' + (sceneLabels[scene] || '客户拜访') + '计划（离线模板）\n\n' +
+    '一、拜访目标：认知塑造与教育\n\n' +
+    '二、用户行动承诺\n  最高：安排POC测试\n  最低：安排二次会议\n\n' +
+    '三、信息获取\n  1. 决策链路\n  2. 预算状况\n\n' +
+    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成拜访计划。';
+}
