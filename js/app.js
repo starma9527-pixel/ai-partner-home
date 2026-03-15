@@ -876,80 +876,78 @@ const MODEL_LABELS = {
   minimax:    'MiniMax-M2.5',
 };
 
-// 格式化AI输出内容（添加目录、表格等结构）
-function formatAIOutput(content) {
+// 格式化AI输出内容
+// 规则：
+// - 去掉 markdown 符号（#, *, -, 等）
+// - 客户分析报告：一级目录(客户AI潜力评估报告)、二级目录(输出1/输出2)、三级目录(5个章节) 加大加粗，其余正文
+// - 拜访计划：6个二级目录(一~六) 加大加粗，其余正文
+function formatAIOutput(content, type) {
   if (!content) return '';
 
-  // 将内容按行分割
-  let lines = content.split('\n');
-  let formatted = [];
-  let inTable = false;
-  let tableLines = [];
+  // 先清除 markdown 符号
+  let text = content;
+  // 去掉 markdown 标题符号 ### ## # 
+  text = text.replace(/^#{1,6}\s*/gm, '');
+  // 去掉加粗 **text** 或 __text__
+  text = text.replace(/\*\*(.+?)\*\*/g, '$1');
+  text = text.replace(/__(.+?)__/g, '$1');
+  // 去掉斜体 *text* 或 _text_（但不影响已处理的加粗）
+  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1');
+  // 去掉列表符号 - 或 • 开头（保留内容）
+  text = text.replace(/^[\-\•]\s+/gm, '');
+  // 去掉有序列表中多余的点号格式如 1. **xxx**：已去掉**
+  // 去掉 --- 分隔线
+  text = text.replace(/^-{3,}$/gm, '');
+  // 去掉 > 引用符号
+  text = text.replace(/^>\s*/gm, '');
+
+  let lines = text.split('\n');
+  let html = [];
 
   for (let line of lines) {
-    line = line.trim();
-    if (!line) {
-      if (inTable) {
-        formatted.push('</table>');
-        inTable = false;
-      }
-      formatted.push('<br>');
+    let trimmed = line.trim();
+    if (!trimmed) {
+      continue; // 跳过空行，不额外加间距
+    }
+
+    // === 客户分析报告的目录层级 ===
+    // 一级目录：包含"客户AI潜力评估报告"
+    if (/客户\s*AI\s*潜力评估报告/.test(trimmed)) {
+      html.push('<div class="ai-title-1">' + trimmed + '</div>');
       continue;
     }
 
-    // 检测一级标题（一、二、三等）
-    if (/^[一二三四五六七八九十]+、/.test(line)) {
-      if (inTable) {
-        formatted.push('</table>');
-        inTable = false;
-      }
-      formatted.push(`<h3 class="ai-h1">${line}</h3>`);
+    // 二级目录：输出1 / 输出2 / 云计算+AI年度预算 / 客户分析报告
+    if (/^输出\s*[12]\s*[：:]/.test(trimmed) || 
+        /^输出\s*[12]\s*/.test(trimmed) && /(云计算|年度预算|客户分析报告)/.test(trimmed)) {
+      html.push('<div class="ai-title-2">' + trimmed + '</div>');
+      continue;
     }
-    // 检测二级标题（1. 2. 或 (1) (2) 等）
-    else if (/^(\d+\.\s+|\(\d+\)\s+|\d+\)\s+)/.test(line)) {
-      if (inTable) {
-        formatted.push('</table>');
-        inTable = false;
-      }
-      formatted.push(`<h4 class="ai-h2">${line}</h4>`);
+    // 单独匹配"云计算+AI年度预算"或"客户分析报告"作为标题行
+    if (/^(用户)?[【\[]?云计算\s*[\+\+]\s*AI[】\]]?\s*年度预算/.test(trimmed) ||
+        /^客户分析报告$/.test(trimmed)) {
+      html.push('<div class="ai-title-2">' + trimmed + '</div>');
+      continue;
     }
-    // 检测列表项（• 或 - 开头）
-    else if (/^[\-\•]\s+/.test(line)) {
-      if (inTable) {
-        formatted.push('</table>');
-        inTable = false;
-      }
-      formatted.push(`<div class="ai-li">${line}</div>`);
+
+    // 三级目录：客户分析的5个章节标题
+    if (/^[1-5]\s*[\.、]\s*(客户业务概况|影响客户业务的关键行业趋势|从客户视角分析的机会与挑战|从"?用户结果"?反推关键举措|公共云与生成式\s*AI)/.test(trimmed)) {
+      html.push('<div class="ai-title-3">' + trimmed + '</div>');
+      continue;
     }
-    // 检测表格行（包含多个|或制表符分隔）
-    else if (line.includes('|') || line.includes('：') && line.includes('；')) {
-      if (!inTable) {
-        inTable = true;
-        formatted.push('<table class="ai-table">');
-      }
-      // 将内容转换为表格行
-      let cells = line.split(/[|：；]/).filter(c => c.trim());
-      if (cells.length >= 2) {
-        formatted.push('<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>');
-      } else {
-        formatted.push(`<div class="ai-p">${line}</div>`);
-      }
+
+    // === 拜访计划的目录层级 ===
+    // 拜访计划6个二级目录
+    if (/^[一二三四五六]\s*[、\.]\s*(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
+      html.push('<div class="ai-title-2">' + trimmed + '</div>');
+      continue;
     }
-    // 普通段落
-    else {
-      if (inTable) {
-        formatted.push('</table>');
-        inTable = false;
-      }
-      formatted.push(`<div class="ai-p">${line}</div>`);
-    }
+
+    // 其余全部按正文输出
+    html.push('<div class="ai-text">' + trimmed + '</div>');
   }
 
-  if (inTable) {
-    formatted.push('</table>');
-  }
-
-  return formatted.join('\n');
+  return html.join('');
 }
 
 async function callAI(type, input, model) {
