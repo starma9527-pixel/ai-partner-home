@@ -12,16 +12,27 @@ const CORS_HEADERS = {
 };
 
 const MODEL_CONFIG = {
-  // 前端使用的模型名称
-  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 2000 },
-  'qwenmax':    { id: 'qwen-max', maxTokens: 2000 },
-  'kimi':       { id: 'qwen-max', maxTokens: 2000 },      // 映射到 qwen-max
-  'minimax':    { id: 'qwen-max', maxTokens: 2000 },      // 映射到 qwen-max
-  // 兼容旧版模型名称
-  'turbo': { id: 'qwen-turbo', maxTokens: 2000 },
-  'plus':  { id: 'qwen-plus',  maxTokens: 1200 },
-  'max':   { id: 'qwen-max',   maxTokens: 1000 },
-  'think': { id: 'qwq-plus', maxTokens: 1500 }
+  // 4个模型都通过阿里云百炼调用（统一使用 DASHSCOPE_API_KEY）
+  'qwen35plus': { 
+    id: 'qwen-plus', 
+    maxTokens: 2000,
+    displayName: 'Qwen-Plus'
+  },
+  'qwenmax': { 
+    id: 'qwen-max', 
+    maxTokens: 2000,
+    displayName: 'Qwen-Max'
+  },
+  'kimi': { 
+    id: 'kimi-k2.5',  // 百炼支持的Kimi模型
+    maxTokens: 2000,
+    displayName: 'Kimi-K2.5'
+  },
+  'minimax': { 
+    id: 'MiniMax-M2.5',  // 百炼支持的MiniMax模型
+    maxTokens: 2000,
+    displayName: 'MiniMax-M2.5'
+  }
 };
 
 export default async (request, context) => {
@@ -104,35 +115,14 @@ export default async (request, context) => {
 5. 每个AI应用场景必须包含：具体业务痛点 → 解决方案 → 预期效果（含量化KPI）。
 6. 阿里云产品推荐必须具体到产品名称和使用方式，不要只列产品名。
 
-请生成一份专业的客户AI潜力评估报告，严格按以下结构输出：
-
-一、客户基本信息
-  - 公司全称：
-  - 所属行业：
-  - 主营业务：
-  - 商业模式：
-  - 核心客户群体：
-
-二、行业AI趋势（未来6-24个月，至少3个具体趋势，每个带简要说明）
-
-三、云+AI转型机会与挑战
-  机会（至少3个具体机会点，与该公司业务直接相关）
-  挑战（至少2个该公司可能面临的具体障碍）
-
-四、AI应用场景建议（3个场景）
-  每个场景包含：
-  - 场景名称
-  - 业务痛点
-  - AI解决方案
-  - 预期KPI提升
-
-五、阿里云产品组合推荐（3套方案）
-  每套包含：
-  - 方案名称
-  - 核心产品（具体阿里云产品名）
-  - 解决的痛点
-  - 实施路径（1-2句话）
-  - 预估投入范围`;
+请生成一份专业的客户AI潜力评估报告，严格按以下结构输出，除了一级标题加粗加黑，其他内容都正常展示，确保文字的上下间距紧凑：
+输出1：用户在【云计算和AI板块】的年度预算金额：单位是人民币万
+输出2：紧跟着在下文输出 客户分析报告，用结构化方式输出（分章节），内容包括但不限于以下五部分：
+1. 客户业务概况：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、他们目前如何触达和服务客户（渠道、触点、服务模式）、企业整体业务方向与中长期发展战略、如有公开信息，请重点梳理 2025 年的工作重点（如研发方向、重点投资计划、数字化/智能化布局等）
+2. 影响客户业务的关键行业趋势（未来 6–24 个月）：提炼 3–5 个与客户高度相关、且在未来 6–24 个月内预计会对其业务产生重大影响的行业或市场趋势，对每个趋势，简要说明趋势内涵、发展逻辑及与客户的相关性
+3. 从客户视角分析的机会与挑战：站在客户管理层视角，结合上述趋势，提炼 3–5 个最关键的业务机会，同时分析对应的主要挑战或风险（如组织能力、资金投入、技术门槛、合规风险等）
+4. 从“用户结果”反推关键举措、指标和 Use Cases：先明确客户在“用户结果”（如用户体验、产品创新、内部员工效率等）层面的目标，基于这些目标，提出 3–6 个关键战略举措（initiatives），并为每个举措设计：关键业务指标（KPIs），可落地的典型数字化/AI Use Cases（用例描述、涉及流程、预期价值）。
+5. 公共云与生成式 AI（GenAI）的应用构想：结合上述分析，说明公有云在基础设施、数据平台、安全合规等层面的潜在价值，设计 3–5 个适合客户的 GenAI 典型应用场景（如智能客服、营销内容生成、知识问答、运营优化、研发辅助等），并说明：业务痛点、解决思路与方案构想、预期业务价值与衡量指标。如有必要，可简要讨论实施路径（短期试点–中期扩展–长期变革）和关键成功要素;
     userPrompt = '请分析以下客户的AI转型潜力：' + input.customerName + '\n\n请务必先识别出该客户的完整公司名称，然后进行深入分析。';
 
   } else if (type === 'visit_plan') {
@@ -143,9 +133,8 @@ export default async (request, context) => {
 【重要规则】
 1. 所有内容必须紧密围绕用户提供的具体客户信息，不要给出泛化的通用建议。
 2. 行动建议必须具体到可执行的步骤，包含话术示例。
-3. 议程安排必须精确到分钟，每个阶段有明确的动作和预期产出。
 
-请生成一份专业的${sceneName}计划，严格按以下结构输出：
+请生成一份专业的拜访计划，严格按以下结构输出，除了一级标题加粗加黑，其他内容都正常展示，确保文字的上下间距紧凑。
 
 一、拜访目标
   - 核心目标（1句话）
@@ -165,8 +154,6 @@ export default async (request, context) => {
   - 支撑证据（案例/数据）
   - 参考话术（1-2句）
 
-五、会议议程（60分钟）
-  分5个阶段，每阶段包含：时间分配 | 具体动作 | 预期产出
 
 六、风险预案
   - 可能遇到的异议（2-3个）
@@ -186,42 +173,41 @@ export default async (request, context) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 50000);
 
-    // 尝试国际端点优先（Netlify 服务器在海外，访问国际端点更快）
-    // 如果国际端点失败再回退到中国区端点
-    const API_URLS = [
-      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
-      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
-    ];
-
     let response = null;
     let lastError = null;
+    
+    // 所有模型都通过阿里云百炼调用
+    // 优先使用中国区端点（API Key 在中国区有效）
+    const API_URLS = [
+      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
+    ];
     
     for (const apiUrl of API_URLS) {
       try {
         response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + API_KEY
-      },
-      body: JSON.stringify({
-        model: cfg.id,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: cfg.maxTokens
-      }),
-      signal: controller.signal
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + API_KEY
+          },
+          body: JSON.stringify({
+            model: cfg.id,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: cfg.maxTokens
+          }),
+          signal: controller.signal
         });
-        // 如果返回 401（key 不匹配此端点），尝试下一个
         if (response.status === 401) {
           lastError = 'AUTH_FAIL on ' + apiUrl;
           response = null;
           continue;
         }
-        break; // 成功拿到非401响应，跳出循环
+        break;
       } catch (fetchErr) {
         lastError = fetchErr.message;
         response = null;
@@ -233,32 +219,31 @@ export default async (request, context) => {
 
     if (!response) {
       return new Response(JSON.stringify({
-        error: 'API_CONNECT_ERROR: 无法连接通义千问API，' + (lastError || '未知错误')
+        error: 'API_CONNECT_ERROR: 无法连接API，' + (lastError || '未知错误')
       }), { status: 502, headers: CORS_HEADERS });
     }
 
     if (!response.ok) {
       const errText = await response.text();
       return new Response(JSON.stringify({
-        error: 'API_ERROR: 通义千问返回 ' + response.status,
+        error: 'API_ERROR: 模型API返回 ' + response.status,
         detail: errText.substring(0, 500)
       }), { status: response.status, headers: CORS_HEADERS });
     }
 
     const data = await response.json();
     const message = data.choices && data.choices[0] && data.choices[0].message;
-    // QwQ deep thinking models may return content in reasoning_content + content
     const content = message
       ? (message.content || message.reasoning_content || '未能生成内容，请重试')
       : '未能生成内容，请重试';
 
-    return new Response(JSON.stringify({ content, model: cfg.id }), {
+    return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
       status: 200, headers: CORS_HEADERS
     });
 
   } catch (err) {
     const errorMsg = err.name === 'AbortError' 
-      ? '请求超时(50秒)，Netlify海外服务器访问阿里云较慢，建议使用 Qwen-Turbo 模型'
+      ? '请求超时(50秒)，请稍后重试'
       : err.message;
     return new Response(JSON.stringify({
       error: 'ERROR: ' + errorMsg
