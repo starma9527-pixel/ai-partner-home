@@ -953,14 +953,30 @@ function formatAIOutput(content) {
 }
 
 async function callAI(type, input, model) {
-  const resp = await fetch('https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, input, model: model || 'turbo' })
-  });
-  const data = await resp.json();
-  if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
-  return { content: data.content, model: data.model };
+  // 优先使用 Netlify Edge Function，备用阿里云 FC
+  const endpoints = [
+    '/api/ai-proxy',  // Netlify Edge Function（推荐）
+    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 阿里云 FC（备用）
+  ];
+
+  let lastError = null;
+  for (const endpoint of endpoints) {
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, input, model: model || 'turbo' })
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
+      return { content: data.content, model: data.model };
+    } catch (err) {
+      lastError = err;
+      console.warn(`AI endpoint ${endpoint} failed:`, err.message);
+      continue; // 尝试下一个端点
+    }
+  }
+  throw lastError || new Error('所有AI端点均不可用');
 }
 
 // ===== Helpers =====
