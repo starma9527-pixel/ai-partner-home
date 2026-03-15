@@ -6,8 +6,9 @@
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
   'Content-Type': 'application/json'
 };
 
@@ -99,7 +100,7 @@ export default async (request, context) => {
   }
 
   const { type, input, model: modelKey } = body;
-  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['turbo'];
+  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen35plus'];
 
   let systemPrompt = '';
   let userPrompt = '';
@@ -115,8 +116,8 @@ export default async (request, context) => {
 5. 每个AI应用场景必须包含：具体业务痛点 → 解决方案 → 预期效果（含量化KPI）。
 6. 阿里云产品推荐必须具体到产品名称和使用方式，不要只列产品名。
 
-请生成一份专业的客户AI潜力评估报告，严格按以下结构输出，除了一级标题加粗加黑，其他内容都正常展示，确保文字的上下间距紧凑：
-输出1：用户在【云计算和AI板块】的年度预算金额：单位是人民币万
+请生成一份专业的客户AI潜力评估报告，除了一级标题加粗加黑，其他内容都已正文的形式来正常展示，确保文字的上下间距紧凑：
+输出1：用户【云计算+AI】年度预算：单位是人民币万。
 输出2：紧跟着在下文输出 客户分析报告，用结构化方式输出（分章节），内容包括但不限于以下五部分：
 1. 客户业务概况：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、他们目前如何触达和服务客户（渠道、触点、服务模式）、企业整体业务方向与中长期发展战略、如有公开信息，请重点梳理 2025 年的工作重点（如研发方向、重点投资计划、数字化/智能化布局等）
 2. 影响客户业务的关键行业趋势（未来 6–24 个月）：提炼 3–5 个与客户高度相关、且在未来 6–24 个月内预计会对其业务产生重大影响的行业或市场趋势，对每个趋势，简要说明趋势内涵、发展逻辑及与客户的相关性
@@ -134,15 +135,11 @@ export default async (request, context) => {
 1. 所有内容必须紧密围绕用户提供的具体客户信息，不要给出泛化的通用建议。
 2. 行动建议必须具体到可执行的步骤，包含话术示例。
 
-请生成一份专业的拜访计划，严格按以下结构输出，除了一级标题加粗加黑，其他内容都正常展示，确保文字的上下间距紧凑。
+请生成一份专业的拜访计划，严格按以下结构输出，除了一级标题加粗加黑，其他内容都已正文形式展示，每行文字之间的上下间距紧凑。
 
-一、拜访目标
-  - 核心目标（1句话）
-  - 成功标志（可衡量的结果）
+一、拜访目标：核心目标（1句话）、成功标志（可衡量的结果）。
 
-二、行动承诺
-  - 最高承诺（理想结果）
-  - 最低承诺（保底结果）
+二、行动承诺：最高承诺（理想结果）、最低承诺（保底结果）、
 
 三、关键信息获取（5项）
   每项包含：信息点 | 优先级(Must/Should/Could) | 获取方式
@@ -155,11 +152,11 @@ export default async (request, context) => {
   - 参考话术（1-2句）
 
 
-六、风险预案
+五、风险预案
   - 可能遇到的异议（2-3个）
   - 应对策略和话术
 
-七、会前准备清单（5项具体待办）`;
+六、会前准备清单（5项具体待办）`;
     userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + input.role + '\n' + input.details;
 
   } else {
@@ -169,7 +166,7 @@ export default async (request, context) => {
   }
 
   try {
-    // 设置 50 秒超时（Netlify Edge Function 最大约 50 秒）
+    // 设置 120 秒超时（Netlify Edge Function 最大约 120 秒）
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 50000);
 
@@ -243,7 +240,7 @@ export default async (request, context) => {
 
   } catch (err) {
     const errorMsg = err.name === 'AbortError' 
-      ? '请求超时(50秒)，请稍后重试'
+      ? '请求超时(120秒)，请稍后重试'
       : err.message;
     return new Response(JSON.stringify({
       error: 'ERROR: ' + errorMsg
