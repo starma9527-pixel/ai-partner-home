@@ -953,10 +953,18 @@ function formatAIOutput(content) {
 }
 
 async function callAI(type, input, model) {
-  // 优先使用 Netlify Edge Function，备用阿里云 FC
-  const endpoints = [
-    '/api/ai-proxy',  // Netlify Edge Function（推荐）
-    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 阿里云 FC（备用）
+  // 智能选择 API 端点
+  // - 本地文件 (file://) 或 localhost：使用阿里云 FC
+  // - Netlify 域名：使用 /api/ai-proxy
+  const isLocal = window.location.protocol === 'file:' ||
+                  window.location.hostname === 'localhost' ||
+                  window.location.hostname === '127.0.0.1';
+
+  const endpoints = isLocal ? [
+    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 本地：只用阿里云 FC
+  ] : [
+    '/api/ai-proxy',  // Netlify：优先使用 Edge Function
+    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 备用：阿里云 FC
   ];
 
   let lastError = null;
@@ -965,7 +973,7 @@ async function callAI(type, input, model) {
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, input, model: model || 'turbo' })
+        body: JSON.stringify({ type, input, model: model || 'qwen35plus' })
       });
       const data = await resp.json();
       if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
