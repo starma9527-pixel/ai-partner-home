@@ -970,17 +970,38 @@ async function callAI(type, input, model) {
   let lastError = null;
   for (const endpoint of endpoints) {
     try {
+      console.log(`[callAI] Trying endpoint: ${endpoint}`);
+      console.log(`[callAI] Request body:`, { type, input, model: model || 'qwen35plus' });
+
       const resp = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ type, input, model: model || 'qwen35plus' })
       });
-      const data = await resp.json();
+
+      console.log(`[callAI] Response status: ${resp.status}`);
+      console.log(`[callAI] Response headers:`, [...resp.headers.entries()]);
+
+      const text = await resp.text();
+      console.log(`[callAI] Raw response:`, text.substring(0, 500));
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('返回的不是有效JSON: ' + text.substring(0, 100));
+      }
+
       if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
       return { content: data.content, model: data.model };
     } catch (err) {
       lastError = err;
-      console.warn(`AI endpoint ${endpoint} failed:`, err.message);
+      console.error(`[callAI] Endpoint ${endpoint} failed:`, err.message);
       continue; // 尝试下一个端点
     }
   }
