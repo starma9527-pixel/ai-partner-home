@@ -527,63 +527,36 @@ input, textarea, select { font-family: inherit; }
 .kb-banner-desc { font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
 .kb-banner-arrow { font-size: 1.5rem; opacity: 0.7; flex-shrink: 0; }
 
-.ai-h1 {
-  font-size: 1rem;
+/* ===== AI Output Text Formatting ===== */
+/* 一级目录：大号加粗 */
+.ai-title-1 {
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--accent-purple);
+  color: var(--text-primary);
   margin: 16px 0 10px 0;
   padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--accent-purple);
 }
-
-.ai-h2 {
-  font-size: 0.9rem;
-  font-weight: 600;
+/* 二级目录：中号加粗 */
+.ai-title-2 {
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text-primary);
-  margin: 12px 0 8px 0;
+  margin: 14px 0 8px 0;
 }
-
-.ai-p {
-  font-size: 0.85rem;
+/* 三级目录：稍大加粗 */
+.ai-title-3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 12px 0 6px 0;
+}
+/* 正文：普通样式 */
+.ai-text {
+  font-size: 0.86rem;
   color: var(--text-secondary);
-  line-height: 1.8;
-  margin: 6px 0;
-}
-
-.ai-li {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.8;
-  margin: 4px 0 4px 16px;
-  position: relative;
-}
-
-.ai-li::before {
-  content: '•';
-  position: absolute;
-  left: -12px;
-  color: var(--accent-purple);
-}
-
-.ai-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 12px 0;
-  font-size: 0.8rem;
-}
-
-.ai-table td {
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-}
-
-.ai-table tr:nth-child(odd) {
-  background: var(--bg-primary);
-}
-
-.ai-table tr:nth-child(even) {
-  background: var(--bg-card);
+  line-height: 1.7;
+  margin: 2px 0;
 }
 .form-card {
   background: var(--bg-card);
