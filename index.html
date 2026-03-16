@@ -17,7 +17,8 @@
       <span>AI 先锋·伙伴之家</span>
     </div>
     <nav class="header-nav" id="pillNav">
-      <button class="pill-btn active" data-tab="weapons">🧰 打单兵器</button>
+      <button class="pill-btn active" data-tab="home">🏠 首页</button>
+      <button class="pill-btn" data-tab="weapons">🧰 打单兵器</button>
       <button class="pill-btn" data-tab="maas">🚀 赢战 MaaS</button>
       <button class="pill-btn" data-tab="guide">🎯 拜访教练</button>
       <button class="pill-btn" data-tab="rank">🏆 龙虎榜</button>
@@ -32,7 +33,8 @@
     <!-- Mobile nav overlay -->
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
     <div class="mobile-nav" id="mobileNav">
-      <button class="mobile-nav-btn active" data-tab="weapons" onclick="mobileNavTo('weapons')">🧰 打单兵器</button>
+      <button class="mobile-nav-btn active" data-tab="home" onclick="mobileNavTo('home')">🏠 首页</button>
+      <button class="mobile-nav-btn" data-tab="weapons" onclick="mobileNavTo('weapons')">🧰 打单兵器</button>
       <button class="mobile-nav-btn" data-tab="maas" onclick="mobileNavTo('maas')">🚀 赢战 MaaS</button>
       <button class="mobile-nav-btn" data-tab="guide" onclick="mobileNavTo('guide')">🎯 拜访教练</button>
       <button class="mobile-nav-btn" data-tab="rank" onclick="mobileNavTo('rank')">🏆 龙虎榜</button>
@@ -55,7 +57,7 @@
 <main class="content-area">
 
   <!-- ===== HOME TAB ===== -->
-  <div class="tab-panel" id="tab-home">
+  <div class="tab-panel active" id="tab-home">
     <!-- Announcements -->
     <div class="announce-bar" id="announceBar">
       <span class="tag">公告</span>
@@ -68,16 +70,22 @@
     </div>
     <div class="quick-grid" id="quickGrid"></div>
 
-    <!-- Recommended -->
+    <!-- Latest Live Trainings -->
     <div class="section-title">
-      <span class="icon">✨</span> 为你推荐的武器
-      <span class="badge">精选</span>
+      <span class="icon">🎬</span> 最新培训
+      <span class="badge">直播</span>
     </div>
-    <div class="recommend-grid" id="recommendGrid"></div>
+    <div class="home-live-grid" id="homeLiveGrid"></div>
+
+    <!-- Latest Battle Reports -->
+    <div class="section-title">
+      <span class="icon">⚔️</span> 最新项目战报
+    </div>
+    <div class="home-battle-list" id="homeBattleList"></div>
   </div>
 
   <!-- ===== WEAPONS TAB ===== -->
-  <div class="tab-panel active" id="tab-weapons">
+  <div class="tab-panel" id="tab-weapons">
     <div class="section-title">
       <span class="icon">🧰</span> 打单兵器库
     </div>
