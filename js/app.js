@@ -1,1080 +1,1086 @@
-/**
- * AI先锋·伙伴之家 - Main Application Logic
- * ====================================================
- * 【技术小白更新指南】
- *   要更新网站内容，请打开 admin.html 管理后台修改数据。
- *   或者直接修改下方 SITE_DATA 对象中的数据。
- * ====================================================
- */
+/* ===== CSS Variables & Reset ===== */
+:root {
+  --bg-primary: #f5f6fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f1f7;
+  --text-primary: #1a1a2e;
+  --text-secondary: #555566;
+  --text-muted: #888899;
+  --accent-purple: #7c3aed;
+  --accent-purple-light: #8b5cf6;
+  --accent-green: #059669;
+  --accent-green-light: #10b981;
+  --gradient-purple: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  --gradient-green: linear-gradient(135deg, #10b981, #059669);
+  --gradient-glow: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(16,185,129,0.04));
+  --border-color: rgba(0,0,0,0.08);
+  --border-active: rgba(139,92,246,0.35);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 9999px;
+  --shadow-card: 0 1px 6px rgba(0,0,0,0.06);
+  --shadow-glow: 0 4px 20px rgba(139,92,246,0.1);
+  --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: var(--accent-purple); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--accent-green); }
+img { max-width: 100%; display: block; }
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+input, textarea, select { font-family: inherit; }
 
-// ===== 网站数据（直接修改这里即可更新内容） =====
-const SITE_DATA = {
-  "site": {
-    "name": "AI先锋·伙伴之家",
-    "slogan": "西部大区伙伴赋能平台",
-    "adminEmail": "admin@example.com"
-  },
-  "hotSearch": [
-    "最新AI大单案例",
-    "通义千问接入指南",
-    "云服务器选型"
-  ],
-  "announcements": [
-    {
-      "id": 1,
-      "text": "2026年Q1伙伴激励政策已发布，点击查看详情",
-      "link": "#",
-      "date": "2025-03-01"
-    },
-    {
-      "id": 2,
-      "text": "本周五直播预告：大模型在游戏场景的落地实践",
-      "link": "#",
-      "date": "2025-03-05"
-    }
-  ],
-  "quickLinks": [
-    {
-      "icon": "🧰",
-      "title": "打单兵器",
-      "desc": "业务规则·常用工具·生态知识库",
-      "tab": "weapons"
-    },
-    {
-      "icon": "🚀",
-      "title": "赢战MaaS",
-      "desc": "财税·AI短剧·智能语音赛道",
-      "tab": "maas"
-    },
-    {
-      "icon": "🎯",
-      "title": "拜访教练",
-      "desc": "甄选客户·拜访计划·AI助手",
-      "tab": "guide"
-    },
-    {
-      "icon": "🏆",
-      "title": "龙虎榜",
-      "desc": "Token排行·案例贡献·学习时长",
-      "tab": "rank"
-    },
-    {
-      "icon": "💬",
-      "title": "回音壁",
-      "desc": "留言反馈·建议吐槽·需求收集",
-      "tab": "feedback"
-    }
-  ],
-  "weapons": {
-    "rules": [
-      {
-        "title": "阿里云生态伙伴平台-信息公告",
-        "size": "",
-        "date": "",
-        "link": "https://aps.aliyun.com",
-        "type": ""
-      }
-    ],
-    "tools": [
-      {
-        "title": "MaaS价格核算",
-        "desc": "快速核算MaaS产品价格",
-        "icon": "🧮",
-        "link": "http://47.109.203.32/"
-      },
-      {
-        "title": "竞品对比工具",
-        "desc": "阿里云 vs 友商能力对比",
-        "icon": "⚔️",
-        "link": "#"
-      },
-      {
-        "title": "AI Demo体验",
-        "desc": "一键体验通义系列产品",
-        "icon": "🤖",
-        "link": "#"
-      },
-      {
-        "title": "方案模板库",
-        "desc": "行业解决方案PPT模板",
-        "icon": "📑",
-        "link": "#"
-      }
-    ],
-    "knowledge": [],
-    "knowledgeBaseLink": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview",
-    "liveTrainings": [
-      {
-        "title": "AI短剧解决方案、AI Coding产品方案选型推荐",
-        "date": "2026-01-09",
-        "speaker": "李阳(山樵)",
-        "link": "https://n.dingtalk.com/dingding/live-room/index.html?roomId=MIzQRx84Yo&liveUuid=34080b76-8c46-45de-a7a6-8a8d11e501a6",
-        "cover": ""
-      },
-      {
-        "title": "Qoder产品售卖策略&Coding plan售卖策略及话术推荐",
-        "date": "2026-03-13",
-        "speaker": "王永刚、何家丞",
-        "link": "https://n.dingtalk.com/dingding/live-room/index.html?roomId=t2m6NntuWo&liveUuid=b8d9b66e-2aa8-4600-85a9-b3839be12b06",
-        "cover": ""
-      },
-      {
-        "title": "AI 智能硬件客户案例分享&无影云电脑应用案例与 AI 价值增量路径",
-        "date": "2026-03-06",
-        "speaker": "袁艺青、舟木",
-        "link": "https://n.dingtalk.com/dingding/live-room/index.html?roomId=D66G4xLuWq&liveUuid=b6f12927-d5b7-4314-8baa-425702cd6d6d",
-        "cover": ""
-      }
-    ],
-    "moreLiveLink": "https://qr.dingtalk.com/action/joingroup?code=v1,k1,k5NQoHBel/zRbku22VcQ6CfqRS7mdpeOFTg8GOING1A=&_dt_no_comment=1&origin=11"
-  },
-  "guide": {},
-  "maas": {
-    "tracks": [
-      {
-        "id": "tax",
-        "icon": "💰",
-        "name": "赛道1 · 财税",
-        "desc": "面向财税行业的MaaS解决方案，助力伙伴快速拓展财税数字化市场",
-        "scenarios": [
-          "智能发票识别与录入",
-          "财务报表自动生成",
-          "税务风险AI预警",
-          "智能记账与对账"
-        ],
-        "products": [
-          "通义千问API",
-          "OCR文字识别",
-          "智能对话机器人"
-        ],
-        "cases": "已有3家伙伴落地财税AI项目，累计合同额超200万",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
-      },
-      {
-        "id": "drama",
-        "icon": "🎬",
-        "name": "赛道2 · AI短剧",
-        "desc": "AI驱动短剧/漫剧内容生产，从剧本到成片全链路赋能",
-        "scenarios": [
-          "AI剧本创作与改编",
-          "AI角色形象生成",
-          "智能配音与语音合成",
-          "AI视频剪辑与特效"
-        ],
-        "products": [
-          "通义万相",
-          "CosyVoice语音合成",
-          "通义千问API"
-        ],
-        "cases": "AI短剧制作成本降低60%，单集产出效率提升5倍",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
-      },
-      {
-        "id": "voice",
-        "icon": "🎙️",
-        "name": "赛道3 · 智能语音",
-        "desc": "基于大模型的智能语音解决方案，覆盖客服、外呼、质检等场景",
-        "scenarios": [
-          "智能客服语音机器人",
-          "AI外呼与营销",
-          "通话质检与合规分析",
-          "语音转文字与会议纪要"
-        ],
-        "products": [
-          "语音识别ASR",
-          "语音合成TTS",
-          "通义千问API"
-        ],
-        "cases": "智能语音客服替代率达70%，客户满意度提升25%",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
-      },
-      {
-        "id": "data",
-        "icon": "🏷️",
-        "name": "赛道4 · 数据标注",
-        "desc": "专业数据标注与数据工程服务，为大模型训练提供高质量数据支撑",
-        "scenarios": [
-          "图像分类与目标检测标注",
-          "文本标注与NER命名实体",
-          "语音数据采集与转写",
-          "大模型指令微调数据构建"
-        ],
-        "products": [
-          "数据标注平台",
-          "通义千问API",
-          "模型微调服务"
-        ],
-        "cases": "已服务5个大模型训练项目，标注准确率超98%",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
-      },
-      {
-        "id": "social",
-        "icon": "💬",
-        "name": "赛道5 · 社交陪伴",
-        "desc": "AI驱动的虚拟陪伴与社交互动解决方案，覆盖情感陪伴、虚拟角色、社群运营等场景",
-        "scenarios": [
-          "AI虚拟伴侣与情感陪伴",
-          "虚拟IP角色对话互动",
-          "智能社群运营与管理",
-          "游戏NPC智能对话"
-        ],
-        "products": [
-          "通义千问API",
-          "语音合成TTS",
-          "数字人形象生成"
-        ],
-        "cases": "虚拟陪伴用户日均使用时长超2小时，用户留存率提升40%",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
-      },
-      {
-        "id": "saasagent",
-        "icon": "🤖",
-        "name": "赛道6 · SaaS Agent",
-        "desc": "基于大模型的智能SaaS助手，为各类SaaS产品注入AI能力，提升用户体验与效率",
-        "scenarios": [
-          "智能文档助手与内容生成",
-          "数据分析与可视化洞察",
-          "自动化工作流与任务执行",
-          "智能客服与工单处理"
-        ],
-        "products": [
-          "通义千问API",
-          "Function Calling工具调用",
-          "知识库RAG检索"
-        ],
-        "cases": "SaaS产品接入AI助手后，用户付费转化率提升35%，操作效率提升3倍",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
-      }
-    ]
-  },
-  "rank": {
-    "tokenRank": [
-      {
-        "rank": 1,
-        "name": "四川捷云",
-        "score": "25%"
-      },
-      {
-        "rank": 2,
-        "name": "成都端木",
-        "score": "17%"
-      },
-      {
-        "rank": 3,
-        "name": "长虹佳华",
-        "score": "14%"
-      },
-      {
-        "rank": 4,
-        "name": "四川柏盛云途",
-        "score": "14%"
-      },
-      {
-        "rank": 5,
-        "name": "重庆羋游",
-        "score": "10%"
-      },
-      {
-        "rank": 6,
-        "name": "重庆云之渝",
-        "score": "9%"
-      },
-      {
-        "rank": 7,
-        "name": "重庆典名",
-        "score": "8%"
-      }
-    ],
-    "caseRank": [
-      {
-        "rank": 1,
-        "name": "重庆典名",
-        "score": ""
-      },
-      {
-        "rank": 2,
-        "name": "数联创新",
-        "score": 18
-      },
-      {
-        "rank": 3,
-        "name": "云翔信息",
-        "score": 15
-      },
-      {
-        "rank": 4,
-        "name": "天行数据",
-        "score": 12
-      },
-      {
-        "rank": 5,
-        "name": "智源网络",
-        "score": 9
-      }
-    ],
-    "studyRank": [
-      {
-        "rank": 1,
-        "name": "云翔信息",
-        "score": "42h"
-      },
-      {
-        "rank": 2,
-        "name": "锐智科技",
-        "score": "38h"
-      },
-      {
-        "rank": 3,
-        "name": "智源网络",
-        "score": "35h"
-      },
-      {
-        "rank": 4,
-        "name": "数联创新",
-        "score": "31h"
-      },
-      {
-        "rank": 5,
-        "name": "天行数据",
-        "score": "28h"
-      }
-    ],
-    "certRank": [
-      {
-        "rank": 1,
-        "name": "锐智科技",
-        "score": "92%"
-      },
-      {
-        "rank": 2,
-        "name": "云翔信息",
-        "score": "85%"
-      },
-      {
-        "rank": 3,
-        "name": "天行数据",
-        "score": "78%"
-      },
-      {
-        "rank": 4,
-        "name": "数联创新",
-        "score": "73%"
-      },
-      {
-        "rank": 5,
-        "name": "智源网络",
-        "score": "68%"
-      }
-    ],
-    "battleReports": [
-      {
-        "title": "重庆典名签约XX私有云项目",
-        "amount": "千万级",
-        "date": "2026-03-2"
-      },
-      {
-        "title": "四川捷云信通抓住 OpenClaw 爆发机遇，7 天狂揽 200+ 新客户！",
-        "amount": "--",
-        "date": "2026-03-10"
-      },
-      {
-        "title": "成都慕创中标XX一体机项目",
-        "amount": "百万级",
-        "date": "2026-03-12"
-      }
-    ]
-  },
-  "feedback": {
-    "messages": [
-      {
-        "id": 1,
-        "author": "张伟 · 锐智科技",
-        "content": "希望能增加更多金融行业的案例资料",
-        "date": "2025-02-28",
-        "likes": 12
-      },
-      {
-        "id": 2,
-        "author": "李娜 · 云翔信息",
-        "content": "周五培训非常实用，希望能有回放",
-        "date": "2025-02-27",
-        "likes": 8
-      },
-      {
-        "id": 3,
-        "author": "王磊 · 数联创新",
-        "content": "报价工具建议增加批量导出功能",
-        "date": "2025-02-26",
-        "likes": 5
-      }
-    ]
-  }
-};
+/* ===== Sticky Header (single row: logo + nav + login) ===== */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+}
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px;
+}
+.header-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1.05rem; font-weight: 700; white-space: nowrap;
+  color: var(--text-primary); flex-shrink: 0;
+}
+.header-logo .logo-icon {
+  width: 32px; height: 32px;
+  background: var(--gradient-purple);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.header-nav {
+  display: flex; gap: 4px; flex: 1;
+  justify-content: center;
+}
+.header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.header-right .btn-login {
+  background: var(--gradient-purple);
+  color: #fff; border-radius: var(--radius-xl);
+  padding: 6px 18px; font-size: 0.8rem; font-weight: 600;
+  transition: opacity var(--transition);
+}
+.header-right .btn-login:hover { opacity: 0.85; }
 
-
-// ===== Global State =====
-let siteData = null;
-
-// ===== Init =====
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadSiteData();
-  initTabs();
-  initRankTabs();
-  initSceneSelector();
-  renderHome();
-  renderWeapons();
-  renderMaas();
-  renderRank();
-  renderFeedback();
-});
-
-// ===== Load Data =====
-async function loadSiteData() {
-  try {
-    const resp = await fetch('data/site-data.json');
-    if (resp.ok) {
-      siteData = await resp.json();
-      return;
-    }
-  } catch (e) {}
-  siteData = SITE_DATA;
+/* Header Nav (pill navigation in same row) */
+.pill-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-xl);
+  padding: 8px 24px; font-size: 1.05rem; font-weight: 600;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.pill-btn:hover {
+  background: rgba(139,92,246,0.06);
+  color: var(--accent-purple);
+}
+.pill-btn.active {
+  background: var(--gradient-purple);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(139,92,246,0.25);
 }
 
-// ===== Tab Navigation =====
-function initTabs() {
-  const nav = document.getElementById('pillNav');
-  nav.addEventListener('click', (e) => {
-    const btn = e.target.closest('.pill-btn');
-    if (!btn) return;
-    const tab = btn.dataset.tab;
-    nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+/* ===== Minimal Top Bar ===== */
+.top-bar {
+  margin-top: 52px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 24px;
+  text-align: center;
 }
 
-// ===== Rank Sub-tabs =====
-function initRankTabs() {
-  const tabs = document.getElementById('rankTabs');
-  if (!tabs) return;
-  tabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.rank-tab');
-    if (!btn) return;
-    const rank = btn.dataset.rank;
-    tabs.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.rank-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('rank-' + rank).classList.add('active');
-  });
+.top-bar-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
 }
 
-// ===== Scene Selector (Visit Plan) =====
-function initSceneSelector() {
-  const sel = document.getElementById('sceneSelector');
-  if (!sel) return;
-  sel.addEventListener('click', (e) => {
-    const btn = e.target.closest('.scene-btn');
-    if (!btn) return;
-    const scene = btn.dataset.scene;
-    sel.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.scene-form').forEach(f => f.classList.remove('active'));
-    document.getElementById('form-' + scene).classList.add('active');
-  });
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent-purple);
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border-color);
 }
 
-// ===== Render: Home =====
-function renderHome() {
-  const announcements = siteData.announcements || [];
-  if (announcements.length > 0) {
-    const textEl = document.getElementById('announceText');
-    let idx = 0;
-    function showAnnounce() {
-      textEl.textContent = announcements[idx].text;
-      idx = (idx + 1) % announcements.length;
-    }
-    showAnnounce();
-    if (announcements.length > 1) setInterval(showAnnounce, 5000);
-  }
-  const grid = document.getElementById('quickGrid');
-  (siteData.quickLinks || []).forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'quick-card';
-    div.innerHTML = `
-      <div class="card-icon">${item.icon}</div>
-      <div>
-        <div class="card-title">${item.title}</div>
-        <div class="card-desc">${item.desc}</div>
-      </div>
-    `;
-    div.onclick = () => {
-      const btn = document.querySelector(`.pill-btn[data-tab="${item.tab}"]`);
-      if (btn) btn.click();
-    };
-    grid.appendChild(div);
-  });
+/* ===== Guide Tab (拜访教练) - 旧版布局 ===== */
+.guide-section { margin-bottom: 36px; }
 
-  // Latest Live Trainings (from weapons data)
-  const homeLiveGrid = document.getElementById('homeLiveGrid');
-  const liveTrainings = (siteData.weapons && siteData.weapons.liveTrainings) || [];
-  liveTrainings.slice(0, 3).forEach(item => {
-    homeLiveGrid.innerHTML += `
-      <a href="${item.link}" class="live-card" target="_blank">
-        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
-        <div class="live-info">
-          <div class="live-title">${item.title}</div>
-          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
-        </div>
-      </a>
-    `;
-  });
+/* ===== Hero Banner (已移除) ===== */
+.hero-banner {
+  margin-top: 52px;
+  background: linear-gradient(135deg, #1a1040 0%, #2d1b69 30%, #4c1d95 60%, #1e3a5f 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 60px 20px 48px;
+  text-align: center;
+}
+.hero-particles {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden; pointer-events: none;
+}
+.hero-particles .particle {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+  animation: particleFloat 6s infinite ease-in-out;
+}
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-40px) scale(1.5); opacity: 0.7; }
+}
+.hero-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+.hero-title {
+  font-size: 2.2rem; font-weight: 800; color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin-bottom: 10px;
+  animation: heroSlideUp 0.8s ease-out;
+}
+.hero-icon-big { font-size: 2.4rem; }
+.hero-subtitle {
+  font-size: 1rem; color: rgba(255,255,255,0.75);
+  font-weight: 500; margin-bottom: 8px;
+  animation: heroSlideUp 0.8s ease-out 0.1s both;
+}
+.hero-desc {
+  font-size: 0.9rem; color: rgba(255,255,255,0.55);
+  margin-bottom: 28px;
+  animation: heroSlideUp 0.8s ease-out 0.2s both;
+}
+@keyframes heroSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-search-box {
+  max-width: 560px; margin: 0 auto 12px; position: relative;
+  animation: heroSlideUp 0.8s ease-out 0.3s both;
+}
+.hero-search-box input {
+  width: 100%; height: 50px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-xl);
+  padding: 0 120px 0 22px;
+  color: #fff;
+  font-size: 0.95rem;
+  transition: all var(--transition);
+}
+.hero-search-box input:focus {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.4);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.2);
+  outline: none;
+}
+.hero-search-box input::placeholder { color: rgba(255,255,255,0.5); }
+.hero-search-box .btn-search {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  background: var(--gradient-purple);
+  color: #fff; border-radius: var(--radius-xl);
+  padding: 0 20px; height: 40px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; font-weight: 600;
+  transition: all var(--transition);
+  box-shadow: 0 2px 10px rgba(124,58,237,0.3);
+}
+.hero-search-box .btn-search:hover {
+  opacity: 0.9;
+  box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+}
+.hero-banner .hot-search {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; flex-wrap: wrap; font-size: 0.8rem;
+  padding: 0; margin-bottom: 28px;
+  animation: heroSlideUp 0.8s ease-out 0.4s both;
+}
+.hero-banner .hot-search span { color: rgba(255,255,255,0.5); }
+.hero-banner .hot-search a {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  padding: 3px 14px; border-radius: var(--radius-xl);
+  transition: all var(--transition);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.hero-banner .hot-search a:hover {
+  background: rgba(255,255,255,0.2); color: #fff;
+}
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px;
+  animation: heroSlideUp 0.8s ease-out 0.5s both;
+}
+.stat-item { text-align: center; }
+.stat-num {
+  font-size: 1.8rem; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-label { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
 
-  // Latest Battle Reports (from rank data)
-  const homeBattleList = document.getElementById('homeBattleList');
-  const battleReports = (siteData.rank && siteData.rank.battleReports) || [];
-  battleReports.forEach(item => {
-    homeBattleList.innerHTML += `
-      <div class="battle-item">
-        <div class="battle-icon">🏅</div>
-        <div class="battle-info">
-          <div class="battle-title">${item.title}</div>
-          <div class="battle-meta">${item.date}</div>
-        </div>
-        <div class="battle-amount">${item.amount}</div>
-      </div>
-    `;
-  });
+/* ===== Search Results Dropdown ===== */
+.search-results-dropdown {
+  position: fixed;
+  top: 52px; left: 50%; transform: translateX(-50%);
+  width: 560px; max-height: 400px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  z-index: 1100;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+.search-results-list { padding: 8px; }
+.search-result-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: background var(--transition);
+}
+.search-result-item:hover { background: var(--bg-card-hover); }
+.search-result-item .result-icon { font-size: 1.3rem; flex-shrink: 0; }
+.search-result-item .result-info { flex: 1; }
+.search-result-item .result-title { font-size: 0.88rem; font-weight: 600; }
+.search-result-item .result-meta { font-size: 0.75rem; color: var(--text-muted); }
+.search-result-item .result-tab {
+  font-size: 0.7rem; background: rgba(139,92,246,0.08);
+  color: var(--accent-purple); padding: 2px 10px;
+  border-radius: var(--radius-xl);
+}
+.search-no-result {
+  padding: 24px; text-align: center; color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
-// ===== Render: Weapons =====
-function renderWeapons() {
-  const weapons = siteData.weapons || {};
-  const rulesList = document.getElementById('rulesList');
-  (weapons.rules || []).forEach(item => {
-    rulesList.innerHTML += `
-      <div class="doc-item">
-        <div class="doc-icon">📋</div>
-        <div class="doc-info">
-          <div class="doc-name">${item.title}</div>
-          <div class="doc-meta">${[item.type, item.size, item.date].filter(Boolean).join(' · ')}</div>
-        </div>
-        <a href="${item.link}" class="btn-dl" target="_blank">查看</a>
-      </div>
-    `;
-  });
-  const toolGrid = document.getElementById('toolGrid');
-  (weapons.tools || []).forEach(item => {
-    toolGrid.innerHTML += `
-      <div class="tool-card" onclick="window.open('${item.link}', '_blank')">
-        <div class="tool-icon">${item.icon}</div>
-        <div class="tool-name">${item.title}</div>
-        <div class="tool-desc">${item.desc}</div>
-      </div>
-    `;
-  });
-  const knowledgeList = document.getElementById('knowledgeList');
-  (weapons.knowledge || []).forEach(item => {
-    const isVideo = item.type === 'VIDEO';
-    knowledgeList.innerHTML += `
-      <div class="doc-item">
-        <div class="doc-icon">${isVideo ? '🎬' : '📄'}</div>
-        <div class="doc-info">
-          <div class="doc-name">${item.title}</div>
-          <div class="doc-meta">${item.type} · ${isVideo ? item.duration : item.size} · ${item.date}</div>
-        </div>
-        <a href="${item.link}" class="btn-dl" target="_blank">${isVideo ? '观看' : '下载'}</a>
-      </div>
-    `;
-  });
-  const kbLink = document.getElementById('kbLink');
-  if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
-
-  // Render Live Trainings (moved from Guide to Weapons)
-  const liveGrid = document.getElementById('liveGrid');
-  if (liveGrid) {
-    (weapons.liveTrainings || []).forEach(item => {
-      liveGrid.innerHTML += `
-        <a href="${item.link}" class="live-card" target="_blank">
-          <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
-          <div class="live-info">
-            <div class="live-title">${item.title}</div>
-            <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
-          </div>
-        </a>
-      `;
-    });
-  }
-  const moreLiveLink = document.getElementById('moreLiveLink');
-  if (weapons.moreLiveLink && moreLiveLink) moreLiveLink.href = weapons.moreLiveLink;
+/* ===== Hamburger Menu ===== */
+.btn-hamburger {
+  display: none;
+  flex-direction: column; gap: 4px;
+  background: transparent; padding: 6px;
+  width: 32px; height: 32px;
+  align-items: center; justify-content: center;
+}
+.btn-hamburger span {
+  display: block; width: 18px; height: 2px;
+  background: var(--text-primary); border-radius: 2px;
+  transition: all 0.3s ease;
+}
+.btn-hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+.btn-hamburger.open span:nth-child(2) { opacity: 0; }
+.btn-hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
+.mobile-nav-overlay {
+  display: none; position: fixed; top: 52px; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 900;
+  animation: fadeIn 0.2s ease;
+}
+.mobile-nav-overlay.show { display: block; }
+.mobile-nav {
+  display: none; position: fixed; top: 52px; right: 0; width: 220px;
+  background: var(--bg-card); border-left: 1px solid var(--border-color);
+  box-shadow: -4px 0 20px rgba(0,0,0,0.08);
+  z-index: 950; padding: 12px; flex-direction: column; gap: 4px;
+  animation: slideInRight 0.25s ease;
+  max-height: calc(100vh - 52px); overflow-y: auto;
+}
+.mobile-nav.show { display: flex; }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.mobile-nav-btn {
+  background: transparent; border: none; text-align: left;
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  font-size: 0.92rem; color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.mobile-nav-btn:hover { background: rgba(139,92,246,0.06); color: var(--text-primary); }
+.mobile-nav-btn.active {
+  background: rgba(139,92,246,0.1); color: var(--accent-purple); font-weight: 600;
 }
 
-// ===== Render: MaaS =====
-function renderMaas() {
-  const maas = siteData.maas || {};
-  const trackGrid = document.getElementById('trackGrid');
-  if (!trackGrid) return;
-
-  (maas.tracks || []).forEach(track => {
-    const scenariosHtml = (track.scenarios || []).map(s => `<li>${s}</li>`).join('');
-    const productsHtml = (track.products || []).map(p => `<span class="product-tag">${p}</span>`).join('');
-
-    trackGrid.innerHTML += `
-      <div class="track-card">
-        <div class="track-header">
-          <span class="track-icon">${track.icon}</span>
-          <span class="track-name">${track.name}</span>
-        </div>
-        <div class="track-desc">${track.desc}</div>
-        <div class="track-section">
-          <div class="track-label">核心场景</div>
-          <ul class="track-scenarios">${scenariosHtml}</ul>
-        </div>
-        <div class="track-section">
-          <div class="track-label">推荐产品</div>
-          <div class="track-products">${productsHtml}</div>
-        </div>
-        <div class="track-cases">${track.cases}</div>
-        <a href="${track.link}" class="track-btn" target="_blank">了解详情 →</a>
-      </div>
-    `;
-  });
+/* ===== Scroll Reveal Animation ===== */
+.reveal {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1; transform: translateY(0);
 }
 
-// ===== Render: Guide =====
-function renderGuide() {
-  const guide = siteData.guide || {};
-  const liveGrid = document.getElementById('liveGrid');
-  (guide.liveTrainings || []).forEach(item => {
-    liveGrid.innerHTML += `
-      <a href="${item.link}" class="live-card" target="_blank">
-        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
-        <div class="live-info">
-          <div class="live-title">${item.title}</div>
-          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
-        </div>
-      </a>
-    `;
-  });
-  const moreLiveLink = document.getElementById('moreLiveLink');
-  if (guide.moreLiveLink && moreLiveLink) moreLiveLink.href = guide.moreLiveLink;
+/* ===== Content Container ===== */
+.content-area { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; }
+
+/* ===== Tab Panels ===== */
+.tab-panel { display: none; animation: fadeIn 0.35s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== Section Title ===== */
+.section-title {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 20px; font-size: 1.15rem; font-weight: 700;
+}
+.section-title .icon { font-size: 1.2rem; }
+.section-title .badge {
+  font-size: 0.7rem; background: rgba(139,92,246,0.1);
+  color: var(--accent-purple);
+  padding: 2px 10px; border-radius: var(--radius-xl);
+  font-weight: 500;
 }
 
-// ===== Render: Rank =====
-function renderRank() {
-  const rank = siteData.rank || {};
-  function renderRankList(containerId, data, unit) {
-    const el = document.getElementById(containerId);
-    (data || []).forEach(item => {
-      el.innerHTML += `
-        <div class="rank-item">
-          <div class="rank-num">${item.rank}</div>
-          <div class="rank-name">${item.name}</div>
-          <div class="rank-score">${typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score}</div>
-        </div>
-      `;
-    });
-  }
-  renderRankList('tokenRankList', rank.tokenRank, '');
-  renderRankList('caseRankList', rank.caseRank, ' 个案例');
-  renderRankList('studyRankList', rank.studyRank);
-  renderRankList('certRankList', rank.certRank);
-  const battleList = document.getElementById('battleList');
-  (rank.battleReports || []).forEach(item => {
-    battleList.innerHTML += `
-      <div class="battle-item">
-        <div class="battle-icon">🏅</div>
-        <div class="battle-info">
-          <div class="battle-title">${item.title}</div>
-          <div class="battle-meta">${item.date}</div>
-        </div>
-        <div class="battle-amount">${item.amount}</div>
-      </div>
-    `;
-  });
+/* ===== Home Tab ===== */
+.announce-bar {
+  background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(16,185,129,0.04));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 20px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 10px;
+  overflow: hidden;
+}
+.announce-bar .tag {
+  background: var(--gradient-purple); color: #fff;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 2px 10px; border-radius: var(--radius-xl);
+  white-space: nowrap;
+}
+.announce-bar .text {
+  flex: 1; font-size: 0.85rem; color: var(--text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px; margin-bottom: 32px;
+}
+.quick-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 22px 20px;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  display: flex; align-items: flex-start; gap: 14px;
+  box-shadow: var(--shadow-card);
+  position: relative; overflow: hidden;
+}
+.quick-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--gradient-purple);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.quick-card:hover::before { transform: scaleX(1); }
+.quick-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(139,92,246,0.12);
+}
+.quick-card .card-icon { font-size: 2rem; flex-shrink: 0; }
+.quick-card .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+.quick-card .card-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* Home page live grid & battle list */
+.home-live-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; margin-bottom: 32px;
+}
+.home-battle-list {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 32px;
 }
 
-// ===== Render: Feedback =====
-function renderFeedback() {
-  const messages = (siteData.feedback && siteData.feedback.messages) || [];
-  const msgList = document.getElementById('msgList');
-  messages.forEach(item => {
-    msgList.innerHTML += `
-      <div class="msg-item">
-        <div class="msg-header">
-          <span class="msg-author">${item.author}</span>
-          <span class="msg-date">${item.date}</span>
-        </div>
-        <div class="msg-content">${item.content}</div>
-        <div class="msg-footer">
-          <button class="btn-like" onclick="handleLike(this, ${item.likes})">❤️ ${item.likes}</button>
-        </div>
-      </div>
-    `;
-  });
+.recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.rec-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: var(--shadow-card);
+}
+.rec-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 8px 30px rgba(139,92,246,0.12);
+}
+.rec-card .rec-thumb {
+  height: 110px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(16,185,129,0.06));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.6rem;
+}
+.rec-card .rec-info { padding: 14px 16px; }
+.rec-card .rec-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+.rec-card .rec-meta { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+.rec-card .rec-type {
+  display: inline-block; padding: 1px 8px;
+  border-radius: var(--radius-xl);
+  font-size: 0.65rem; font-weight: 600;
+}
+.type-pdf { background: rgba(239,68,68,0.1); color: #dc2626; }
+.type-video { background: rgba(59,130,246,0.1); color: #2563eb; }
+.rec-card .btn-action {
+  display: inline-block; margin-top: 10px;
+  background: rgba(139,92,246,0.08); color: var(--accent-purple);
+  padding: 5px 14px; border-radius: var(--radius-xl);
+  font-size: 0.78rem; font-weight: 500;
+  transition: background var(--transition);
+}
+.rec-card .btn-action:hover { background: rgba(139,92,246,0.15); }
+
+/* ===== Weapons Tab ===== */
+.sub-section { margin-bottom: 32px; }
+.sub-title {
+  font-size: 1rem; font-weight: 700; margin-bottom: 14px;
+  padding-left: 12px;
+  border-left: 3px solid var(--accent-purple);
+}
+.doc-list { display: flex; flex-direction: column; gap: 10px; }
+.doc-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-card);
+}
+.doc-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+}
+.doc-item .doc-icon { font-size: 1.6rem; flex-shrink: 0; }
+.doc-item .doc-info { flex: 1; }
+.doc-item .doc-name { font-size: 0.9rem; font-weight: 600; }
+.doc-item .doc-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.doc-item .btn-dl {
+  background: rgba(16,185,129,0.1); color: var(--accent-green);
+  padding: 6px 16px; border-radius: var(--radius-xl);
+  font-size: 0.78rem; font-weight: 500;
+  transition: background var(--transition);
+}
+.doc-item .btn-dl:hover { background: rgba(16,185,129,0.18); }
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.tool-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px 16px; text-align: center;
+  transition: all var(--transition);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+.tool-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+}
+.tool-card .tool-icon { font-size: 2rem; margin-bottom: 8px; }
+.tool-card .tool-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+.tool-card .tool-desc { font-size: 0.75rem; color: var(--text-secondary); }
+.kb-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gradient-glow);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 24px; margin-top: 10px;
+  font-size: 0.9rem; font-weight: 500;
+  transition: all var(--transition);
+}
+.kb-link:hover { border-color: var(--border-active); }
+
+/* Knowledge Base Banner */
+.kb-banner {
+  display: flex; align-items: center; gap: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-md);
+  padding: 24px 28px; margin-top: 12px;
+  color: #fff; text-decoration: none;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.kb-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102,126,234,0.35);
+  color: #fff;
+}
+.kb-banner-icon { font-size: 2.2rem; flex-shrink: 0; }
+.kb-banner-text { flex: 1; }
+.kb-banner-title { font-size: 1.1rem; font-weight: 700; }
+.kb-banner-desc { font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
+.kb-banner-arrow { font-size: 1.5rem; opacity: 0.7; flex-shrink: 0; }
+
+/* ===== AI Output Text Formatting ===== */
+/* 一级目录：大号加粗 */
+.ai-title-1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 16px 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent-purple);
+}
+/* 二级目录：中号加粗 */
+.ai-title-2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 14px 0 8px 0;
+}
+/* 三级目录：稍大加粗 */
+.ai-title-3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 12px 0 6px 0;
+}
+/* 正文：普通样式 */
+.ai-text {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 2px 0;
+}
+.form-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-card);
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-size: 0.85rem; font-weight: 600;
+  margin-bottom: 6px; color: var(--text-secondary);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%; padding: 10px 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: border-color var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--accent-purple);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.08);
+}
+.form-group select { appearance: none; cursor: pointer; }
+.form-group select option { background: var(--bg-card); color: var(--text-primary); }
+.scene-selector { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.scene-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  padding: 12px 20px; font-size: 0.85rem;
+  transition: all var(--transition);
+}
+.scene-btn:hover { border-color: rgba(139,92,246,0.3); color: var(--text-primary); }
+.scene-btn.active {
+  background: rgba(139,92,246,0.08);
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
+  font-weight: 600;
+}
+.scene-form { display: none; }
+.scene-form.active { display: block; }
+.btn-generate {
+  background: var(--gradient-purple);
+  color: #fff; border-radius: var(--radius-md);
+  padding: 12px 32px; font-size: 0.95rem; font-weight: 600;
+  width: 100%;
+  transition: opacity var(--transition);
+}
+.btn-generate:hover { opacity: 0.9; }
+.ai-output {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px; margin-top: 20px;
+  display: none;
+  box-shadow: var(--shadow-card);
+}
+.ai-output.show { display: block; animation: fadeIn 0.4s ease; }
+.ai-output h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: var(--accent-green); }
+.ai-output .output-content {
+  font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;
+}
+/* AI output uses custom classes (ai-title-1/2/3, ai-text) for formatting.
+   Reset any HTML elements that might slip through to prevent unwanted bold/large text. */
+.ai-output .output-content h1,
+.ai-output .output-content h2,
+.ai-output .output-content h3,
+.ai-output .output-content h4,
+.ai-output .output-content h5,
+.ai-output .output-content h6,
+.ai-output .output-content strong,
+.ai-output .output-content b,
+.ai-output .output-content p,
+.ai-output .output-content li {
+  font-size: inherit; font-weight: normal; color: inherit; margin: 0; padding: 0;
+}
+.compare-card-body h1,
+.compare-card-body h2,
+.compare-card-body h3,
+.compare-card-body h4,
+.compare-card-body h5,
+.compare-card-body h6,
+.compare-card-body strong,
+.compare-card-body b,
+.compare-card-body p,
+.compare-card-body li {
+  font-size: inherit; font-weight: normal; color: inherit; margin: 0; padding: 0;
+}
+/* Typing cursor animation */
+.typing-cursor {
+  display: inline-block; width: 2px; height: 1em;
+  background: var(--accent-purple);
+  animation: blink 0.8s infinite;
+  vertical-align: text-bottom; margin-left: 2px;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.live-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-card);
+}
+.live-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+.live-thumb {
+  height: 150px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(16,185,129,0.06));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; position: relative;
+}
+.live-thumb .live-badge {
+  position: absolute; top: 12px; right: 12px;
+  background: #ef4444; color: #fff;
+  padding: 2px 10px; border-radius: var(--radius-xl);
+  font-size: 0.7rem; font-weight: 600;
+}
+.live-info { padding: 16px; }
+.live-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+.live-meta { font-size: 0.78rem; color: var(--text-muted); }
+
+/* ===== Rank Tab ===== */
+.rank-tabs {
+  display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.rank-tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--radius-xl);
+  padding: 8px 18px; font-size: 0.82rem;
+  transition: all var(--transition);
+}
+.rank-tab:hover { border-color: rgba(139,92,246,0.3); color: var(--text-primary); }
+.rank-tab.active {
+  background: var(--gradient-green);
+  border-color: transparent;
+  color: #fff;
+}
+.rank-panel { display: none; }
+.rank-panel.active { display: block; animation: fadeIn 0.3s ease; }
+.rank-list { display: flex; flex-direction: column; gap: 10px; }
+.rank-item {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-card);
+}
+.rank-item:hover { background: var(--bg-card-hover); }
+.rank-item .rank-num {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 0.85rem; font-weight: 700;
+  background: var(--bg-primary); color: var(--text-muted);
+  flex-shrink: 0;
+}
+.rank-item:nth-child(1) .rank-num { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #fff; }
+.rank-item:nth-child(2) .rank-num { background: linear-gradient(135deg, #d1d5db, #9ca3af); color: #fff; }
+.rank-item:nth-child(3) .rank-num { background: linear-gradient(135deg, #d97706, #b45309); color: #fff; }
+.rank-item .rank-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+.rank-item .rank-score {
+  font-size: 0.95rem; font-weight: 700;
+  color: var(--accent-green);
+}
+.battle-list { display: flex; flex-direction: column; gap: 10px; }
+.battle-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow-card);
+}
+.battle-item .battle-icon { font-size: 1.5rem; }
+.battle-item .battle-info { flex: 1; }
+.battle-item .battle-title { font-size: 0.9rem; font-weight: 600; }
+.battle-item .battle-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.battle-item .battle-amount {
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--accent-green);
 }
 
-// ===== Mobile Navigation =====
-function toggleMobileNav() {
-  const nav = document.getElementById('mobileNav');
-  const overlay = document.getElementById('mobileNavOverlay');
-  const btn = document.getElementById('hamburgerBtn');
-  nav.classList.toggle('show');
-  overlay.classList.toggle('show');
-  btn.classList.toggle('open');
+/* ===== Feedback Tab ===== */
+.feedback-form {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px; margin-bottom: 28px;
+  box-shadow: var(--shadow-card);
+}
+.feedback-form textarea {
+  width: 100%; min-height: 100px; resize: vertical;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px; color: var(--text-primary);
+  font-size: 0.9rem; margin-bottom: 12px;
+  transition: border-color var(--transition);
+}
+.feedback-form textarea:focus {
+  border-color: var(--accent-purple);
+  outline: none;
+}
+.feedback-form textarea::placeholder { color: var(--text-muted); }
+.feedback-form .form-row {
+  display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.feedback-form .form-row input {
+  flex: 1; min-width: 180px; padding: 10px 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: 0.85rem;
+}
+.feedback-form .form-row input:focus {
+  border-color: var(--accent-purple);
+  outline: none;
+}
+.feedback-form .form-row input::placeholder { color: var(--text-muted); }
+.btn-submit {
+  background: var(--gradient-green);
+  color: #fff; border-radius: var(--radius-md);
+  padding: 10px 28px; font-size: 0.9rem; font-weight: 600;
+  transition: opacity var(--transition);
+}
+.btn-submit:hover { opacity: 0.9; }
+.msg-list { display: flex; flex-direction: column; gap: 12px; }
+.msg-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+.msg-item .msg-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.msg-item .msg-author { font-size: 0.85rem; font-weight: 600; }
+.msg-item .msg-date { font-size: 0.75rem; color: var(--text-muted); }
+.msg-item .msg-content { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px; }
+.msg-item .msg-footer { display: flex; align-items: center; gap: 6px; }
+.msg-item .btn-like {
+  background: rgba(239,68,68,0.06); color: #ef4444;
+  border-radius: var(--radius-xl);
+  padding: 3px 12px; font-size: 0.75rem;
+  transition: background var(--transition);
+}
+.msg-item .btn-like:hover { background: rgba(239,68,68,0.12); }
+
+/* ===== Footer ===== */
+.footer {
+  text-align: center; padding: 24px 20px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.78rem; color: var(--text-muted);
 }
 
-function mobileNavTo(tab) {
-  const btn = document.querySelector('.pill-btn[data-tab="' + tab + '"]');
-  if (btn) btn.click();
-  // Update mobile nav active state
-  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.mobile-nav-btn[data-tab="' + tab + '"]').classList.add('active');
-  toggleMobileNav();
+/* ===== Toast ===== */
+.toast {
+  position: fixed; top: 110px; left: 50%; transform: translateX(-50%);
+  background: var(--accent-green); color: #fff;
+  padding: 10px 28px; border-radius: var(--radius-xl);
+  font-size: 0.85rem; font-weight: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 2000;
+  box-shadow: 0 4px 16px rgba(5,150,105,0.3);
+}
+.toast.show { opacity: 1; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .header-row { padding: 0 16px; gap: 8px; }
+  .header-nav { gap: 2px; overflow-x: auto; flex-shrink: 1; min-width: 0; }
+  .pill-btn { padding: 5px 12px; font-size: 0.75rem; }
+  .header-logo span { font-size: 0.9rem; }
+  .hero-banner { padding: 40px 16px 36px; }
+  .hero-title { font-size: 1.6rem; }
+  .hero-stats { gap: 28px; }
+  .stat-num { font-size: 1.4rem; }
+  .content-area { padding: 12px 16px 40px; }
+  .quick-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .quick-card { padding: 16px 14px; }
+  .quick-card .card-icon { font-size: 1.5rem; }
+  .recommend-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .live-grid { grid-template-columns: 1fr; }
+  .form-card { padding: 20px 16px; }
+  .scene-selector { flex-direction: column; }
+  .scene-btn { text-align: center; }
+  .btn-hamburger { display: flex; }
+  .search-results-dropdown { width: calc(100% - 32px); }
 }
 
-// ===== 客户分析报告（多模型对比）=====
-function handleCustomerAnalysis() {
-  const val = document.getElementById('analysisInput').value.trim();
-  if (!val) { showToast('请输入客户名称'); return; }
-
-  // 读取选中的模型
-  const checked = document.querySelectorAll('input[name="analysisModel"]:checked');
-  const selectedModels = Array.from(checked).map(cb => cb.value);
-  if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
-
-  const outputDiv = document.getElementById('customerOutput');
-  const contentDiv = document.getElementById('customerOutputContent');
-  outputDiv.classList.add('show');
-
-  // 构建对比卡片布局
-  const colsClass = selectedModels.length >= 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
-  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="customerCompareGrid">' +
-    selectedModels.map(m =>
-      '<div class="compare-card" id="card-customer-' + m + '">' +
-        '<div class="compare-card-header">' +
-          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
-          '<span class="model-status" id="status-customer-' + m + '">⏳ 生成中...</span>' +
-        '</div>' +
-        '<div class="compare-card-body" id="body-customer-' + m + '">' +
-          '<span class="spinner"></span> AI正在分析中，请稍候...' +
-        '</div>' +
-      '</div>'
-    ).join('') +
-    '</div>';
-
-  // 并行调用所有选中的模型
-  selectedModels.forEach(m => {
-    callAI('customer_analysis', { customerName: val }, m)
-      .then(result => {
-        document.getElementById('body-customer-' + m).innerHTML = formatAIOutput(result.content);
-        const statusEl = document.getElementById('status-customer-' + m);
-        statusEl.textContent = '✅ 已完成';
-        statusEl.className = 'model-status done';
-      })
-      .catch(err => {
-        document.getElementById('body-customer-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
-        const statusEl = document.getElementById('status-customer-' + m);
-        statusEl.textContent = '❌ 失败';
-        statusEl.className = 'model-status error';
-      });
-  });
+@media (max-width: 480px) {
+  .header-nav { display: none; }
+  .hero-banner { padding: 32px 16px 28px; }
+  .hero-title { font-size: 1.35rem; gap: 8px; }
+  .hero-icon-big { font-size: 1.6rem; }
+  .hero-subtitle { font-size: 0.88rem; }
+  .hero-desc { font-size: 0.82rem; }
+  .hero-search-box input { height: 44px; padding-right: 100px; font-size: 0.85rem; }
+  .hero-search-box .btn-search { padding: 0 14px; height: 34px; font-size: 0.78rem; }
+  .hero-stats { gap: 20px; }
+  .stat-num { font-size: 1.2rem; }
+  .stat-label { font-size: 0.7rem; }
+  .quick-grid { grid-template-columns: 1fr; }
+  .recommend-grid { grid-template-columns: 1fr; }
+  .tool-grid { grid-template-columns: 1fr 1fr; }
+  .search-results-dropdown { width: calc(100% - 24px); }
 }
 
-function handleVisitPlan() {
-  const activeScene = document.querySelector('.scene-btn.active');
-  if (!activeScene) return;
-  const scene = activeScene.dataset.scene;
-  const form = document.getElementById('form-' + scene);
-  const roleSelect = document.getElementById('visitRole');
-  const inputs = form.querySelectorAll('input, select');
-  let valid = true;
-  if (!roleSelect.value.trim()) { valid = false; roleSelect.style.borderColor = '#f87171'; }
-  else { roleSelect.style.borderColor = ''; }
-  inputs.forEach(inp => {
-    if (!inp.value.trim()) { valid = false; inp.style.borderColor = '#f87171'; }
-    else { inp.style.borderColor = ''; }
-  });
-  if (!valid) { showToast('请填写所有必填项'); return; }
+/* ===== Loading Spinner ===== */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(139,92,246,0.2);
+  border-top-color: var(--accent-purple);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle; margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  // 读取选中的模型
-  const checked = document.querySelectorAll('input[name="visitModel"]:checked');
-  const selectedModels = Array.from(checked).map(cb => cb.value);
-  if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
-
-  const outputDiv = document.getElementById('visitOutput');
-  const contentDiv = document.getElementById('visitOutputContent');
-  outputDiv.classList.add('show');
-
-  const details = Array.from(inputs).map(inp => {
-    const label = inp.closest('.form-group')?.querySelector('label')?.textContent || '';
-    return label.replace(' *', '') + '：' + inp.value;
-  }).join('\n');
-
-  // 构建对比卡片布局
-  const colsClass = selectedModels.length >= 4 ? 'cols-4' : selectedModels.length === 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
-  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="visitCompareGrid">' +
-    selectedModels.map(m =>
-      '<div class="compare-card" id="card-visit-' + m + '">' +
-        '<div class="compare-card-header">' +
-          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
-          '<span class="model-status" id="status-visit-' + m + '">⏳ 生成中...</span>' +
-        '</div>' +
-        '<div class="compare-card-body" id="body-visit-' + m + '">' +
-          '<span class="spinner"></span> AI教练正在生成计划...' +
-        '</div>' +
-      '</div>'
-    ).join('') +
-    '</div>';
-
-  // 并行调用所有选中的模型
-  selectedModels.forEach(m => {
-    callAI('visit_plan', { scene, role: roleSelect.value, details }, m)
-      .then(result => {
-        document.getElementById('body-visit-' + m).innerHTML = formatAIOutput(result.content);
-        const statusEl = document.getElementById('status-visit-' + m);
-        statusEl.textContent = '✅ 已完成';
-        statusEl.className = 'model-status done';
-      })
-      .catch(err => {
-        document.getElementById('body-visit-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
-        const statusEl = document.getElementById('status-visit-' + m);
-        statusEl.textContent = '❌ 失败';
-        statusEl.className = 'model-status error';
-      });
-  });
+/* ===== Model Selector ===== */
+.model-selector {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.model-selector-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.model-selector-2col .model-option {
+  width: 100%;
+}
+.model-selector-2col .model-chip {
+  width: 100%;
+  justify-content: center;
+}
+.model-option {
+  cursor: pointer; display: flex; align-items: center;
+}
+.model-option input[type="checkbox"] {
+  display: none;
+}
+.model-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 7px 16px; font-size: 0.82rem; font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.model-chip em {
+  font-style: normal; font-size: 0.7rem;
+  background: rgba(139,92,246,0.08); color: var(--accent-purple);
+  padding: 1px 8px; border-radius: var(--radius-xl);
+}
+.model-option input:checked + .model-chip {
+  background: rgba(139,92,246,0.08);
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
+  font-weight: 600;
 }
 
-function handleFeedback() {
-  const content = document.getElementById('feedbackContent').value.trim();
-  if (!content) { showToast('请输入反馈内容'); return; }
-  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
-  const company = document.getElementById('feedbackCompany').value.trim();
-  const author = company ? name + ' · ' + company : name;
-  const today = new Date().toISOString().split('T')[0];
-  const msgList = document.getElementById('msgList');
-  const newMsg = document.createElement('div');
-  newMsg.className = 'msg-item';
-  newMsg.innerHTML = `
-    <div class="msg-header">
-      <span class="msg-author">${author}</span>
-      <span class="msg-date">${today}</span>
-    </div>
-    <div class="msg-content">${escapeHtml(content)}</div>
-    <div class="msg-footer">
-      <button class="btn-like" onclick="handleLike(this, 0)">❤️ 0</button>
-    </div>
-  `;
-  msgList.insertBefore(newMsg, msgList.firstChild);
-  document.getElementById('feedbackContent').value = '';
-  document.getElementById('feedbackName').value = '';
-  document.getElementById('feedbackCompany').value = '';
-  showToast('感谢反馈！已通知管理员');
-  sendFeedbackToAdmin(author, content);
+/* ===== Model Comparison Results ===== */
+.compare-grid {
+  display: grid; gap: 16px; margin-top: 20px;
+}
+.compare-grid.cols-1 { grid-template-columns: 1fr; }
+.compare-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.compare-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.compare-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+.compare-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.compare-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--gradient-glow);
+  border-bottom: 1px solid var(--border-color);
+}
+.compare-card-header .model-name {
+  font-size: 0.85rem; font-weight: 700; color: var(--accent-purple);
+}
+.compare-card-header .model-status {
+  font-size: 0.72rem; color: var(--text-muted);
+}
+.compare-card-header .model-status.done { color: var(--accent-green); }
+.compare-card-header .model-status.error { color: #ef4444; }
+.compare-card-body {
+  padding: 20px;
+  font-size: 0.86rem; color: var(--text-secondary); line-height: 1.8;
+  max-height: 600px; overflow-y: auto;
 }
 
-function handleLike(btn, currentLikes) {
-  if (btn.dataset.liked) return;
-  btn.dataset.liked = '1';
-  btn.textContent = '❤️ ' + (currentLikes + 1);
-  btn.style.background = 'rgba(239,68,68,0.2)';
+@media (max-width: 900px) {
+  .compare-grid.cols-2,
+  .compare-grid.cols-3,
+  .compare-grid.cols-4 { grid-template-columns: 1fr; }
 }
 
-// ===== AI API Call =====
-const MODEL_LABELS = {
-  qwen35plus: 'Qwen3.5-Plus',
-  qwenmax:    'Qwen-Max',
-  kimi:       'Kimi-K2.5',
-  minimax:    'MiniMax-M2.5',
-};
+/* ===== MaaS Tab (赢战MaaS) ===== */
+.track-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.track-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+.track-card::after {
+  content: ''; position: absolute; top: -50%; right: -50%;
+  width: 100%; height: 100%;
+  background: radial-gradient(circle, rgba(139,92,246,0.04) 0%, transparent 70%);
+  transition: opacity 0.4s ease; opacity: 0;
+  pointer-events: none;
+}
+.track-card:hover::after { opacity: 1; }
+.track-card:hover {
+  border-color: var(--border-active);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(139,92,246,0.12);
+}
+.track-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px;
+}
+.track-icon { font-size: 2rem; }
+.track-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.track-desc {
+  font-size: 0.85rem; color: var(--text-secondary);
+  margin-bottom: 18px; line-height: 1.6;
+}
+.track-section { margin-bottom: 14px; }
+.track-label {
+  font-size: 0.78rem; font-weight: 700; color: var(--accent-purple);
+  margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.track-scenarios {
+  list-style: none; padding: 0;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.track-scenarios li {
+  font-size: 0.83rem; color: var(--text-secondary);
+  padding-left: 16px; position: relative;
+}
+.track-scenarios li::before {
+  content: '▸'; position: absolute; left: 0;
+  color: var(--accent-purple); font-weight: 700;
+}
+.track-products { display: flex; flex-wrap: wrap; gap: 6px; }
+.product-tag {
+  display: inline-block;
+  background: rgba(16,185,129,0.08); color: var(--accent-green);
+  padding: 3px 12px; border-radius: var(--radius-xl);
+  font-size: 0.75rem; font-weight: 500;
+  border: 1px solid rgba(16,185,129,0.15);
+}
+.track-cases {
+  font-size: 0.8rem; color: var(--accent-green); font-weight: 500;
+  background: rgba(16,185,129,0.06);
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  margin-bottom: 16px; margin-top: auto;
+}
+.btn-track {
+  display: inline-block; text-align: center;
+  background: var(--gradient-purple); color: #fff;
+  padding: 10px 24px; border-radius: var(--radius-md);
+  font-size: 0.88rem; font-weight: 600;
+  transition: opacity var(--transition);
+}
+.btn-track:hover { opacity: 0.9; color: #fff; }
 
-// 格式化AI输出内容
-// 规则：
-// 1. 去掉所有 markdown 符号和残留HTML标签
-// 2. 客户分析报告：一级/二级/三级目录 加大加粗，其余正文
-// 3. 拜访计划：6个二级目录 加大加粗，其余正文
-function formatAIOutput(content) {
-  if (!content) return '';
-
-  // Step 1: 清除所有 markdown 符号和 HTML 标签
-  var text = content;
-  // 去掉所有 HTML 标签（彻底清理，防止模型返回任何 HTML）
-  text = text.replace(/<[^>]+>/g, '');
-  // 去掉 HTML 实体
-  text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-  text = text.replace(/&amp;/g, '&');
-  // 去掉标题符号 ### ## #（行首）
-  text = text.replace(/^#{1,6}\s*/gm, '');
-  // 去掉加粗 **text**（不跨行）
-  text = text.replace(/\*\*([^\n]*?)\*\*/g, '$1');
-  // 去掉加粗 __text__（不跨行）
-  text = text.replace(/__([^\n]*?)__/g, '$1');
-  // 去掉斜体 *text*
-  text = text.replace(/\*([^\*\n]+)\*/g, '$1');
-  // 去掉 --- 或 === 分隔线
-  text = text.replace(/^[\-=]{3,}\s*$/gm, '');
-  // 去掉引用符号 >
-  text = text.replace(/^>\s*/gm, '');
-  // 去掉行首列表符号 - • * +
-  text = text.replace(/^[\-\u2022\*\+]\s+/gm, '');
-  // 去掉行首数字列表符号 1. 2. 等（仅去掉列表符号，保留内容）
-  text = text.replace(/^\d+[\.\)）]\s*/gm, '');
-
-  // Step 2: 按行解析，分配样式
-  var lines = text.split('\n');
-  var html = [];
-
-  for (var i = 0; i < lines.length; i++) {
-    var trimmed = lines[i].trim();
-    if (!trimmed) continue;
-
-    // ======= 客户分析报告：一级目录 =======
-    if (/客户\s*AI\s*潜力评估报告/.test(trimmed)) {
-      html.push('<div class="ai-title-1">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 客户分析报告：二级目录 =======
-    if (/^输出\s*[12]\s*[：:]/i.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-    if (/云计算[\s\+\＋]*AI[\s】\]]*\s*年度预算/.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^客户分析报告\s*$/.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 客户分析报告：三级目录（5个章节）=======
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(客户业务概况)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(影响客户业务的关键行业趋势)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(从客户视角分析的机会与挑战)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(从.{0,4}用户结果.{0,4}反推关键举措)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(公共云与生成式\s*AI)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 拜访计划：二级目录（6个章节）=======
-    // 匹配多种格式：一、拜访目标 / 一.拜访目标 / 一，拜访目标 / 一 拜访目标 / （一）拜访目标
-    if (/^(?:[一二三四五六]\s*[、\.\,，．\s]\s*|(?:（|\()[一二三四五六](?:）|\))\s*)(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 其余全部按正文输出 =======
-    html.push('<div class="ai-text">' + trimmed + '</div>');
-  }
-
-  return html.join('');
+@media (max-width: 768px) {
+  .track-grid { grid-template-columns: 1fr; }
 }
 
-async function callAI(type, input, model) {
-  // 智能选择 API 端点
-  // - 本地文件 (file://) 或 localhost：使用阿里云 FC
-  // - Netlify 域名：使用 /api/ai-proxy
-  const isLocal = window.location.protocol === 'file:' ||
-                  window.location.hostname === 'localhost' ||
-                  window.location.hostname === '127.0.0.1';
-
-  const endpoints = isLocal ? [
-    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 本地：只用阿里云 FC
-  ] : [
-    '/api/ai-proxy',  // Netlify：优先使用 Edge Function
-    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 备用：阿里云 FC
-  ];
-
-  let lastError = null;
-  for (const endpoint of endpoints) {
-    try {
-      console.log(`[callAI] Trying endpoint: ${endpoint}`);
-      console.log(`[callAI] Request body:`, { type, input, model: model || 'qwen35plus' });
-
-      const resp = await fetch(endpoint, {
-        method: 'POST',
-        mode: 'cors',
-        credentials: 'omit',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ type, input, model: model || 'qwen35plus' })
-      });
-
-      console.log(`[callAI] Response status: ${resp.status}`);
-      console.log(`[callAI] Response headers:`, [...resp.headers.entries()]);
-
-      const text = await resp.text();
-      console.log(`[callAI] Raw response:`, text.substring(0, 500));
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error('返回的不是有效JSON: ' + text.substring(0, 100));
-      }
-
-      if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
-      return { content: data.content, model: data.model };
-    } catch (err) {
-      lastError = err;
-      console.error(`[callAI] Endpoint ${endpoint} failed:`, err.message);
-      continue; // 尝试下一个端点
-    }
-  }
-  throw lastError || new Error('所有AI端点均不可用');
-}
-
-// ===== Helpers =====
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function sendFeedbackToAdmin(author, content) {
-  console.log('[Feedback]', author, content);
-}
-
-// ===== Offline AI Templates (fallback) =====
-function generateCustomerReport(name) {
-  return '📊 ' + name + ' — AI潜力评估报告（离线模板）\n\n' +
-    '一、客户业务概况\n  • 商业模式：待补充\n  • 核心客户群体：待调研\n\n' +
-    '二、关键行业趋势\n  1. AI大模型规模化落地\n  2. 云原生架构演进\n\n' +
-    '三、机会与挑战\n  机会：AI赋能业务流程\n  挑战：数字化人才储备\n\n' +
-    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成报告。';
-}
-
-function generateVisitPlan(scene, form, role) {
-  const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
-  return '🎯 ' + (sceneLabels[scene] || '客户拜访') + '计划（离线模板）\n\n' +
-    '一、拜访目标：认知塑造与教育\n\n' +
-    '二、客户行动承诺\n  最高：客户同意安排POC测试\n  最低：客户同意参加下次技术交流会\n\n' +
-    '三、信息获取\n  1. 决策链路\n  2. 预算状况\n\n' +
-    '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成拜访计划。';
-}
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
