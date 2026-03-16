@@ -399,6 +399,17 @@ input, textarea, select { font-family: inherit; }
 .quick-card .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
 .quick-card .card-desc { font-size: 0.8rem; color: var(--text-secondary); }
 
+/* Home page live grid & battle list */
+.home-live-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; margin-bottom: 32px;
+}
+.home-battle-list {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 32px;
+}
+
 .recommend-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -629,39 +640,31 @@ input, textarea, select { font-family: inherit; }
 .ai-output .output-content {
   font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;
 }
-/* Markdown rendered content in AI output */
+/* AI output uses custom classes (ai-title-1/2/3, ai-text) for formatting.
+   Reset any HTML elements that might slip through to prevent unwanted bold/large text. */
 .ai-output .output-content h1,
 .ai-output .output-content h2,
 .ai-output .output-content h3,
-.ai-output .output-content h4 {
-  color: var(--text-primary); margin: 16px 0 8px; font-weight: 700;
+.ai-output .output-content h4,
+.ai-output .output-content h5,
+.ai-output .output-content h6,
+.ai-output .output-content strong,
+.ai-output .output-content b,
+.ai-output .output-content p,
+.ai-output .output-content li {
+  font-size: inherit; font-weight: normal; color: inherit; margin: 0; padding: 0;
 }
-.ai-output .output-content h1 { font-size: 1.15rem; }
-.ai-output .output-content h2 { font-size: 1.05rem; }
-.ai-output .output-content h3 { font-size: 0.95rem; }
-.ai-output .output-content p { margin-bottom: 10px; }
-.ai-output .output-content ul,
-.ai-output .output-content ol {
-  padding-left: 20px; margin-bottom: 10px;
-}
-.ai-output .output-content li { margin-bottom: 4px; }
-.ai-output .output-content strong { color: var(--text-primary); }
-.ai-output .output-content code {
-  background: rgba(139,92,246,0.08); color: var(--accent-purple);
-  padding: 2px 6px; border-radius: 4px; font-size: 0.82rem;
-}
-.ai-output .output-content pre {
-  background: #1e1e2e; color: #cdd6f4; padding: 16px;
-  border-radius: var(--radius-sm); overflow-x: auto;
-  margin: 10px 0; font-size: 0.82rem; line-height: 1.6;
-}
-.ai-output .output-content pre code {
-  background: transparent; color: inherit; padding: 0;
-}
-.ai-output .output-content blockquote {
-  border-left: 3px solid var(--accent-purple);
-  padding-left: 14px; margin: 10px 0;
-  color: var(--text-muted); font-style: italic;
+.compare-card-body h1,
+.compare-card-body h2,
+.compare-card-body h3,
+.compare-card-body h4,
+.compare-card-body h5,
+.compare-card-body h6,
+.compare-card-body strong,
+.compare-card-body b,
+.compare-card-body p,
+.compare-card-body li {
+  font-size: inherit; font-weight: normal; color: inherit; margin: 0; padding: 0;
 }
 /* Typing cursor animation */
 .typing-cursor {
