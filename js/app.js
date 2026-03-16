@@ -421,6 +421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initRankTabs();
   initSceneSelector();
+  renderHome();
   renderWeapons();
   renderMaas();
   renderRank();
@@ -514,24 +515,36 @@ function renderHome() {
     };
     grid.appendChild(div);
   });
-  const recGrid = document.getElementById('recommendGrid');
-  const knowledge = (siteData.weapons && siteData.weapons.knowledge) || [];
-  knowledge.slice(0, 4).forEach(item => {
-    const isVideo = item.type === 'VIDEO';
-    const div = document.createElement('div');
-    div.className = 'rec-card';
-    div.innerHTML = `
-      <div class="rec-thumb">${isVideo ? '🎬' : '📄'}</div>
-      <div class="rec-info">
-        <div class="rec-title">${item.title}</div>
-        <div class="rec-meta">
-          <span class="rec-type ${isVideo ? 'type-video' : 'type-pdf'}">${item.type}</span>
-          ${isVideo ? item.duration : item.size} · ${item.date}
+
+  // Latest Live Trainings (from weapons data)
+  const homeLiveGrid = document.getElementById('homeLiveGrid');
+  const liveTrainings = (siteData.weapons && siteData.weapons.liveTrainings) || [];
+  liveTrainings.slice(0, 3).forEach(item => {
+    homeLiveGrid.innerHTML += `
+      <a href="${item.link}" class="live-card" target="_blank">
+        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
+        <div class="live-info">
+          <div class="live-title">${item.title}</div>
+          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
         </div>
-        <a href="${item.link}" class="btn-action" target="_blank">${isVideo ? '▶ 观看' : '📥 查看'}</a>
+      </a>
+    `;
+  });
+
+  // Latest Battle Reports (from rank data)
+  const homeBattleList = document.getElementById('homeBattleList');
+  const battleReports = (siteData.rank && siteData.rank.battleReports) || [];
+  battleReports.forEach(item => {
+    homeBattleList.innerHTML += `
+      <div class="battle-item">
+        <div class="battle-icon">🏅</div>
+        <div class="battle-info">
+          <div class="battle-title">${item.title}</div>
+          <div class="battle-meta">${item.date}</div>
+        </div>
+        <div class="battle-amount">${item.amount}</div>
       </div>
     `;
-    recGrid.appendChild(div);
   });
 }
 
@@ -878,28 +891,37 @@ const MODEL_LABELS = {
 
 // 格式化AI输出内容
 // 规则：
-// 1. 去掉所有 markdown 符号（#, **, __, >, ---）
+// 1. 去掉所有 markdown 符号和残留HTML标签
 // 2. 客户分析报告：一级/二级/三级目录 加大加粗，其余正文
 // 3. 拜访计划：6个二级目录 加大加粗，其余正文
 function formatAIOutput(content) {
   if (!content) return '';
 
-  // Step 1: 清除 markdown 符号
+  // Step 1: 清除所有 markdown 符号和 HTML 标签
   var text = content;
+  // 去掉所有 HTML 标签（彻底清理，防止模型返回任何 HTML）
+  text = text.replace(/<[^>]+>/g, '');
+  // 去掉 HTML 实体
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&amp;/g, '&');
   // 去掉标题符号 ### ## #（行首）
   text = text.replace(/^#{1,6}\s*/gm, '');
-  // 去掉加粗 **text**
-  text = text.replace(/\*\*([\s\S]*?)\*\*/g, '$1');
-  // 去掉加粗 __text__
-  text = text.replace(/__([\s\S]*?)__/g, '$1');
-  // 去掉剩余单个 * 包裹的斜体（简单处理：行内成对的 *x*）
+  // 去掉加粗 **text**（不跨行）
+  text = text.replace(/\*\*([^\n]*?)\*\*/g, '$1');
+  // 去掉加粗 __text__（不跨行）
+  text = text.replace(/__([^\n]*?)__/g, '$1');
+  // 去掉斜体 *text*
   text = text.replace(/\*([^\*\n]+)\*/g, '$1');
   // 去掉 --- 或 === 分隔线
   text = text.replace(/^[\-=]{3,}\s*$/gm, '');
   // 去掉引用符号 >
   text = text.replace(/^>\s*/gm, '');
-  // 去掉行首的列表符号 - 或 • 或 *（但不去掉数字编号如 1. 2.）
+  // 去掉行首列表符号 - • * +
   text = text.replace(/^[\-\u2022\*\+]\s+/gm, '');
+  // 去掉行首数字列表符号 1. 2. 等（仅去掉列表符号，保留内容）
+  text = text.replace(/^\d+[\.\)）]\s*/gm, '');
 
   // Step 2: 按行解析，分配样式
   var lines = text.split('\n');
@@ -910,31 +932,26 @@ function formatAIOutput(content) {
     if (!trimmed) continue;
 
     // ======= 客户分析报告：一级目录 =======
-    // 匹配 "客户AI潜力评估报告" / "客户 AI 潜力评估报告"
     if (/客户\s*AI\s*潜力评估报告/.test(trimmed)) {
       html.push('<div class="ai-title-1">' + trimmed + '</div>');
       continue;
     }
 
     // ======= 客户分析报告：二级目录 =======
-    // "输出1：xxx" / "输出2：xxx"
     if (/^输出\s*[12]\s*[：:]/i.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
-    // "用户【云计算+AI】年度预算" / "云计算+AI年度预算"
     if (/云计算[\s\+\＋]*AI[\s】\]]*\s*年度预算/.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
-    // 单独 "客户分析报告"
     if (/^客户分析报告\s*$/.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
 
     // ======= 客户分析报告：三级目录（5个章节）=======
-    // 匹配 "1. 客户业务概况" 或 "1、客户业务概况" 或直接 "客户业务概况"
     if (/^([1-5]\s*[\.\、\)）]\s*)?(客户业务概况)/.test(trimmed)) {
       html.push('<div class="ai-title-3">' + trimmed + '</div>');
       continue;
@@ -957,7 +974,8 @@ function formatAIOutput(content) {
     }
 
     // ======= 拜访计划：二级目录（6个章节）=======
-    if (/^[一二三四五六]\s*[、\.\,，]\s*(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
+    // 匹配多种格式：一、拜访目标 / 一.拜访目标 / 一，拜访目标 / 一 拜访目标 / （一）拜访目标
+    if (/^(?:[一二三四五六]\s*[、\.\,，．\s]\s*|(?:（|\()[一二三四五六](?:）|\))\s*)(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
       html.push('<div class="ai-title-2">' + trimmed + '</div>');
       continue;
     }
@@ -1056,7 +1074,7 @@ function generateVisitPlan(scene, form, role) {
   const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
   return '🎯 ' + (sceneLabels[scene] || '客户拜访') + '计划（离线模板）\n\n' +
     '一、拜访目标：认知塑造与教育\n\n' +
-    '二、用户行动承诺\n  最高：安排POC测试\n  最低：安排二次会议\n\n' +
+    '二、客户行动承诺\n  最高：客户同意安排POC测试\n  最低：客户同意参加下次技术交流会\n\n' +
     '三、信息获取\n  1. 决策链路\n  2. 预算状况\n\n' +
     '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成拜访计划。';
 }
