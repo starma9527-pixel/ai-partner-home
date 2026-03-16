@@ -80,7 +80,7 @@ const SITE_DATA = {
         "title": "MaaS价格核算",
         "desc": "快速核算MaaS产品价格",
         "icon": "🧮",
-        "link": "http://47.109.203.32/"
+        "link": "https://www.maas-nexus.top/"
       },
       {
         "title": "竞品对比工具",
@@ -368,7 +368,7 @@ const SITE_DATA = {
     ],
     "battleReports": [
       {
-        "title": "重庆典名签约XX私有云项目",
+        "title": "重庆典名签约XX客户千万级数据集建设项目",
         "amount": "千万级",
         "date": "2026-03-2"
       },
@@ -447,12 +447,23 @@ function initTabs() {
     const btn = e.target.closest('.pill-btn');
     if (!btn) return;
     const tab = btn.dataset.tab;
-    nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    switchTab(tab);
   });
+}
+
+// 切换标签页（首页卡片和导航栏共用）
+function switchTab(tab) {
+  const nav = document.getElementById('pillNav');
+  nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+  const targetBtn = nav.querySelector(`.pill-btn[data-tab="${tab}"]`);
+  if (targetBtn) targetBtn.classList.add('active');
+  // 手机端导航也同步
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  const mobileBtn = document.querySelector(`.mobile-nav-btn[data-tab="${tab}"]`);
+  if (mobileBtn) mobileBtn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ===== Rank Sub-tabs =====
@@ -490,62 +501,16 @@ function renderHome() {
   const announcements = siteData.announcements || [];
   if (announcements.length > 0) {
     const textEl = document.getElementById('announceText');
-    let idx = 0;
-    function showAnnounce() {
-      textEl.textContent = announcements[idx].text;
-      idx = (idx + 1) % announcements.length;
+    if (textEl) {
+      let idx = 0;
+      function showAnnounce() {
+        textEl.textContent = announcements[idx].text;
+        idx = (idx + 1) % announcements.length;
+      }
+      showAnnounce();
+      if (announcements.length > 1) setInterval(showAnnounce, 5000);
     }
-    showAnnounce();
-    if (announcements.length > 1) setInterval(showAnnounce, 5000);
   }
-  const grid = document.getElementById('quickGrid');
-  (siteData.quickLinks || []).forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'quick-card';
-    div.innerHTML = `
-      <div class="card-icon">${item.icon}</div>
-      <div>
-        <div class="card-title">${item.title}</div>
-        <div class="card-desc">${item.desc}</div>
-      </div>
-    `;
-    div.onclick = () => {
-      const btn = document.querySelector(`.pill-btn[data-tab="${item.tab}"]`);
-      if (btn) btn.click();
-    };
-    grid.appendChild(div);
-  });
-
-  // Latest Live Trainings (from weapons data)
-  const homeLiveGrid = document.getElementById('homeLiveGrid');
-  const liveTrainings = (siteData.weapons && siteData.weapons.liveTrainings) || [];
-  liveTrainings.slice(0, 3).forEach(item => {
-    homeLiveGrid.innerHTML += `
-      <a href="${item.link}" class="live-card" target="_blank">
-        <div class="live-thumb">🎓<span class="live-badge">直播</span></div>
-        <div class="live-info">
-          <div class="live-title">${item.title}</div>
-          <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
-        </div>
-      </a>
-    `;
-  });
-
-  // Latest Battle Reports (from rank data)
-  const homeBattleList = document.getElementById('homeBattleList');
-  const battleReports = (siteData.rank && siteData.rank.battleReports) || [];
-  battleReports.forEach(item => {
-    homeBattleList.innerHTML += `
-      <div class="battle-item">
-        <div class="battle-icon">🏅</div>
-        <div class="battle-info">
-          <div class="battle-title">${item.title}</div>
-          <div class="battle-meta">${item.date}</div>
-        </div>
-        <div class="battle-amount">${item.amount}</div>
-      </div>
-    `;
-  });
 }
 
 // ===== Render: Weapons =====
