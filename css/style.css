@@ -399,15 +399,39 @@ input, textarea, select { font-family: inherit; }
 .quick-card .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
 .quick-card .card-desc { font-size: 0.8rem; color: var(--text-secondary); }
 
-/* Home page live grid & battle list */
-.home-live-grid {
+/* Home page navigation cards */
+.home-nav-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px; margin-bottom: 32px;
-}
-.home-battle-list {
-  display: flex; flex-direction: column; gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
   margin-bottom: 32px;
+}
+.home-nav-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+.home-nav-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(139,92,246,0.15);
+  border-color: var(--accent-purple);
+}
+.home-nav-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.home-nav-title { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.home-nav-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+
+@media (max-width: 600px) {
+  .home-nav-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .home-nav-card { padding: 20px 16px; }
+  .home-nav-icon { font-size: 2rem; margin-bottom: 8px; }
+  .home-nav-title { font-size: 1rem; }
 }
 
 .recommend-grid {
