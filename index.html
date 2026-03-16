@@ -64,24 +64,32 @@
       <span class="text" id="announceText"></span>
     </div>
 
-    <!-- Quick Links -->
+    <!-- 首页导航入口 -->
     <div class="section-title">
       <span class="icon">⚡</span> 快速入口
     </div>
-    <div class="quick-grid" id="quickGrid"></div>
-
-    <!-- Latest Live Trainings -->
-    <div class="section-title">
-      <span class="icon">🎬</span> 最新培训
-      <span class="badge">直播</span>
+    <div class="home-nav-grid">
+      <div class="home-nav-card" onclick="switchTab('weapons')">
+        <div class="home-nav-icon">🧰</div>
+        <div class="home-nav-title">打单兵器</div>
+        <div class="home-nav-desc">业务规则 · 常用工具 · 生态知识库 · 直播培训</div>
+      </div>
+      <div class="home-nav-card" onclick="switchTab('maas')">
+        <div class="home-nav-icon">🚀</div>
+        <div class="home-nav-title">赢战 MaaS</div>
+        <div class="home-nav-desc">财税 · AI短剧 · 智能语音 · 数据标注 · SaaS Agent</div>
+      </div>
+      <div class="home-nav-card" onclick="switchTab('guide')">
+        <div class="home-nav-icon">🎯</div>
+        <div class="home-nav-title">拜访教练</div>
+        <div class="home-nav-desc">AI客户分析报告 · AI拜访计划生成</div>
+      </div>
+      <div class="home-nav-card" onclick="switchTab('rank')">
+        <div class="home-nav-icon">🏆</div>
+        <div class="home-nav-title">龙虎榜</div>
+        <div class="home-nav-desc">MaaS渗透率 · 案例贡献 · 学习时长 · 项目战报</div>
+      </div>
     </div>
-    <div class="home-live-grid" id="homeLiveGrid"></div>
-
-    <!-- Latest Battle Reports -->
-    <div class="section-title">
-      <span class="icon">⚔️</span> 最新项目战报
-    </div>
-    <div class="home-battle-list" id="homeBattleList"></div>
   </div>
 
   <!-- ===== WEAPONS TAB ===== -->
