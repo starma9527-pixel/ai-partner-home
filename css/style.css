@@ -664,32 +664,7 @@ input, textarea, select { font-family: inherit; }
 .ai-output .output-content {
   font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;
 }
-/* AI output uses custom classes (ai-title-1/2/3, ai-text) for formatting.
-   Reset any HTML elements that might slip through to prevent unwanted bold/large text. */
-.ai-output .output-content h1,
-.ai-output .output-content h2,
-.ai-output .output-content h3,
-.ai-output .output-content h4,
-.ai-output .output-content h5,
-.ai-output .output-content h6,
-.ai-output .output-content strong,
-.ai-output .output-content b,
-.ai-output .output-content p,
-.ai-output .output-content li {
-  font-size: inherit; font-weight: normal; color: inherit; margin: 0; padding: 0;
-}
-.compare-card-body h1,
-.compare-card-body h2,
-.compare-card-body h3,
-.compare-card-body h4,
-.compare-card-body h5,
-.compare-card-body h6,
-.compare-card-body strong,
-.compare-card-body b,
-.compare-card-body p,
-.compare-card-body li {
-  font-size: inherit; font-weight: normal; color: inherit; margin: 0; padding: 0;
-}
+/* AI output 现在使用 marked.js 渲染 Markdown，样式由 .ai-markdown-output 控制 */
 /* Typing cursor animation */
 .typing-cursor {
   display: inline-block; width: 2px; height: 1em;
@@ -1018,6 +993,117 @@ input, textarea, select { font-family: inherit; }
   .compare-grid.cols-2,
   .compare-grid.cols-3,
   .compare-grid.cols-4 { grid-template-columns: 1fr; }
+}
+
+/* ===== Output Tabs (模型Tab切换 - 单宫格展示) ===== */
+.output-tabs {
+  display: flex; gap: 0; border-bottom: 2px solid var(--border-color);
+  margin-bottom: 0; overflow-x: auto;
+}
+.output-tab {
+  display: flex; align-items: center; gap: 8px;
+  background: transparent;
+  border: none; border-bottom: 3px solid transparent;
+  padding: 12px 20px;
+  font-size: 0.88rem; font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  margin-bottom: -2px;
+}
+.output-tab:hover {
+  color: var(--text-primary);
+  background: rgba(139,92,246,0.04);
+}
+.output-tab.active {
+  color: var(--accent-purple);
+  border-bottom-color: var(--accent-purple);
+}
+.output-tab-name { font-weight: 700; }
+.output-tab-status {
+  font-size: 0.7rem; font-weight: 400;
+  color: var(--text-muted);
+}
+.output-tab-status.done { color: var(--accent-green); }
+.output-tab-status.error { color: #ef4444; }
+.output-panels { position: relative; }
+.output-panel {
+  display: none;
+  padding: 24px 4px;
+  font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;
+}
+.output-panel.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+/* Output panels 内的 Markdown 样式由 .ai-markdown-output 统一控制 */
+
+/* ===== Markdown Rendered Output Styles ===== */
+.ai-markdown-output { color: var(--text-secondary); line-height: 1.8; }
+.ai-markdown-output h1 {
+  font-size: 1.2rem; font-weight: 700; color: var(--text-primary);
+  margin: 20px 0 10px; padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent-purple);
+}
+.ai-markdown-output h2 {
+  font-size: 1.05rem; font-weight: 700; color: var(--accent-purple);
+  margin: 16px 0 8px;
+}
+.ai-markdown-output h3 {
+  font-size: 0.95rem; font-weight: 600; color: var(--text-primary);
+  margin: 12px 0 6px;
+}
+.ai-markdown-output h4, .ai-markdown-output h5, .ai-markdown-output h6 {
+  font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
+  margin: 10px 0 4px;
+}
+.ai-markdown-output p { margin: 4px 0 8px; }
+.ai-markdown-output strong, .ai-markdown-output b { font-weight: 700; color: var(--text-primary); }
+.ai-markdown-output em, .ai-markdown-output i { font-style: italic; }
+.ai-markdown-output ul, .ai-markdown-output ol {
+  margin: 6px 0 10px; padding-left: 1.5em;
+}
+.ai-markdown-output li { margin: 3px 0; }
+.ai-markdown-output blockquote {
+  margin: 8px 0; padding: 8px 14px;
+  border-left: 3px solid var(--accent-purple);
+  background: rgba(139,92,246,0.04);
+  color: var(--text-muted); font-style: italic;
+}
+.ai-markdown-output hr {
+  border: none; border-top: 1px solid var(--border-color);
+  margin: 16px 0;
+}
+.ai-markdown-output table {
+  width: 100%; border-collapse: collapse;
+  margin: 10px 0; font-size: 0.84rem;
+}
+.ai-markdown-output th, .ai-markdown-output td {
+  border: 1px solid var(--border-color);
+  padding: 8px 12px; text-align: left;
+}
+.ai-markdown-output th {
+  background: var(--gradient-glow);
+  font-weight: 700; color: var(--text-primary);
+}
+.ai-markdown-output tr:nth-child(even) td {
+  background: rgba(139,92,246,0.02);
+}
+.ai-markdown-output code {
+  background: rgba(139,92,246,0.08);
+  padding: 1px 5px; border-radius: 3px;
+  font-size: 0.85em;
+}
+.ai-markdown-output pre {
+  background: rgba(0,0,0,0.03); border: 1px solid var(--border-color);
+  padding: 12px; border-radius: 6px; overflow-x: auto;
+  margin: 8px 0;
+}
+.ai-markdown-output a { color: var(--accent-purple); text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .output-tab { padding: 10px 14px; font-size: 0.82rem; }
 }
 
 /* ===== MaaS Tab (赢战MaaS) ===== */
