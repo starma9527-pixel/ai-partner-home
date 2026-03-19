@@ -699,7 +699,25 @@ function mobileNavTo(tab) {
   toggleMobileNav();
 }
 
-// ===== 客户分析报告（多模型对比）=====
+// ===== 客户分析报告（多模型Tab切换）=====
+// Markdown 格式指令，附加到前端请求确保 AI 返回格式化内容
+const MD_FORMAT_HINT_CUSTOMER = '\n\n【输出格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
+  '- 使用 # 作为一级标题（如 # 输出1：云+AI预算评估）\n' +
+  '- 使用 ## 作为二级标题（如 ## 1. 客户业务概况）\n' +
+  '- 使用 ### 作为三级子标题\n' +
+  '- 使用 **加粗** 突出关键数据和结论\n' +
+  '- 使用 - 作为无序列表，1. 2. 作为有序列表\n' +
+  '- 多维度对比内容使用Markdown表格（| 列1 | 列2 |）\n' +
+  '请务必在每个章节标题前加 # 或 ## 符号，不要输出纯文本。';
+
+const MD_FORMAT_HINT_VISIT = '\n\n【输出格式要求】请严格使用Markdown格式输出：\n' +
+  '- 使用 ## 作为每个章节标题（如 ## 一、拜访目标）\n' +
+  '- 使用 ### 作为子标题\n' +
+  '- 使用 **加粗** 突出关键信息\n' +
+  '- 使用 - 作为无序列表，1. 2. 作为有序列表\n' +
+  '- 信息获取、会议议程等使用Markdown表格（| 列1 | 列2 |）\n' +
+  '请务必在每个章节标题前加 ## 符号，不要输出纯文本。';
+
 function handleCustomerAnalysis() {
   const val = document.getElementById('analysisInput').value.trim();
   if (!val) { showToast('请输入客户名称'); return; }
@@ -713,36 +731,38 @@ function handleCustomerAnalysis() {
   const contentDiv = document.getElementById('customerOutputContent');
   outputDiv.classList.add('show');
 
-  // 构建对比卡片布局
-  const colsClass = selectedModels.length >= 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
-  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="customerCompareGrid">' +
-    selectedModels.map(m =>
-      '<div class="compare-card" id="card-customer-' + m + '">' +
-        '<div class="compare-card-header">' +
-          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
-          '<span class="model-status" id="status-customer-' + m + '">⏳ 生成中...</span>' +
-        '</div>' +
-        '<div class="compare-card-body" id="body-customer-' + m + '">' +
+  // 构建Tab切换布局（单宫格）
+  contentDiv.innerHTML =
+    '<div class="output-tabs" id="customerOutputTabs">' +
+      selectedModels.map((m, i) =>
+        '<button class="output-tab' + (i === 0 ? ' active' : '') + '" data-model="' + m + '" onclick="switchOutputTab(\'customer\', \'' + m + '\')">' +
+          '<span class="output-tab-name">' + (MODEL_LABELS[m] || m) + '</span>' +
+          '<span class="output-tab-status" id="status-customer-' + m + '">⏳ 生成中</span>' +
+        '</button>'
+      ).join('') +
+    '</div>' +
+    '<div class="output-panels" id="customerOutputPanels">' +
+      selectedModels.map((m, i) =>
+        '<div class="output-panel' + (i === 0 ? ' active' : '') + '" id="panel-customer-' + m + '">' +
           '<span class="spinner"></span> AI正在分析中，请稍候...' +
-        '</div>' +
-      '</div>'
-    ).join('') +
+        '</div>'
+      ).join('') +
     '</div>';
 
   // 并行调用所有选中的模型
   selectedModels.forEach(m => {
-    callAI('customer_analysis', { customerName: val }, m)
+    callAI('customer_analysis', { customerName: val + MD_FORMAT_HINT_CUSTOMER }, m)
       .then(result => {
-        document.getElementById('body-customer-' + m).innerHTML = formatAIOutput(result.content);
+        document.getElementById('panel-customer-' + m).innerHTML = formatAIOutput(result.content);
         const statusEl = document.getElementById('status-customer-' + m);
         statusEl.textContent = '✅ 已完成';
-        statusEl.className = 'model-status done';
+        statusEl.className = 'output-tab-status done';
       })
       .catch(err => {
-        document.getElementById('body-customer-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+        document.getElementById('panel-customer-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
         const statusEl = document.getElementById('status-customer-' + m);
         statusEl.textContent = '❌ 失败';
-        statusEl.className = 'model-status error';
+        statusEl.className = 'output-tab-status error';
       });
   });
 }
@@ -777,38 +797,52 @@ function handleVisitPlan() {
     return label.replace(' *', '') + '：' + inp.value;
   }).join('\n');
 
-  // 构建对比卡片布局
-  const colsClass = selectedModels.length >= 4 ? 'cols-4' : selectedModels.length === 3 ? 'cols-3' : selectedModels.length === 2 ? 'cols-2' : 'cols-1';
-  contentDiv.innerHTML = '<div class="compare-grid ' + colsClass + '" id="visitCompareGrid">' +
-    selectedModels.map(m =>
-      '<div class="compare-card" id="card-visit-' + m + '">' +
-        '<div class="compare-card-header">' +
-          '<span class="model-name">' + (MODEL_LABELS[m] || m) + '</span>' +
-          '<span class="model-status" id="status-visit-' + m + '">⏳ 生成中...</span>' +
-        '</div>' +
-        '<div class="compare-card-body" id="body-visit-' + m + '">' +
+  // 构建Tab切换布局（单宫格）
+  contentDiv.innerHTML =
+    '<div class="output-tabs" id="visitOutputTabs">' +
+      selectedModels.map((m, i) =>
+        '<button class="output-tab' + (i === 0 ? ' active' : '') + '" data-model="' + m + '" onclick="switchOutputTab(\'visit\', \'' + m + '\')">' +
+          '<span class="output-tab-name">' + (MODEL_LABELS[m] || m) + '</span>' +
+          '<span class="output-tab-status" id="status-visit-' + m + '">⏳ 生成中</span>' +
+        '</button>'
+      ).join('') +
+    '</div>' +
+    '<div class="output-panels" id="visitOutputPanels">' +
+      selectedModels.map((m, i) =>
+        '<div class="output-panel' + (i === 0 ? ' active' : '') + '" id="panel-visit-' + m + '">' +
           '<span class="spinner"></span> AI教练正在生成计划...' +
-        '</div>' +
-      '</div>'
-    ).join('') +
+        '</div>'
+      ).join('') +
     '</div>';
 
   // 并行调用所有选中的模型
   selectedModels.forEach(m => {
-    callAI('visit_plan', { scene, role: roleSelect.value, details }, m)
+    callAI('visit_plan', { scene, role: roleSelect.value, details: details + MD_FORMAT_HINT_VISIT }, m)
       .then(result => {
-        document.getElementById('body-visit-' + m).innerHTML = formatAIOutput(result.content);
+        document.getElementById('panel-visit-' + m).innerHTML = formatAIOutput(result.content);
         const statusEl = document.getElementById('status-visit-' + m);
         statusEl.textContent = '✅ 已完成';
-        statusEl.className = 'model-status done';
+        statusEl.className = 'output-tab-status done';
       })
       .catch(err => {
-        document.getElementById('body-visit-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+        document.getElementById('panel-visit-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
         const statusEl = document.getElementById('status-visit-' + m);
         statusEl.textContent = '❌ 失败';
-        statusEl.className = 'model-status error';
+        statusEl.className = 'output-tab-status error';
       });
   });
+}
+
+// ===== Tab切换输出面板 =====
+function switchOutputTab(prefix, model) {
+  // 更新Tab按钮状态
+  const tabsContainer = document.getElementById(prefix + 'OutputTabs');
+  tabsContainer.querySelectorAll('.output-tab').forEach(t => t.classList.remove('active'));
+  tabsContainer.querySelector('.output-tab[data-model="' + model + '"]').classList.add('active');
+  // 更新面板显示
+  const panelsContainer = document.getElementById(prefix + 'OutputPanels');
+  panelsContainer.querySelectorAll('.output-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + prefix + '-' + model).classList.add('active');
 }
 
 function handleFeedback() {
@@ -855,101 +889,144 @@ const MODEL_LABELS = {
 };
 
 // 格式化AI输出内容
-// 规则：
-// 1. 去掉所有 markdown 符号和残留HTML标签
-// 2. 客户分析报告：一级/二级/三级目录 加大加粗，其余正文
-// 3. 拜访计划：6个二级目录 加大加粗，其余正文
+// 优先使用 marked.js，否则使用内置简易 Markdown 渲染器
 function formatAIOutput(content) {
   if (!content) return '';
 
-  // Step 1: 清除所有 markdown 符号和 HTML 标签
-  var text = content;
-  // 去掉所有 HTML 标签（彻底清理，防止模型返回任何 HTML）
-  text = text.replace(/<[^>]+>/g, '');
-  // 去掉 HTML 实体
-  text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-  text = text.replace(/&amp;/g, '&');
-  // 去掉标题符号 ### ## #（行首）
-  text = text.replace(/^#{1,6}\s*/gm, '');
-  // 去掉加粗 **text**（不跨行）
-  text = text.replace(/\*\*([^\n]*?)\*\*/g, '$1');
-  // 去掉加粗 __text__（不跨行）
-  text = text.replace(/__([^\n]*?)__/g, '$1');
-  // 去掉斜体 *text*
-  text = text.replace(/\*([^\*\n]+)\*/g, '$1');
-  // 去掉 --- 或 === 分隔线
-  text = text.replace(/^[\-=]{3,}\s*$/gm, '');
-  // 去掉引用符号 >
-  text = text.replace(/^>\s*/gm, '');
-  // 去掉行首列表符号 - • * +
-  text = text.replace(/^[\-\u2022\*\+]\s+/gm, '');
-  // 去掉行首数字列表符号 1. 2. 等（仅去掉列表符号，保留内容）
-  text = text.replace(/^\d+[\.\)）]\s*/gm, '');
-
-  // Step 2: 按行解析，分配样式
-  var lines = text.split('\n');
-  var html = [];
-
-  for (var i = 0; i < lines.length; i++) {
-    var trimmed = lines[i].trim();
-    if (!trimmed) continue;
-
-    // ======= 客户分析报告：一级目录 =======
-    if (/客户\s*AI\s*潜力评估报告/.test(trimmed)) {
-      html.push('<div class="ai-title-1">' + trimmed + '</div>');
-      continue;
+  // 优先使用 marked 库（如果加载成功）
+  if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+    try {
+      var rendered = marked.parse(content);
+      console.log('[formatAIOutput] 使用 marked.js 渲染');
+      return '<div class="ai-markdown-output">' + rendered + '</div>';
+    } catch (e) {
+      console.error('[formatAIOutput] marked.parse 出错, 降级到内置渲染:', e);
     }
-
-    // ======= 客户分析报告：二级目录 =======
-    if (/^输出\s*[12]\s*[：:]/i.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-    if (/云计算[\s\+\＋]*AI[\s】\]]*\s*年度预算/.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^客户分析报告\s*$/.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 客户分析报告：三级目录（5个章节）=======
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(客户业务概况)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(影响客户业务的关键行业趋势)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(从客户视角分析的机会与挑战)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(从.{0,4}用户结果.{0,4}反推关键举措)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-    if (/^([1-5]\s*[\.\、\)）]\s*)?(公共云与生成式\s*AI)/.test(trimmed)) {
-      html.push('<div class="ai-title-3">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 拜访计划：二级目录（6个章节）=======
-    // 匹配多种格式：一、拜访目标 / 一.拜访目标 / 一，拜访目标 / 一 拜访目标 / （一）拜访目标
-    if (/^(?:[一二三四五六]\s*[、\.\,，．\s]\s*|(?:（|\()[一二三四五六](?:）|\))\s*)(拜访目标|行动承诺|关键信息获取|价值传递|风险预案|会前准备清单)/.test(trimmed)) {
-      html.push('<div class="ai-title-2">' + trimmed + '</div>');
-      continue;
-    }
-
-    // ======= 其余全部按正文输出 =======
-    html.push('<div class="ai-text">' + trimmed + '</div>');
+  } else {
+    console.log('[formatAIOutput] marked.js 未加载, 使用内置渲染器');
   }
 
-  return html.join('');
+  // 内置简易 Markdown 渲染器（不依赖外部库）
+  return '<div class="ai-markdown-output">' + simpleMarkdownRender(content) + '</div>';
+}
+
+// ===== 内置简易 Markdown 渲染器 =====
+function simpleMarkdownRender(text) {
+  if (!text) return '';
+  var lines = text.split('\n');
+  var html = [];
+  var inUl = false, inOl = false, inTable = false, isFirstTableRow = true;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var trimmed = line.trim();
+
+    // 空行：关闭打开的块元素
+    if (!trimmed) {
+      if (inUl) { html.push('</ul>'); inUl = false; }
+      if (inOl) { html.push('</ol>'); inOl = false; }
+      if (inTable) { html.push('</tbody></table>'); inTable = false; isFirstTableRow = true; }
+      continue;
+    }
+
+    // 表格：以 | 开头和结尾
+    if (trimmed.charAt(0) === '|' && trimmed.charAt(trimmed.length - 1) === '|') {
+      // 跳过分隔行 |---|---|
+      if (/^\|[\s\-:|\s]+\|$/.test(trimmed)) continue;
+      var cells = trimmed.slice(1, -1).split('|');
+      if (!inTable) {
+        // 第一行作为表头
+        html.push('<table><thead><tr>');
+        for (var c = 0; c < cells.length; c++) {
+          html.push('<th>' + mdInline(cells[c].trim()) + '</th>');
+        }
+        html.push('</tr></thead><tbody>');
+        inTable = true;
+        isFirstTableRow = false;
+        continue;
+      }
+      html.push('<tr>');
+      for (var c = 0; c < cells.length; c++) {
+        html.push('<td>' + mdInline(cells[c].trim()) + '</td>');
+      }
+      html.push('</tr>');
+      continue;
+    }
+    // 非表格行时关闭表格
+    if (inTable) { html.push('</tbody></table>'); inTable = false; isFirstTableRow = true; }
+
+    // 标题：# ## ### #### ##### ######
+    var hMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (hMatch) {
+      if (inUl) { html.push('</ul>'); inUl = false; }
+      if (inOl) { html.push('</ol>'); inOl = false; }
+      var lvl = hMatch[1].length;
+      html.push('<h' + lvl + '>' + mdInline(hMatch[2]) + '</h' + lvl + '>');
+      continue;
+    }
+
+    // 水平线
+    if (/^[-*_]{3,}\s*$/.test(trimmed)) {
+      if (inUl) { html.push('</ul>'); inUl = false; }
+      if (inOl) { html.push('</ol>'); inOl = false; }
+      html.push('<hr>');
+      continue;
+    }
+
+    // 无序列表：- 或 * 或 + 开头
+    if (/^[-*+]\s+/.test(trimmed)) {
+      if (inOl) { html.push('</ol>'); inOl = false; }
+      if (!inUl) { html.push('<ul>'); inUl = true; }
+      html.push('<li>' + mdInline(trimmed.replace(/^[-*+]\s+/, '')) + '</li>');
+      continue;
+    }
+
+    // 有序列表：数字. 开头
+    if (/^\d+\.\s+/.test(trimmed)) {
+      if (inUl) { html.push('</ul>'); inUl = false; }
+      if (!inOl) { html.push('<ol>'); inOl = true; }
+      html.push('<li>' + mdInline(trimmed.replace(/^\d+\.\s+/, '')) + '</li>');
+      continue;
+    }
+
+    // 引用：> 开头
+    if (trimmed.charAt(0) === '>') {
+      if (inUl) { html.push('</ul>'); inUl = false; }
+      if (inOl) { html.push('</ol>'); inOl = false; }
+      html.push('<blockquote>' + mdInline(trimmed.replace(/^>\s*/, '')) + '</blockquote>');
+      continue;
+    }
+
+    // 关闭列表
+    if (inUl) { html.push('</ul>'); inUl = false; }
+    if (inOl) { html.push('</ol>'); inOl = false; }
+
+    // 普通段落
+    html.push('<p>' + mdInline(trimmed) + '</p>');
+  }
+
+  // 关闭尾部未关闭的块
+  if (inUl) html.push('</ul>');
+  if (inOl) html.push('</ol>');
+  if (inTable) html.push('</tbody></table>');
+
+  return html.join('\n');
+}
+
+// 行内 Markdown 格式化：加粗、斜体、行内代码
+function mdInline(text) {
+  if (!text) return '';
+  // 转义 HTML 特殊字符
+  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // 行内代码 `code`
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 加粗 **text** 或 __text__
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // 斜体 *text* 或 _text_
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  text = text.replace(/_(.+?)_/g, '<em>$1</em>');
+  return text;
 }
 
 async function callAI(type, input, model) {
