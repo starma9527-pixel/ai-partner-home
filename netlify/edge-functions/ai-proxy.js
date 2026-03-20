@@ -223,14 +223,21 @@ export default async (request, context) => {
   };
 
   try {
+    // 显式超时控制（Netlify Edge Function 有 ~30s 执行限制）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + API_KEY
       },
-      body: JSON.stringify(apiBody)
+      body: JSON.stringify(apiBody),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errText = await response.text();
@@ -257,7 +264,10 @@ export default async (request, context) => {
     });
 
   } catch (err) {
-    const errorMsg = err.name === 'AbortError' ? '请求超时，请稍后重试' : err.message;
+    const isAbort = err.name === 'AbortError' || (err.message && err.message.includes('aborted'));
+    const errorMsg = isAbort
+      ? '模型响应超时(25秒)，该模型可能正忙，请稍后重试'
+      : err.message;
     return new Response(JSON.stringify({ error: 'ERROR: ' + errorMsg }), {
       status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
     });
