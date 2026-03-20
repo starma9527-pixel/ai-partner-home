@@ -99,16 +99,16 @@ exports.handler = async (event, context) => {
 
   // 模型映射（前端 key → 百炼模型 ID）
   const models = {
-    qwen35plus: 'qwen-plus',
+    qwen35plus: 'qwen3.5-plus',
     qwenmax: 'qwen-max',
     kimi: 'kimi-k2.5',
     minimax: 'MiniMax-M2.5'
   };
-  const modelId = models[model] || 'qwen-plus';
+  const modelId = models[model] || 'qwen3.5-plus';
 
   // 模型显示名称
   const displayNames = {
-    'qwen-plus': 'Qwen-Plus',
+    'qwen3.5-plus': 'Qwen3.5-Plus',
     'qwen-max': 'Qwen-Max',
     'kimi-k2.5': 'Kimi-K2.5',
     'MiniMax-M2.5': 'MiniMax-M2.5'
