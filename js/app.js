@@ -749,7 +749,7 @@ function handleCustomerAnalysis() {
       ).join('') +
     '</div>';
 
-  // 错开调用各模型（间隔2秒，避免触发百炼API并发限流）
+  // 错开调用各模型（间隔3秒，避免触发百炼API并发限流）
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
       callAIStream('customer_analysis', { customerName: val + MD_FORMAT_HINT_CUSTOMER }, m, 'panel-customer-' + m)
@@ -759,11 +759,12 @@ function handleCustomerAnalysis() {
         })
         .catch(err => {
           const panel = document.getElementById('panel-customer-' + m);
-          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+          const friendlyMsg = friendlyError(err.message);
+          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ ' + escapeHtml(friendlyMsg) + '</div>';
           const statusEl = document.getElementById('status-customer-' + m);
           if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
         });
-    }, index * 2000);
+    }, index * 3000);
   });
 }
 
@@ -815,7 +816,7 @@ function handleVisitPlan() {
       ).join('') +
     '</div>';
 
-  // 错开调用各模型（间隔2秒，避免触发百炼API并发限流）
+  // 错开调用各模型（间隔3秒，避免触发百炼API并发限流）
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
       callAIStream('visit_plan', { scene, role: roleSelect.value, details: details + MD_FORMAT_HINT_VISIT }, m, 'panel-visit-' + m)
@@ -825,11 +826,12 @@ function handleVisitPlan() {
         })
         .catch(err => {
           const panel = document.getElementById('panel-visit-' + m);
-          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+          const friendlyMsg = friendlyError(err.message);
+          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ ' + escapeHtml(friendlyMsg) + '</div>';
           const statusEl = document.getElementById('status-visit-' + m);
           if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
         });
-    }, index * 2000);
+    }, index * 3000);
   });
 }
 
@@ -1169,6 +1171,19 @@ async function callAIStream(type, input, model, panelId) {
 }
 
 // ===== Helpers =====
+// 将技术错误信息转为用户友好的提示
+function friendlyError(msg) {
+  if (!msg) return '未知错误，请重试';
+  if (msg.includes('aborted') || msg.includes('abort'))
+    return '模型响应超时，当前模型可能排队中，请稍后重试或换一个模型';
+  if (msg.includes('429') || msg.includes('rate') || msg.includes('limit'))
+    return 'API调用频率超限，请稍后再试';
+  if (msg.includes('timeout') || msg.includes('超时'))
+    return '请求超时，请稍后重试';
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('网络'))
+    return '网络连接失败，请检查网络后重试';
+  return msg;
+}
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
