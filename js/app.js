@@ -749,21 +749,21 @@ function handleCustomerAnalysis() {
       ).join('') +
     '</div>';
 
-  // 并行调用所有选中的模型
-  selectedModels.forEach(m => {
-    callAI('customer_analysis', { customerName: val + MD_FORMAT_HINT_CUSTOMER }, m)
-      .then(result => {
-        document.getElementById('panel-customer-' + m).innerHTML = formatAIOutput(result.content);
-        const statusEl = document.getElementById('status-customer-' + m);
-        statusEl.textContent = '✅ 已完成';
-        statusEl.className = 'output-tab-status done';
-      })
-      .catch(err => {
-        document.getElementById('panel-customer-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
-        const statusEl = document.getElementById('status-customer-' + m);
-        statusEl.textContent = '❌ 失败';
-        statusEl.className = 'output-tab-status error';
-      });
+  // 错开调用各模型（间隔2秒，避免触发百炼API并发限流）
+  selectedModels.forEach((m, index) => {
+    setTimeout(() => {
+      callAIStream('customer_analysis', { customerName: val + MD_FORMAT_HINT_CUSTOMER }, m, 'panel-customer-' + m)
+        .then(() => {
+          const statusEl = document.getElementById('status-customer-' + m);
+          if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
+        })
+        .catch(err => {
+          const panel = document.getElementById('panel-customer-' + m);
+          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+          const statusEl = document.getElementById('status-customer-' + m);
+          if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
+        });
+    }, index * 2000);
   });
 }
 
@@ -815,21 +815,21 @@ function handleVisitPlan() {
       ).join('') +
     '</div>';
 
-  // 并行调用所有选中的模型
-  selectedModels.forEach(m => {
-    callAI('visit_plan', { scene, role: roleSelect.value, details: details + MD_FORMAT_HINT_VISIT }, m)
-      .then(result => {
-        document.getElementById('panel-visit-' + m).innerHTML = formatAIOutput(result.content);
-        const statusEl = document.getElementById('status-visit-' + m);
-        statusEl.textContent = '✅ 已完成';
-        statusEl.className = 'output-tab-status done';
-      })
-      .catch(err => {
-        document.getElementById('panel-visit-' + m).innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
-        const statusEl = document.getElementById('status-visit-' + m);
-        statusEl.textContent = '❌ 失败';
-        statusEl.className = 'output-tab-status error';
-      });
+  // 错开调用各模型（间隔2秒，避免触发百炼API并发限流）
+  selectedModels.forEach((m, index) => {
+    setTimeout(() => {
+      callAIStream('visit_plan', { scene, role: roleSelect.value, details: details + MD_FORMAT_HINT_VISIT }, m, 'panel-visit-' + m)
+        .then(() => {
+          const statusEl = document.getElementById('status-visit-' + m);
+          if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
+        })
+        .catch(err => {
+          const panel = document.getElementById('panel-visit-' + m);
+          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ 调用失败：' + escapeHtml(err.message) + '</div>';
+          const statusEl = document.getElementById('status-visit-' + m);
+          if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
+        });
+    }, index * 2000);
   });
 }
 
@@ -1029,60 +1029,143 @@ function mdInline(text) {
   return text;
 }
 
-async function callAI(type, input, model) {
-  // 智能选择 API 端点
-  // - 本地文件 (file://) 或 localhost：使用阿里云 FC
-  // - Netlify 域名：使用 /api/ai-proxy
+// ===== 流式 AI 调用（SSE）=====
+// 流式调用：内容逐步显示，大幅降低等待时间
+// onChunk(content) 在每次收到新内容时调用
+async function callAIStream(type, input, model, panelId) {
   const isLocal = window.location.protocol === 'file:' ||
                   window.location.hostname === 'localhost' ||
                   window.location.hostname === '127.0.0.1';
 
-  const endpoints = isLocal ? [
-    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 本地：只用阿里云 FC
+  // 流式只支持 Netlify Edge Function，本地走非流式
+  const streamEndpoint = isLocal ? null : '/api/ai-proxy';
+  const fallbackEndpoints = isLocal ? [
+    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'
   ] : [
-    '/api/ai-proxy',  // Netlify：优先使用 Edge Function
-    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'  // 备用：阿里云 FC
+    'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'
   ];
 
-  let lastError = null;
-  for (const endpoint of endpoints) {
-    try {
-      console.log(`[callAI] Trying endpoint: ${endpoint}`);
-      console.log(`[callAI] Request body:`, { type, input, model: model || 'qwen35plus' });
+  const panelEl = document.getElementById(panelId);
 
-      const resp = await fetch(endpoint, {
+  // 尝试流式调用
+  if (streamEndpoint) {
+    try {
+      console.log(`[stream] model=${model} endpoint=${streamEndpoint}`);
+      const resp = await fetch(streamEndpoint, {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ type, input, model: model || 'qwen35plus' })
+        headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+        body: JSON.stringify({ type, input, model: model || 'qwen35plus', stream: true })
       });
 
-      console.log(`[callAI] Response status: ${resp.status}`);
-      console.log(`[callAI] Response headers:`, [...resp.headers.entries()]);
-
-      const text = await resp.text();
-      console.log(`[callAI] Raw response:`, text.substring(0, 500));
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error('返回的不是有效JSON: ' + text.substring(0, 100));
+      if (!resp.ok) {
+        const errText = await resp.text();
+        let errMsg = '请求失败 HTTP ' + resp.status;
+        try { const j = JSON.parse(errText); errMsg = j.error || errMsg; } catch(e) {}
+        throw new Error(errMsg);
       }
 
-      if (!resp.ok || data.error) throw new Error(data.error || '请求失败');
-      return { content: data.content, model: data.model };
+      // 读取 SSE 流
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+      let buffer = '';
+      let renderTimer = null;
+
+      // 节流渲染：最多每200ms渲染一次
+      function scheduleRender() {
+        if (renderTimer) return;
+        renderTimer = setTimeout(() => {
+          renderTimer = null;
+          if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
+        }, 200);
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed === 'data: [DONE]') continue;
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(trimmed.slice(6));
+              if (data.type === 'chunk' && data.content) {
+                fullContent += data.content;
+                scheduleRender();
+              } else if (data.type === 'error') {
+                throw new Error(data.error);
+              }
+            } catch (e) {
+              if (e.message && !e.message.includes('JSON')) throw e;
+            }
+          }
+        }
+      }
+
+      // 最终完整渲染
+      if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+      if (!fullContent) throw new Error('未收到有效内容');
+      if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
+      return { content: fullContent, model: model };
     } catch (err) {
-      lastError = err;
-      console.error(`[callAI] Endpoint ${endpoint} failed:`, err.message);
-      continue; // 尝试下一个端点
+      console.error(`[stream] 流式调用失败:`, err.message, '降级到非流式');
+      // 流式失败，降级到非流式 fallback
     }
   }
-  throw lastError || new Error('所有AI端点均不可用');
+
+  // 非流式 fallback（本地 file:// 或流式失败时）
+  const MAX_RETRIES = 1;
+  let attempt = 0;
+
+  while (attempt <= MAX_RETRIES) {
+    let lastError = null;
+    for (const endpoint of fallbackEndpoints) {
+      try {
+        console.log(`[callAI] attempt=${attempt} model=${model} endpoint=${endpoint}`);
+        if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> AI正在生成中（非流式模式）...';
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ type, input, model: model || 'qwen35plus' }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const text = await resp.text();
+        let data;
+        try { data = JSON.parse(text); } catch (e) {
+          throw new Error('返回的不是有效JSON: ' + text.substring(0, 100));
+        }
+        if (!resp.ok || data.error) throw new Error(data.error || '请求失败 HTTP ' + resp.status);
+        if (panelEl) panelEl.innerHTML = formatAIOutput(data.content);
+        return { content: data.content, model: data.model };
+      } catch (err) {
+        lastError = err;
+        console.error(`[callAI] Endpoint ${endpoint} failed:`, err.message);
+        continue;
+      }
+    }
+    attempt++;
+    if (attempt <= MAX_RETRIES) {
+      console.log(`[callAI] 所有端点失败，3秒后重试 (${attempt}/${MAX_RETRIES})...`);
+      await new Promise(r => setTimeout(r, 3000));
+    } else {
+      throw lastError || new Error('所有AI端点均不可用');
+    }
+  }
 }
 
 // ===== Helpers =====
