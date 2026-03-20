@@ -1,67 +1,27 @@
 /**
  * Netlify Edge Function: AI Proxy for DashScope
- * Edge Function 基于 Deno 运行时
- * 支持 qwen-plus / qwen-max / kimi-k2.5 / MiniMax-M2.5 多模型
+ * 支持流式输出 (SSE) + 非流式输出
+ * 支持 qwen3.5-plus / qwen-max / kimi-k2.5 / MiniMax-M2.5 多模型
  */
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-  'Content-Type': 'application/json'
+  'Access-Control-Max-Age': '86400'
 };
 
 const MODEL_CONFIG = {
-  'qwen35plus': { id: 'qwen-plus', maxTokens: 4000, displayName: 'Qwen-Plus' },
+  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 4000, displayName: 'Qwen3.5-Plus' },
   'qwenmax': { id: 'qwen-max', maxTokens: 4000, displayName: 'Qwen-Max' },
   'kimi': { id: 'kimi-k2.5', maxTokens: 4000, displayName: 'Kimi-K2.5' },
   'minimax': { id: 'MiniMax-M2.5', maxTokens: 4000, displayName: 'MiniMax-M2.5' }
 };
 
-export default async (request, context) => {
-  if (request.method === 'GET') {
-    const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
-    const hasKey = !!API_KEY;
-    const diagnostics = { status: 'Edge Function is working!', hasApiKey: hasKey, timestamp: new Date().toISOString() };
-    try {
-      const testCtrl = new AbortController();
-      const testTimeout = setTimeout(() => testCtrl.abort(), 8000);
-      const testResp = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/models', {
-        headers: { 'Authorization': 'Bearer ' + (API_KEY || 'test') },
-        signal: testCtrl.signal
-      });
-      clearTimeout(testTimeout);
-      diagnostics.cnApi = { reachable: true, status: testResp.status };
-    } catch (e) {
-      diagnostics.cnApi = { reachable: false, error: e.name + ': ' + e.message };
-    }
-    return new Response(JSON.stringify(diagnostics, null, 2), { status: 200, headers: CORS_HEADERS });
-  }
+const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
-  if (request.method === 'OPTIONS') {
-    return new Response('', { status: 200, headers: CORS_HEADERS });
-  }
-
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: CORS_HEADERS });
-  }
-
-  const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
-  if (!API_KEY) {
-    return new Response(JSON.stringify({ error: 'ENV_MISSING: 服务端未配置 DASHSCOPE_API_KEY 环境变量' }), { status: 500, headers: CORS_HEADERS });
-  }
-
-  let body;
-  try {
-    body = await request.json();
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'PARSE_ERROR: 请求格式错误' }), { status: 400, headers: CORS_HEADERS });
-  }
-
-  const { type, input, model: modelKey } = body;
-  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen35plus'];
-
+// ===== 构建提示词 =====
+function buildPrompts(type, input) {
   let systemPrompt = '';
   let userPrompt = '';
 
@@ -128,69 +88,164 @@ export default async (request, context) => {
     userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + (input.role || '') + '\n' + (input.details || '') + '\n\n请严格按照Markdown格式输出，包含##章节标题、###子标题、**加粗**、列表和表格。';
 
   } else {
-    return new Response(JSON.stringify({ error: 'INVALID_TYPE: 未知的请求类型' }), { status: 400, headers: CORS_HEADERS });
+    return null;
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 50000);
+  return { systemPrompt, userPrompt };
+}
 
-    let response = null;
-    let lastError = null;
+// ===== 流式处理：转发 DashScope SSE 到客户端 =====
+function handleStream(apiResponse, cfg) {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
 
-    const API_URLS = [
-      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-      'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'
-    ];
+  const stream = new ReadableStream({
+    async start(controller) {
+      // 先发送模型信息
+      controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'start', model: cfg.displayName }) + '\n\n'));
 
-    for (const apiUrl of API_URLS) {
+      const reader = apiResponse.body.getReader();
+      let buffer = '';
+
       try {
-        response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + API_KEY
-          },
-          body: JSON.stringify({
-            model: cfg.id,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: cfg.maxTokens
-          }),
-          signal: controller.signal
-        });
-        if (response.status === 401) {
-          lastError = 'AUTH_FAIL on ' + apiUrl;
-          response = null;
-          continue;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            if (trimmed === 'data: [DONE]') {
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              continue;
+            }
+
+            if (trimmed.startsWith('data: ')) {
+              try {
+                const json = JSON.parse(trimmed.slice(6));
+                const delta = json.choices && json.choices[0] && json.choices[0].delta;
+                if (delta) {
+                  const content = delta.content || delta.reasoning_content || '';
+                  if (content) {
+                    controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'chunk', content }) + '\n\n'));
+                  }
+                }
+              } catch (e) {
+                // 忽略解析错误的行
+              }
+            }
+          }
         }
-        break;
-      } catch (fetchErr) {
-        lastError = fetchErr.message;
-        response = null;
-        continue;
+      } catch (err) {
+        controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'error', error: err.message }) + '\n\n'));
+      } finally {
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        controller.close();
       }
     }
+  });
 
-    clearTimeout(timeoutId);
-
-    if (!response) {
-      return new Response(JSON.stringify({
-        error: 'API_CONNECT_ERROR: 无法连接API，' + (lastError || '未知错误')
-      }), { status: 502, headers: CORS_HEADERS });
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      ...CORS_HEADERS,
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive'
     }
+  });
+}
+
+// ===== 主处理函数 =====
+export default async (request, context) => {
+  // GET - 健康检查
+  if (request.method === 'GET') {
+    const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
+    return new Response(JSON.stringify({
+      status: 'Edge Function is working!',
+      hasApiKey: !!API_KEY,
+      streaming: true,
+      timestamp: new Date().toISOString()
+    }, null, 2), { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+  }
+
+  // OPTIONS - CORS
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 200, headers: CORS_HEADERS });
+  }
+
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  }
+
+  const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
+  if (!API_KEY) {
+    return new Response(JSON.stringify({ error: 'ENV_MISSING: 服务端未配置 DASHSCOPE_API_KEY' }), {
+      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'PARSE_ERROR: 请求格式错误' }), {
+      status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  }
+
+  const { type, input, model: modelKey, stream: useStream } = body;
+  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen35plus'];
+  const prompts = buildPrompts(type, input);
+
+  if (!prompts) {
+    return new Response(JSON.stringify({ error: 'INVALID_TYPE: 未知的请求类型' }), {
+      status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  }
+
+  const apiBody = {
+    model: cfg.id,
+    messages: [
+      { role: 'system', content: prompts.systemPrompt },
+      { role: 'user', content: prompts.userPrompt }
+    ],
+    temperature: 0.7,
+    max_tokens: cfg.maxTokens,
+    stream: !!useStream
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + API_KEY
+      },
+      body: JSON.stringify(apiBody)
+    });
 
     if (!response.ok) {
       const errText = await response.text();
       return new Response(JSON.stringify({
         error: 'API_ERROR: 模型API返回 ' + response.status,
         detail: errText.substring(0, 500)
-      }), { status: response.status, headers: CORS_HEADERS });
+      }), { status: response.status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
     }
 
+    // 流式输出
+    if (useStream) {
+      return handleStream(response, cfg);
+    }
+
+    // 非流式输出（兼容旧版前端）
     const data = await response.json();
     const message = data.choices && data.choices[0] && data.choices[0].message;
     const content = message
@@ -198,16 +253,14 @@ export default async (request, context) => {
       : '未能生成内容，请重试';
 
     return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
-      status: 200, headers: CORS_HEADERS
+      status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
     });
 
   } catch (err) {
-    const errorMsg = err.name === 'AbortError'
-      ? '请求超时(50秒)，请稍后重试'
-      : err.message;
-    return new Response(JSON.stringify({
-      error: 'ERROR: ' + errorMsg
-    }), { status: 500, headers: CORS_HEADERS });
+    const errorMsg = err.name === 'AbortError' ? '请求超时，请稍后重试' : err.message;
+    return new Response(JSON.stringify({ error: 'ERROR: ' + errorMsg }), {
+      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
   }
 };
 
