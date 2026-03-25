@@ -9,6 +9,10 @@
   path = "/api/ai-proxy"
   function = "ai-proxy"
 
+[[edge_functions]]
+  path = "/api/feedback"
+  function = "feedback"
+
 [[headers]]
   for = "/api/*"
   [headers.values]
