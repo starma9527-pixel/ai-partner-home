@@ -102,7 +102,7 @@ const SITE_DATA = {
       }
     ],
     "knowledge": [],
-    "knowledgeBaseLink": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview",
+    "knowledgeBaseLink": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview",
     "liveTrainings": [
       {
         "title": "AI短剧解决方案、AI Coding产品方案选型推荐",
@@ -148,7 +148,7 @@ const SITE_DATA = {
           "智能对话机器人"
         ],
         "cases": "已有3家伙伴落地财税AI项目，累计合同额超200万",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
+        "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
       {
         "id": "drama",
@@ -167,7 +167,7 @@ const SITE_DATA = {
           "通义千问API"
         ],
         "cases": "AI短剧制作成本降低60%，单集产出效率提升5倍",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
+        "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
       {
         "id": "voice",
@@ -186,7 +186,7 @@ const SITE_DATA = {
           "通义千问API"
         ],
         "cases": "智能语音客服替代率达70%，客户满意度提升25%",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
+        "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
       {
         "id": "data",
@@ -205,7 +205,7 @@ const SITE_DATA = {
           "模型微调服务"
         ],
         "cases": "已服务5个大模型训练项目，标注准确率超98%",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
+        "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
       {
         "id": "social",
@@ -224,7 +224,7 @@ const SITE_DATA = {
           "数字人形象生成"
         ],
         "cases": "虚拟陪伴用户日均使用时长超2小时，用户留存率提升40%",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
+        "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
       {
         "id": "saasagent",
@@ -243,7 +243,7 @@ const SITE_DATA = {
           "知识库RAG检索"
         ],
         "cases": "SaaS产品接入AI助手后，用户付费转化率提升35%，操作效率提升3倍",
-        "link": "https://alidocs.dingtalk.com/i/spaces/nb9XJJ5P1yPLVXyA/overview"
+        "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       }
     ]
   },
@@ -421,11 +421,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initRankTabs();
   initSceneSelector();
+  initSiteStats();
   renderHome();
   renderWeapons();
   renderMaas();
   renderRank();
   renderFeedback();
+  renderStats();
 });
 
 // ===== Load Data =====
@@ -1115,6 +1117,7 @@ async function callAIStream(type, input, model, panelId) {
       if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
       if (!fullContent) throw new Error('未收到有效内容');
       if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
+      if (typeof incrementAICalls === 'function') incrementAICalls();
       return { content: fullContent, model: model };
     } catch (err) {
       console.error(`[stream] 流式调用失败:`, err.message, '降级到非流式');
@@ -1153,6 +1156,7 @@ async function callAIStream(type, input, model, panelId) {
         }
         if (!resp.ok || data.error) throw new Error(data.error || '请求失败 HTTP ' + resp.status);
         if (panelEl) panelEl.innerHTML = formatAIOutput(data.content);
+        if (typeof incrementAICalls === 'function') incrementAICalls();
         return { content: data.content, model: data.model };
       } catch (err) {
         lastError = err;
@@ -1198,7 +1202,162 @@ function escapeHtml(str) {
 }
 
 function sendFeedbackToAdmin(author, content) {
-  console.log('[Feedback]', author, content);
+  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
+  const company = document.getElementById('feedbackCompany').value.trim() || '';
+
+  // 1) 尝试 Netlify Forms（部署到 Netlify 后自动生效）
+  const formData = new URLSearchParams();
+  formData.append('form-name', 'feedback');
+  formData.append('name', name);
+  formData.append('company', company);
+  formData.append('content', content);
+
+  fetch('/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formData.toString()
+  }).then(resp => {
+    if (resp.ok) console.log('[Feedback] Netlify Forms 提交成功');
+    else console.warn('[Feedback] Netlify Forms 提交失败:', resp.status);
+  }).catch(err => {
+    console.warn('[Feedback] Netlify Forms 不可用:', err.message);
+  });
+
+  // 2) 尝试 Edge Function 发送邮件
+  const isLocal = window.location.protocol === 'file:';
+  if (!isLocal) {
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, company, content, author })
+    }).then(resp => resp.json()).then(data => {
+      if (data.success) console.log('[Feedback] 邮件发送成功');
+      else console.warn('[Feedback] 邮件发送失败:', data.error);
+    }).catch(err => {
+      console.warn('[Feedback] Edge Function 不可用:', err.message);
+    });
+  }
+}
+
+// ===== 网站活跃度统计 (localStorage) =====
+const STATS_KEY = 'aihome_stats';
+let _sessionStart = Date.now();
+let _sessionTimer = null;
+
+function getStats() {
+  try {
+    return JSON.parse(localStorage.getItem(STATS_KEY)) || {};
+  } catch (e) { return {}; }
+}
+
+function saveStats(stats) {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {}
+}
+
+function initSiteStats() {
+  var stats = getStats();
+  var today = new Date().toISOString().split('T')[0];
+
+  // 累计访问次数
+  stats.totalVisits = (stats.totalVisits || 0) + 1;
+
+  // 今日访问
+  if (stats.lastVisitDate !== today) {
+    stats.todayVisits = 1;
+  } else {
+    stats.todayVisits = (stats.todayVisits || 0) + 1;
+  }
+
+  // 记录上次访问日期（展示用，在更新 lastVisitDate 之前保存）
+  stats.prevVisitDate = stats.lastVisitDate || today;
+  stats.lastVisitDate = today;
+
+  // 页面浏览量（每次页面加载 +1）
+  stats.pageViews = (stats.pageViews || 0) + 1;
+
+  // AI 调用次数（初始化，后续在 callAIStream 中累加）
+  if (!stats.aiCalls) stats.aiCalls = 0;
+
+  // 累计使用时长（秒）
+  if (!stats.totalDuration) stats.totalDuration = 0;
+
+  _sessionStart = Date.now();
+  saveStats(stats);
+
+  // 每秒更新本次会话时长显示
+  _sessionTimer = setInterval(function() {
+    var el = document.getElementById('statSessionTime');
+    if (el) {
+      var secs = Math.floor((Date.now() - _sessionStart) / 1000);
+      el.textContent = formatDuration(secs);
+    }
+    // 每30秒保存一次累计时长
+    if (Math.floor((Date.now() - _sessionStart) / 1000) % 30 === 0) {
+      var s = getStats();
+      s.totalDuration = (s.totalDuration || 0) + 30;
+      saveStats(s);
+    }
+  }, 1000);
+}
+
+// Tab 切换时记录页面浏览
+var _origSwitchTab = switchTab;
+switchTab = function(tab) {
+  _origSwitchTab(tab);
+  var stats = getStats();
+  stats.pageViews = (stats.pageViews || 0) + 1;
+  saveStats(stats);
+  var el = document.getElementById('statPageViews');
+  if (el) el.textContent = stats.pageViews;
+};
+
+// AI 调用计数（公开函数供 callAIStream 调用）
+function incrementAICalls() {
+  var stats = getStats();
+  stats.aiCalls = (stats.aiCalls || 0) + 1;
+  saveStats(stats);
+  var el = document.getElementById('statAICalls');
+  if (el) el.textContent = stats.aiCalls;
+}
+
+function formatDuration(totalSecs) {
+  if (totalSecs < 60) return totalSecs + '秒';
+  var m = Math.floor(totalSecs / 60);
+  var s = totalSecs % 60;
+  if (m < 60) return m + '分' + (s > 0 ? s + '秒' : '');
+  var h = Math.floor(m / 60);
+  m = m % 60;
+  return h + '时' + (m > 0 ? m + '分' : '');
+}
+
+function renderStats() {
+  var stats = getStats();
+  var el;
+
+  el = document.getElementById('statTotalVisits');
+  if (el) el.textContent = stats.totalVisits || 0;
+
+  el = document.getElementById('statTodayVisits');
+  if (el) el.textContent = stats.todayVisits || 0;
+
+  el = document.getElementById('statSessionTime');
+  if (el) el.textContent = '0秒';
+
+  el = document.getElementById('statPageViews');
+  if (el) el.textContent = stats.pageViews || 0;
+
+  el = document.getElementById('statAICalls');
+  if (el) el.textContent = stats.aiCalls || 0;
+
+  el = document.getElementById('statLastVisit');
+  if (el) {
+    var prev = stats.prevVisitDate;
+    if (prev && prev !== stats.lastVisitDate) {
+      el.textContent = prev;
+    } else {
+      el.textContent = '首次访问';
+    }
+  }
 }
 
 // ===== Offline AI Templates (fallback) =====
