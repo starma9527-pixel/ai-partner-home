@@ -43,11 +43,6 @@
   </div>
 </header>
 
-<!-- ===== Minimal Top Bar ===== -->
-<div class="top-bar">
-  <p class="top-bar-text">用 AI 武装每一位伙伴，让打单更智能、拜访更精准、成长更高效</p>
-</div>
-
 <!-- ===== Search Results Dropdown ===== -->
 <div class="search-results-dropdown" id="searchResults" style="display:none;">
   <div class="search-results-list" id="searchResultsList"></div>
@@ -58,11 +53,6 @@
 
   <!-- ===== HOME TAB ===== -->
   <div class="tab-panel active" id="tab-home">
-    <!-- Announcements -->
-    <div class="announce-bar" id="announceBar">
-      <span class="tag">公告</span>
-      <span class="text" id="announceText"></span>
-    </div>
 
     <!-- 首页导航入口 -->
     <div class="section-title">
@@ -321,6 +311,41 @@
       <span class="badge">畅所欲言</span>
     </div>
 
+    <!-- 网站活跃度统计 -->
+    <div class="sub-title">📊 网站活跃度</div>
+    <div class="stats-dashboard" id="statsDashboard">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="statTotalVisits">--</div>
+        <div class="stat-label">累计访问次数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👤</div>
+        <div class="stat-value" id="statTodayVisits">--</div>
+        <div class="stat-label">今日访问</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-value" id="statSessionTime">--</div>
+        <div class="stat-label">本次使用时长</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📄</div>
+        <div class="stat-value" id="statPageViews">--</div>
+        <div class="stat-label">页面浏览量</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-value" id="statAICalls">--</div>
+        <div class="stat-label">AI调用次数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value" id="statLastVisit">--</div>
+        <div class="stat-label">上次访问</div>
+      </div>
+    </div>
+
     <div class="feedback-form">
       <textarea id="feedbackContent" placeholder="说说你的想法、建议或需求...一句话也行！"></textarea>
       <div class="form-row">
@@ -336,6 +361,11 @@
 
 </main>
 
+<!-- ===== Slogan Bar ===== -->
+<div class="top-bar">
+  <p class="top-bar-text">用 AI 武装每一位伙伴，让打单更智能、拜访更精准、成长更高效</p>
+</div>
+
 <!-- ===== Footer ===== -->
 <footer class="footer">
   <p>AI 先锋·伙伴之家 — 阿里云西部大区伙伴赋能平台</p>
@@ -344,6 +374,14 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Hidden Netlify Form (for Netlify Forms detection) -->
+<form name="feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input name="bot-field" />
+  <input name="name" />
+  <input name="company" />
+  <textarea name="content"></textarea>
+</form>
 
 <script src="js/marked.min.js"></script>
 <script src="js/app.js"></script>
