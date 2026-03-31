@@ -710,7 +710,16 @@ const MD_FORMAT_HINT_CUSTOMER = '\n\n【输出格式要求】请严格使用Mark
   '- 使用 **加粗** 突出关键数据和结论\n' +
   '- 使用 - 作为无序列表，1. 2. 作为有序列表\n' +
   '- 多维度对比内容使用Markdown表格（| 列1 | 列2 |）\n' +
-  '请务必在每个章节标题前加 # 或 ## 符号，不要输出纯文本。';
+  '请务必在每个章节标题前加 # 或 ## 符号，不要输出纯文本。\n\n' +
+  '【额外内容要求】在输出1（云+AI预算评估）中，除了预算评估和合作计划外，还必须包含以下两个深度检索章节：\n' +
+  '## 招投标信息深度检索\n' +
+  '检索该公司近1-3年的招投标信息，用Markdown表格展示，列包含：招标项目名称、招标时间、中标公司、中标金额。如有更多公开信息（如招标编号、采购方式、项目类型等），也请补充。如无法检索到具体信息，请基于行业和公司规模进行合理推测并注明"推测"。\n' +
+  '## 股权信息深度检索\n' +
+  '检索该公司的股权结构信息，分以下子项详细展开：\n' +
+  '- 控股人及其背景（个人或企业控股人的基本信息、行业背景、其他投资）\n' +
+  '- 集团公司与分/子公司列表，用Markdown表格展示，列包含：公司名称、类型（母公司/子公司/分公司）、成立时间、注册资金、法人、持股比例\n' +
+  '- 股权分布（主要股东及持股比例，用列表展示）\n' +
+  '如无法检索到具体信息，请基于公开资料进行合理推测并注明"推测"。';
 
 const MD_FORMAT_HINT_VISIT = '\n\n【输出格式要求】请严格使用Markdown格式输出：\n' +
   '- 使用 ## 作为每个章节标题（如 ## 一、拜访目标）\n' +
@@ -758,6 +767,7 @@ function handleCustomerAnalysis() {
         .then(() => {
           const statusEl = document.getElementById('status-customer-' + m);
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
+          insertExportToolbar('panel-customer-' + m, '客户分析报告_' + val + '_' + (MODEL_LABELS[m] || m));
         })
         .catch(err => {
           const panel = document.getElementById('panel-customer-' + m);
@@ -825,6 +835,7 @@ function handleVisitPlan() {
         .then(() => {
           const statusEl = document.getElementById('status-visit-' + m);
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
+          insertExportToolbar('panel-visit-' + m, '拜访计划_' + (MODEL_LABELS[m] || m));
         })
         .catch(err => {
           const panel = document.getElementById('panel-visit-' + m);
@@ -1172,6 +1183,102 @@ async function callAIStream(type, input, model, panelId) {
       throw lastError || new Error('所有AI端点均不可用');
     }
   }
+}
+
+// ===== 导出功能（Word / PDF）=====
+// 在指定面板底部插入导出工具栏
+function insertExportToolbar(panelId, fileName) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return;
+  // 防止重复插入
+  if (panel.querySelector('.export-toolbar')) return;
+  var toolbar = document.createElement('div');
+  toolbar.className = 'export-toolbar';
+  toolbar.innerHTML =
+    '<button class="btn-export" onclick="exportToWord(\'' + panelId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')">📄 导出 Word</button>' +
+    '<button class="btn-export" onclick="exportToPDF(\'' + panelId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')">📑 导出 PDF</button>';
+  panel.appendChild(toolbar);
+}
+
+// 构建导出用的完整 HTML（含样式）
+function buildExportHTML(panelId) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return '';
+  // 克隆内容，去掉导出工具栏
+  var clone = panel.cloneNode(true);
+  var tb = clone.querySelector('.export-toolbar');
+  if (tb) tb.remove();
+  return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+    '<style>' +
+    'body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;padding:32px 40px;color:#222;line-height:1.8;max-width:800px;margin:0 auto;}' +
+    'h1{font-size:20px;color:#4f46e5;border-bottom:2px solid #4f46e5;padding-bottom:6px;margin:28px 0 14px;}' +
+    'h2{font-size:17px;color:#6d28d9;margin:22px 0 10px;}' +
+    'h3{font-size:15px;color:#333;margin:16px 0 8px;}' +
+    'table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px;}' +
+    'th{background:#f3f0ff;color:#4f46e5;padding:8px 10px;border:1px solid #ddd;text-align:left;}' +
+    'td{padding:8px 10px;border:1px solid #ddd;}' +
+    'tr:nth-child(even){background:#fafafa;}' +
+    'ul,ol{padding-left:20px;margin:8px 0;}' +
+    'li{margin:4px 0;}' +
+    'strong{color:#1a1a2e;}' +
+    'blockquote{border-left:3px solid #7c3aed;padding:8px 16px;margin:10px 0;background:#f9f7ff;color:#555;}' +
+    'code{background:#f0f0f5;padding:2px 6px;border-radius:3px;font-size:0.9em;}' +
+    'hr{border:none;border-top:1px solid #e5e5e5;margin:20px 0;}' +
+    '</style></head><body>' +
+    clone.innerHTML +
+    '</body></html>';
+}
+
+// 导出 Word（.doc 格式，Word 可直接打开的 HTML）
+function exportToWord(panelId, fileName) {
+  var html = buildExportHTML(panelId);
+  if (!html) { showToast('没有可导出的内容'); return; }
+  var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = (fileName || '报告') + '.doc';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Word 文件已开始下载');
+}
+
+// 导出 PDF（使用 html2pdf.js）
+function exportToPDF(panelId, fileName) {
+  if (typeof html2pdf === 'undefined') {
+    showToast('PDF 导出库加载中，请稍后重试');
+    return;
+  }
+  var panel = document.getElementById(panelId);
+  if (!panel) { showToast('没有可导出的内容'); return; }
+  // 克隆去掉工具栏
+  var clone = panel.cloneNode(true);
+  var tb = clone.querySelector('.export-toolbar');
+  if (tb) tb.remove();
+  // 创建临时容器用于生成PDF
+  var container = document.createElement('div');
+  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:700px;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#222;line-height:1.8;';
+  container.innerHTML = clone.innerHTML;
+  document.body.appendChild(container);
+
+  showToast('正在生成 PDF...');
+  html2pdf().set({
+    margin: [15, 15, 15, 15],
+    filename: (fileName || '报告') + '.pdf',
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  }).from(container).save().then(function() {
+    document.body.removeChild(container);
+    showToast('PDF 文件已开始下载');
+  }).catch(function(err) {
+    document.body.removeChild(container);
+    console.error('[PDF export]', err);
+    showToast('PDF 导出失败：' + err.message);
+  });
 }
 
 // ===== Helpers =====
