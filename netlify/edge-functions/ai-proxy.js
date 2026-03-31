@@ -12,10 +12,10 @@ const CORS_HEADERS = {
 };
 
 const MODEL_CONFIG = {
-  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 4000, displayName: 'Qwen3.5-Plus' },
-  'qwenmax': { id: 'qwen-max', maxTokens: 4000, displayName: 'Qwen-Max' },
-  'kimi': { id: 'kimi-k2.5', maxTokens: 4000, displayName: 'Kimi-K2.5' },
-  'minimax': { id: 'MiniMax-M2.5', maxTokens: 4000, displayName: 'MiniMax-M2.5' }
+  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 8000, displayName: 'Qwen3.5-Plus' },
+  'qwenmax': { id: 'qwen-max', maxTokens: 8000, displayName: 'Qwen-Max' },
+  'kimi': { id: 'kimi-k2.5', maxTokens: 8000, displayName: 'Kimi-K2.5' },
+  'minimax': { id: 'MiniMax-M2.5', maxTokens: 8000, displayName: 'MiniMax-M2.5' }
 };
 
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
@@ -46,10 +46,18 @@ function buildPrompts(type, input) {
       '请生成一份专业的客户云与AI合作战略分析报告，严格按以下结构输出：\n\n' +
       '# 输出1：云+AI预算评估\n' +
       '1. 用户XXX使用云计算和AI大模型的年度预算金额预计是【XXX】万元。（给出估算依据，用列表列出推算逻辑）\n' +
-      '2. 用户XXX跟云计算或AI厂商的合作计划，或联合市场活动的内容概括，附对应链接（如有）。\n\n' +
+      '2. 用户XXX跟云计算或AI厂商的合作计划，或联合市场活动的内容概括，附对应链接（如有）。\n' +
+      '## 招投标信息深度检索\n' +
+      '检索该公司近1-3年的招投标信息，用Markdown表格展示，列包含：招标项目名称、招标时间、中标公司、中标金额。如有更多公开信息（如招标编号、采购方式、项目类型等），也请补充。如无法检索到具体信息，请基于行业和公司规模进行合理推测并注明"推测"。\n' +
+      '## 股权信息深度检索\n' +
+      '检索该公司的股权结构信息，分以下子项用列表详细展开：\n' +
+      '- 控股人及其背景（个人或企业控股人的基本信息、行业背景、其他投资）\n' +
+      '- 集团公司与分/子公司列表，用Markdown表格展示，列包含：公司名称、类型（母公司/子公司/分公司）、成立时间、注册资金、法人、持股比例\n' +
+      '- 股权分布（主要股东及持股比例，用列表展示）\n' +
+      '如无法检索到具体信息，请基于公开资料进行合理推测并注明"推测"。\n\n' +
       '# 输出2：客户分析报告\n' +
       '## 1. 客户业务概况\n' +
-      '分别用 ### 三级标题列出以下子项，每个子项下用列表展开：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、客户触达与服务模式、企业整体业务方向与中长期发展战略、2025年工作重点\n' +
+      '分别用 ### 三级标题列出以下子项，每个子项下用列表展开：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、客户触达与服务模式、企业整体业务方向与中长期发展战略、2026年工作重点\n' +
       '## 2. 影响客户业务的关键行业趋势（未来 6-24 个月）\n' +
       '用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑、与客户的相关性\n' +
       '## 3. 从客户视角分析的机会与挑战\n' +
@@ -223,9 +231,10 @@ export default async (request, context) => {
   };
 
   try {
-    // 显式超时控制（Netlify Edge Function 有 ~30s 执行限制）
+    // 显式超时控制（流式模式下Netlify允许更长时间）
+    const timeoutMs = useStream ? 55000 : 25000;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(API_URL, {
       method: 'POST',
