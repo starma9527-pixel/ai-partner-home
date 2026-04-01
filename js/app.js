@@ -767,7 +767,7 @@ function handleCustomerAnalysis() {
           const statusEl = document.getElementById('status-customer-' + m);
           if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
         });
-    }, index * 3000);
+    }, index * 6000);
   });
 }
 
@@ -835,7 +835,7 @@ function handleVisitPlan() {
           const statusEl = document.getElementById('status-visit-' + m);
           if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
         });
-    }, index * 3000);
+    }, index * 6000);
   });
 }
 
@@ -1057,12 +1057,16 @@ async function callAIStream(type, input, model, panelId) {
   if (streamEndpoint) {
     try {
       console.log(`[stream] model=${model} endpoint=${streamEndpoint}`);
+      // 流式超时 120s（千问模型首 token 延迟可达 30-40s）
+      const streamCtrl = new AbortController();
+      const streamTimeout = setTimeout(() => streamCtrl.abort(), 120000);
       const resp = await fetch(streamEndpoint, {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-        body: JSON.stringify({ type, input, model: model || 'qwen35plus', stream: true })
+        body: JSON.stringify({ type, input, model: model || 'qwen35plus', stream: true }),
+        signal: streamCtrl.signal
       });
 
       if (!resp.ok) {
@@ -1116,6 +1120,7 @@ async function callAIStream(type, input, model, panelId) {
       }
 
       // 最终完整渲染
+      clearTimeout(streamTimeout);
       if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
       if (!fullContent) throw new Error('未收到有效内容');
       if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
@@ -1139,7 +1144,7 @@ async function callAIStream(type, input, model, panelId) {
         if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> AI正在生成中（非流式模式）...';
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 90000);
+        const timeoutId = setTimeout(() => controller.abort(), 150000);
 
         const resp = await fetch(endpoint, {
           method: 'POST',
@@ -1249,74 +1254,89 @@ function exportToWord(panelId, fileName) {
   showToast('Word 文件已开始下载');
 }
 
-// 导出 PDF：创建独立容器 + 内联样式，彻底绕过 html2canvas 的 CSS 兼容问题
+// 导出 PDF：使用 html2canvas 1.4.1 + jsPDF 2.5.1（独立组合，非 html2pdf.js）
 function exportToPDF(panelId, fileName) {
-  if (typeof html2pdf === 'undefined') {
-    showToast('PDF 导出库加载中，请稍后重试');
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    showToast('PDF 库尚未加载完成，请稍后重试');
     return;
   }
 
   var content = getExportContent(panelId);
   if (!content) { showToast('没有可导出的内容'); return; }
 
-  // 创建完全独立的临时容器，脱离页面 CSS 上下文
-  var container = document.createElement('div');
-  container.style.cssText = 'position:absolute;left:0;top:0;width:700px;z-index:99999;background:#fff;color:#222;font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;font-size:14px;padding:32px 40px;';
-  container.innerHTML = content;
+  // ——— 关键：用 iframe 创建完全隔离的渲染环境 ———
+  // 这样 html2canvas 不会受到主页面 CSS 变量、overflow、z-index 等影响
+  var iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;left:0;top:0;width:800px;border:none;z-index:99999;opacity:1;background:#fff;';
+  document.body.appendChild(iframe);
 
-  // 将所有样式直接内联到元素上（html2canvas 只读取 computed style，不解析 CSS 变量）
-  _inlineExportStyles(container);
+  var iDoc = iframe.contentDocument || iframe.contentWindow.document;
+  iDoc.open();
+  iDoc.write(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+    'body{margin:0;padding:32px 40px;background:#fff;color:#222;' +
+    'font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;' +
+    'line-height:1.8;font-size:14px;}' +
+    EXPORT_STYLES +
+    '</style></head><body>' + content + '</body></html>'
+  );
+  iDoc.close();
 
-  document.body.appendChild(container);
+  showToast('正在生成 PDF，请稍候...');
 
-  // 等待浏览器完成布局再截图
+  // 等待 iframe 完成渲染
   setTimeout(function() {
-    showToast('正在生成 PDF，请稍候...');
+    // 设置 iframe 高度匹配内容
+    var bodyH = iDoc.body.scrollHeight;
+    iframe.style.height = bodyH + 'px';
 
-    html2pdf().set({
-      margin: [15, 15, 15, 15],
-      filename: (fileName || '报告') + '.pdf',
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    }).from(container).save().then(function() {
-      if (container.parentNode) container.parentNode.removeChild(container);
+    // 用最新版 html2canvas 截图 iframe 内的 body
+    html2canvas(iDoc.body, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      width: 700,
+      height: bodyH,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 800,
+      windowHeight: bodyH,
+      logging: false
+    }).then(function(canvas) {
+      // canvas → 多页 PDF
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf = new jsPDF('p', 'mm', 'a4');
+      var pageW = 210, pageH = 297, margin = 15;
+      var usableW = pageW - 2 * margin;
+      var usableH = pageH - 2 * margin;
+      var imgW = usableW;
+      var imgH = (canvas.height / canvas.width) * imgW;
+      var imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+      var heightLeft = imgH;
+      var yOffset = margin;
+
+      // 首页
+      pdf.addImage(imgData, 'JPEG', margin, yOffset, imgW, imgH);
+      heightLeft -= usableH;
+
+      // 后续页
+      while (heightLeft > 0) {
+        pdf.addPage();
+        yOffset = margin - (imgH - heightLeft);
+        pdf.addImage(imgData, 'JPEG', margin, yOffset, imgW, imgH);
+        heightLeft -= usableH;
+      }
+
+      pdf.save((fileName || '报告') + '.pdf');
+      document.body.removeChild(iframe);
       showToast('PDF 文件已开始下载');
     }).catch(function(err) {
-      if (container.parentNode) container.parentNode.removeChild(container);
-      console.error('[PDF export]', err);
+      document.body.removeChild(iframe);
+      console.error('[PDF export] html2canvas error:', err);
       showToast('PDF 导出失败：' + err.message);
     });
-  }, 200);
-}
-
-// 内联导出样式到每个元素（确保 html2canvas 正确渲染，不依赖任何外部 CSS）
-function _inlineExportStyles(root) {
-  var rules = {
-    'h1':         'font-size:20px;font-weight:700;color:#4f46e5;border-bottom:2px solid #4f46e5;padding-bottom:6px;margin:28px 0 14px;',
-    'h2':         'font-size:17px;font-weight:700;color:#6d28d9;margin:22px 0 10px;',
-    'h3':         'font-size:15px;font-weight:700;color:#333;margin:16px 0 8px;',
-    'h4,h5,h6':  'font-size:14px;font-weight:700;color:#444;margin:12px 0 6px;',
-    'p':          'margin:4px 0 8px;color:#222;',
-    'table':      'border-collapse:collapse;width:100%;margin:12px 0;font-size:13px;',
-    'th':         'background:#f3f0ff;color:#4f46e5;padding:8px 10px;border:1px solid #ddd;text-align:left;font-weight:700;',
-    'td':         'padding:8px 10px;border:1px solid #ddd;color:#222;',
-    'ul,ol':      'padding-left:20px;margin:8px 0;color:#222;',
-    'li':         'margin:4px 0;color:#222;',
-    'strong,b':   'font-weight:700;color:#1a1a2e;',
-    'blockquote': 'border-left:3px solid #7c3aed;padding:8px 16px;margin:10px 0;background:#f9f7ff;color:#555;',
-    'code':       'background:#f0f0f5;padding:2px 6px;border-radius:3px;font-size:0.9em;',
-    'pre':        'background:#f5f5f5;padding:12px;border-radius:6px;overflow-x:auto;font-size:0.85em;',
-    'hr':         'border:none;border-top:1px solid #e5e5e5;margin:20px 0;',
-    'a':          'color:#4f46e5;text-decoration:underline;'
-  };
-  for (var selector in rules) {
-    var style = rules[selector];
-    try {
-      root.querySelectorAll(selector).forEach(function(el) { el.style.cssText += style; });
-    } catch(e) { /* ignore unsupported selector */ }
-  }
+  }, 600);
 }
 
 // ===== Helpers =====
