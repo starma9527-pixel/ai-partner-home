@@ -1253,14 +1253,26 @@ function exportToPDF(panelId, fileName) {
   }
   var panel = document.getElementById(panelId);
   if (!panel) { showToast('没有可导出的内容'); return; }
-  // 克隆去掉工具栏
-  var clone = panel.cloneNode(true);
-  var tb = clone.querySelector('.export-toolbar');
-  if (tb) tb.remove();
-  // 创建临时容器用于生成PDF
+
+  // 用完整自带样式的HTML构建临时容器
+  var htmlContent = buildExportHTML(panelId);
+  if (!htmlContent) { showToast('没有可导出的内容'); return; }
+
   var container = document.createElement('div');
-  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:700px;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#222;line-height:1.8;';
-  container.innerHTML = clone.innerHTML;
+  container.style.cssText = 'position:fixed;left:0;top:0;width:700px;z-index:-1;opacity:1;background:#fff;padding:32px 40px;font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#222;line-height:1.8;';
+
+  // 提取body中的内容（buildExportHTML返回完整html，取body部分）
+  var bodyMatch = htmlContent.match(/<body>([\s\S]*)<\/body>/);
+  container.innerHTML = bodyMatch ? bodyMatch[1] : htmlContent;
+
+  // 内联样式到元素上，确保html2canvas能渲染
+  var styleMatch = htmlContent.match(/<style>([\s\S]*?)<\/style>/);
+  if (styleMatch) {
+    var styleEl = document.createElement('style');
+    styleEl.textContent = styleMatch[1];
+    container.insertBefore(styleEl, container.firstChild);
+  }
+
   document.body.appendChild(container);
 
   showToast('正在生成 PDF...');
@@ -1268,7 +1280,7 @@ function exportToPDF(panelId, fileName) {
     margin: [15, 15, 15, 15],
     filename: (fileName || '报告') + '.pdf',
     image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
+    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, windowWidth: 700 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   }).from(container).save().then(function() {
