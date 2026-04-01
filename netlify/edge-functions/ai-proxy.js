@@ -231,8 +231,8 @@ export default async (request, context) => {
   };
 
   try {
-    // 显式超时控制（流式模式下Netlify允许更长时间）
-    const timeoutMs = useStream ? 55000 : 25000;
+    // 显式超时控制（流式模式下给更充足的时间，千问模型首 token 延迟可达 30-40s）
+    const timeoutMs = useStream ? 120000 : 60000;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
