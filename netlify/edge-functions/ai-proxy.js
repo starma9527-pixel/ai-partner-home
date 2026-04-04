@@ -1,7 +1,7 @@
 /**
  * Netlify Edge Function: AI Proxy for DashScope
  * 支持流式输出 (SSE) + 非流式输出
- * 支持 qwen3.5-plus / qwen-max / kimi-k2.5 / MiniMax-M2.5 多模型
+ * 支持 qwen3.5-plus / qwen-max / kimi-k2.5 / deepseek-v3 多模型
  */
 
 const CORS_HEADERS = {
@@ -12,10 +12,10 @@ const CORS_HEADERS = {
 };
 
 const MODEL_CONFIG = {
-  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 8000, displayName: 'Qwen3.5-Plus' },
-  'qwenmax': { id: 'qwen-max', maxTokens: 8000, displayName: 'Qwen-Max' },
-  'kimi': { id: 'kimi-k2.5', maxTokens: 8000, displayName: 'Kimi-K2.5' },
-  'minimax': { id: 'MiniMax-M2.5', maxTokens: 8000, displayName: 'MiniMax-M2.5' }
+  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 16000, displayName: 'Qwen3.5-Plus' },
+  'qwenmax': { id: 'qwen-max', maxTokens: 16000, displayName: 'Qwen-Max' },
+  'kimi': { id: 'kimi-k2.5', maxTokens: 16000, displayName: 'Kimi-K2.5' },
+  'deepseek': { id: 'deepseek-v3', maxTokens: 16000, displayName: 'DeepSeek-V3' }
 };
 
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
@@ -25,25 +25,17 @@ function buildPrompts(type, input, modelKey) {
   let systemPrompt = '';
   let userPrompt = '';
 
-  // Qwen 系列：使用强制搜索指令（平台级搜索 + 模型原生理解）
-  // 非 Qwen（Kimi/MiniMax）：搜索由平台注入，但模型可能输出 tool_call XML，需要禁止
-  const isQwen = modelKey === 'qwen35plus' || modelKey === 'qwenmax';
-  const nonQwenSearchNote = '【重要：输出格式禁令 — 最高优先级】\n' +
-    '系统已为你开启联网搜索，搜索结果会自动提供给你，你无需自行调用任何工具。\n' +
-    '绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。\n' +
-    '你只需要直接输出Markdown格式的报告内容。如果搜索结果中包含了公司工商信息，请直接引用。\n\n';
-
   if (type === 'customer_analysis') {
-    const searchBlock = isQwen
-      ? ('【强制联网搜索指令 — 最高优先级】\n' +
-         '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
-         '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
-         '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
-         '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
-         '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
-         '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n\n')
-      : nonQwenSearchNote;
-    systemPrompt = searchBlock +
+    // 所有模型统一使用相同的强制搜索指令（enable_search 对所有模型生效）
+    // cleanToolCallTags 过滤器已兜底处理 MiniMax 等模型可能输出的 XML 标签
+    systemPrompt = '【强制联网搜索指令 — 最高优先级】\n' +
+      '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
+      '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
+      '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
+      '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
+      '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
+      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n' +
+      '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。只输出Markdown格式的报告内容。\n\n' +
       '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
       '- 使用 # 作为一级标题（如 # 输出1：客户营收基础信息）\n' +
@@ -161,18 +153,34 @@ function buildPrompts(type, input, modelKey) {
 }
 
 // ===== 清理模型幻觉的 tool_call XML 标签 =====
-// MiniMax 等模型可能在输出中包含原始的工具调用标签，需要过滤掉
 function cleanToolCallTags(text) {
   if (!text) return text;
-  // 移除完整的 tool_call 块（含内容）
   text = text.replace(/<\/?minimax:tool_call>/g, '');
   text = text.replace(/<invoke\s+name="[^"]*">/g, '');
   text = text.replace(/<\/invoke>/g, '');
   text = text.replace(/<parameter\s+name="[^"]*">[^<]*<\/parameter>/g, '');
   text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
-  // 移除其他可能的工具调用格式
   text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
   text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
+  // MiniMax 的 <tool_code>...</tool_code> 格式
+  text = text.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '');
+  text = text.replace(/<tool_code>[\s\S]*$/g, '');
+  text = text.replace(/<query>[^<]*<\/query>/g, '');
+  return text;
+}
+
+// ===== 去除模型输出中混入正文的"思考过程" =====
+// 规则：找到第一个 Markdown 标题（# 或 ##），去掉前面的思考文本
+function stripThinkingPreamble(text) {
+  if (!text) return text;
+  var match = text.match(/(^|\n)(#{1,2}\s+.+)/);
+  if (match && match.index !== undefined) {
+    var preambleEnd = match.index + (match[1] === '\n' ? 1 : 0);
+    var preamble = text.substring(0, preambleEnd);
+    if (preamble.trim().length > 15) {
+      return text.substring(preambleEnd);
+    }
+  }
   return text;
 }
 
@@ -212,7 +220,8 @@ function handleStream(apiResponse, cfg) {
                 const json = JSON.parse(trimmed.slice(6));
                 const delta = json.choices && json.choices[0] && json.choices[0].delta;
                 if (delta) {
-                  let content = delta.content || delta.reasoning_content || '';
+                  // 只取 content，不取 reasoning_content（那是思考过程，不应展示）
+                  let content = delta.content || '';
                   content = cleanToolCallTags(content);
                   if (content) {
                     controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'chunk', content }) + '\n\n'));
@@ -343,10 +352,12 @@ export default async (request, context) => {
     // 非流式输出（兼容旧版前端）
     const data = await response.json();
     const message = data.choices && data.choices[0] && data.choices[0].message;
+    // 只取 content，不取 reasoning_content（那是思考过程，不应展示）
     let content = message
-      ? (message.content || message.reasoning_content || '未能生成内容，请重试')
+      ? (message.content || '未能生成内容，请重试')
       : '未能生成内容，请重试';
     content = cleanToolCallTags(content);
+    content = stripThinkingPreamble(content);
 
     return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
       status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
