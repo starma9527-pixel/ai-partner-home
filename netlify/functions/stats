@@ -1,192 +1,114 @@
 /**
- * Netlify Serverless Function: Site Stats (全局访问统计)
- * 零依赖版本 — 直接用 HTTP 请求访问 Netlify Blobs API
- * 不需要 @netlify/blobs npm 包，完全自包含
+ * Netlify Edge Function: Site Stats (全局访问统计)
+ * 使用 @netlify/blobs 官方 SDK（Edge Function 内置，无需 npm install）
  */
+import { getStore } from "@netlify/blobs";
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Content-Type': 'application/json',
-  'Cache-Control': 'no-cache, no-store'
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Content-Type": "application/json",
+  "Cache-Control": "no-cache, no-store"
 };
 
-const STORE_NAME = 'site-stats';
 const EMPTY = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-
-// 解析 Netlify 自动注入的 Blobs 上下文
-function getBlobsContext() {
-  const raw = process.env.NETLIFY_BLOBS_CONTEXT;
-  if (!raw) return null;
-  try {
-    // 可能是 base64 编码
-    const decoded = Buffer.from(raw, 'base64').toString('utf-8');
-    return JSON.parse(decoded);
-  } catch (e) {
-    try {
-      // 也可能是纯 JSON
-      return JSON.parse(raw);
-    } catch (e2) {
-      console.error('[stats] Cannot parse NETLIFY_BLOBS_CONTEXT:', e2.message);
-      return null;
-    }
-  }
-}
-
-// 直接 HTTP 调用 Blobs API 读取
-async function blobGet(ctx, key) {
-  const baseURL = ctx.uncachedEdgeURL || ctx.edgeURL;
-  const url = baseURL + '/' + ctx.siteID + '/' + STORE_NAME + '/' + encodeURIComponent(key);
-  const resp = await fetch(url, {
-    headers: { 'Authorization': 'Bearer ' + ctx.token }
-  });
-  if (resp.status === 404) return null;
-  if (!resp.ok) {
-    console.error('[stats] blobGet ' + key + ' HTTP ' + resp.status);
-    return null;
-  }
-  const text = await resp.text();
-  try { return JSON.parse(text); } catch (e) { return null; }
-}
-
-// 直接 HTTP 调用 Blobs API 写入
-async function blobSet(ctx, key, value) {
-  const baseURL = ctx.uncachedEdgeURL || ctx.edgeURL;
-  const url = baseURL + '/' + ctx.siteID + '/' + STORE_NAME + '/' + encodeURIComponent(key);
-  const resp = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': 'Bearer ' + ctx.token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(value)
-  });
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    throw new Error('blobSet ' + key + ' HTTP ' + resp.status + ': ' + errText);
-  }
-}
 
 function getTimeKeys() {
   const now = new Date();
   const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  // ISO week number
   const tmp = new Date(now);
   tmp.setHours(0, 0, 0, 0);
   tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
   const week1 = new Date(tmp.getFullYear(), 0, 4);
   const wn = 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
   return {
-    day:   y + '-' + m + '-' + d,
-    week:  y + '-W' + String(wn).padStart(2, '0'),
-    month: y + '-' + m,
-    year:  '' + y
+    day:   y + "-" + m + "-" + d,
+    week:  y + "-W" + String(wn).padStart(2, "0"),
+    month: y + "-" + m,
+    year:  "" + y
   };
 }
 
-exports.handler = async function(event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: CORS_HEADERS, body: '' };
-  }
+function jsonResp(data, status) {
+  return new Response(JSON.stringify(data), { status: status || 200, headers: CORS_HEADERS });
+}
 
-  // 检查 Blobs 上下文
-  const ctx = getBlobsContext();
-  if (!ctx) {
-    const envKeys = Object.keys(process.env).filter(k => k.includes('NETLIFY') || k.includes('BLOB'));
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({
-        error: 'NETLIFY_BLOBS_CONTEXT not available',
-        hint: 'This function must run on Netlify with Blobs enabled',
-        availableEnvKeys: envKeys
-      })
-    };
+export default async (request, context) => {
+  // CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response("", { status: 204, headers: CORS_HEADERS });
   }
 
   try {
+    const store = getStore("site-stats");
+    const keys = getTimeKeys();
+
     // GET: 返回各时间维度的统计数据
-    if (event.httpMethod === 'GET') {
-      const keys = getTimeKeys();
+    if (request.method === "GET") {
       const [day, week, month, year] = await Promise.all([
-        blobGet(ctx, keys.day),
-        blobGet(ctx, keys.week),
-        blobGet(ctx, keys.month),
-        blobGet(ctx, keys.year)
+        store.get(keys.day, { type: "json" }).catch(() => null),
+        store.get(keys.week, { type: "json" }).catch(() => null),
+        store.get(keys.month, { type: "json" }).catch(() => null),
+        store.get(keys.year, { type: "json" }).catch(() => null)
       ]);
 
-      return {
-        statusCode: 200,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({
-          today: day || { ...EMPTY },
-          week:  week || { ...EMPTY },
-          month: month || { ...EMPTY },
-          year:  year || { ...EMPTY }
-        })
-      };
+      return jsonResp({
+        today: day  || { ...EMPTY },
+        week:  week || { ...EMPTY },
+        month: month || { ...EMPTY },
+        year:  year  || { ...EMPTY }
+      });
     }
 
     // POST: 记录事件
-    if (event.httpMethod === 'POST') {
-      const body = JSON.parse(event.body || '{}');
-      const events = body.events;
-      if (!events || !Array.isArray(events) || events.length === 0) {
-        return {
-          statusCode: 400,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({ error: 'Missing events' })
-        };
+    if (request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch (e) {
+        return jsonResp({ error: "Invalid JSON body" }, 400);
       }
 
-      const keys = getTimeKeys();
-      const periodEntries = [
-        { key: keys.day,   label: 'day' },
-        { key: keys.week,  label: 'week' },
-        { key: keys.month, label: 'month' },
-        { key: keys.year,  label: 'year' }
-      ];
+      const events = body.events;
+      if (!events || !Array.isArray(events) || events.length === 0) {
+        return jsonResp({ error: "Missing events array" }, 400);
+      }
 
+      const allKeys = [keys.day, keys.week, keys.month, keys.year];
       const errors = [];
 
       // 顺序读取-更新-写回（避免并发竞态）
-      for (const entry of periodEntries) {
+      for (const key of allKeys) {
         try {
-          let data = await blobGet(ctx, entry.key);
+          let data = await store.get(key, { type: "json" }).catch(() => null);
           if (!data) data = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
 
           for (const evt of events) {
-            if (evt === 'visit') data.visits += 1;
-            else if (evt === 'pageView') data.pageViews += 1;
-            else if (evt === 'aiCall') data.aiCalls += 1;
-            else if (evt.startsWith('duration:')) {
-              data.duration += (parseInt(evt.split(':')[1], 10) || 0);
+            if (evt === "visit") data.visits += 1;
+            else if (evt === "pageView") data.pageViews += 1;
+            else if (evt === "aiCall") data.aiCalls += 1;
+            else if (typeof evt === "string" && evt.startsWith("duration:")) {
+              data.duration += (parseInt(evt.split(":")[1], 10) || 0);
             }
           }
 
-          await blobSet(ctx, entry.key, data);
+          await store.setJSON(key, data);
         } catch (e) {
-          console.error('[stats] ' + entry.label + ' error:', e.message);
-          errors.push(entry.label + ': ' + e.message);
+          console.error("[stats] key=" + key + " error:", e.message);
+          errors.push(key + ": " + e.message);
         }
       }
 
-      return {
-        statusCode: 200,
-        headers: CORS_HEADERS,
-        body: JSON.stringify({ ok: errors.length === 0, errors: errors.length > 0 ? errors : undefined })
-      };
+      return jsonResp({ ok: errors.length === 0, errors: errors.length > 0 ? errors : undefined });
     }
 
-    return { statusCode: 405, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return jsonResp({ error: "Method not allowed" }, 405);
   } catch (err) {
-    console.error('[stats] Error:', err);
-    return {
-      statusCode: 500,
-      headers: CORS_HEADERS,
-      body: JSON.stringify({ error: err.message })
-    };
+    console.error("[stats] Error:", err);
+    return jsonResp({ error: err.message, type: err.constructor?.name || "Error" }, 500);
   }
 };
