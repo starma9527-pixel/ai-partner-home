@@ -21,12 +21,29 @@ const MODEL_CONFIG = {
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
 // ===== 构建提示词 =====
-function buildPrompts(type, input) {
+function buildPrompts(type, input, modelKey) {
   let systemPrompt = '';
   let userPrompt = '';
 
+  // 判断模型是否支持 DashScope 平台级联网搜索（仅 Qwen 系列原生支持）
+  const isQwen = modelKey === 'qwen35plus' || modelKey === 'qwenmax';
+  // 非 Qwen 模型的搜索指令：告知模型不要输出工具调用标签
+  const nonQwenSearchNote = '【重要：输出格式禁令】你没有工具调用能力，绝对禁止在输出中包含任何XML标签（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。如果你想搜索信息，直接根据你的知识回答即可。对于无法确认的工商信息（成立时间、注册资本、法定代表人、股东等），标注"⚠ 建议通过天眼查(tianyancha.com)或企查查(qcc.com)核实"即可，不要输出任何工具调用代码。\n\n';
+
   if (type === 'customer_analysis') {
-    systemPrompt = '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
+    // Qwen 模型：保留强制搜索指令（平台会真正执行搜索）
+    // 非 Qwen 模型：告知禁止输出 tool_call，用训练知识 + 标注建议核实
+    const searchBlock = isQwen
+      ? ('【强制联网搜索指令 — 最高优先级】\n' +
+         '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
+         '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
+         '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
+         '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
+         '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
+         '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n\n')
+      : nonQwenSearchNote;
+    systemPrompt = searchBlock +
+      '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
       '- 使用 # 作为一级标题（如 # 输出1：客户营收基础信息）\n' +
       '- 使用 ## 作为二级标题（如 ## 1. 客户业务概况）\n' +
@@ -87,7 +104,14 @@ function buildPrompts(type, input) {
       '用Markdown表格展示，列包含：用户结果目标、关键战略举措、KPIs、典型Use Case\n' +
       '## 5. 公共云与生成式 AI（GenAI）的应用构想\n' +
       '先用 ### 子标题说明公有云潜在价值，再用Markdown表格展示3-5个GenAI应用场景，列包含：场景、业务痛点、解决思路、预期价值与指标。最后可简要讨论实施路径和关键成功要素';
-    userPrompt = '请分析以下客户的AI转型潜力：\n客户公司全称：' + input.customerName +
+    userPrompt = '【搜索指令 — 请立即执行】\n' +
+      '在生成报告前，请先联网搜索以下关键词获取该公司的真实工商信息：\n' +
+      '1. "' + input.customerName + ' 天眼查"\n' +
+      '2. "' + input.customerName + ' 企查查"\n' +
+      '3. "' + input.customerName + ' 工商信息 成立时间 注册资本 法定代表人"\n' +
+      '4. "' + input.customerName + ' 股东信息 股权结构"\n' +
+      '将搜索到的成立时间、注册资本、法定代表人、股东持股比例等信息直接填入报告的"公司基本信息"和"股权信息"表格中。\n\n' +
+      '请分析以下客户的AI转型潜力：\n客户公司全称：' + input.customerName +
       (input.productName ? '\n产品/APP名称：' + input.productName : '') +
       (input.website ? '\n公司官网：' + input.website : '') +
       '\n\n请务必先识别出该客户的完整公司名称，然后进行深入分析。' +
@@ -135,6 +159,22 @@ function buildPrompts(type, input) {
   return { systemPrompt, userPrompt };
 }
 
+// ===== 清理模型幻觉的 tool_call XML 标签 =====
+// MiniMax 等模型可能在输出中包含原始的工具调用标签，需要过滤掉
+function cleanToolCallTags(text) {
+  if (!text) return text;
+  // 移除完整的 tool_call 块（含内容）
+  text = text.replace(/<\/?minimax:tool_call>/g, '');
+  text = text.replace(/<invoke\s+name="[^"]*">/g, '');
+  text = text.replace(/<\/invoke>/g, '');
+  text = text.replace(/<parameter\s+name="[^"]*">[^<]*<\/parameter>/g, '');
+  text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
+  // 移除其他可能的工具调用格式
+  text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
+  text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
+  return text;
+}
+
 // ===== 流式处理：转发 DashScope SSE 到客户端 =====
 function handleStream(apiResponse, cfg) {
   const encoder = new TextEncoder();
@@ -171,7 +211,8 @@ function handleStream(apiResponse, cfg) {
                 const json = JSON.parse(trimmed.slice(6));
                 const delta = json.choices && json.choices[0] && json.choices[0].delta;
                 if (delta) {
-                  const content = delta.content || delta.reasoning_content || '';
+                  let content = delta.content || delta.reasoning_content || '';
+                  content = cleanToolCallTags(content);
                   if (content) {
                     controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'chunk', content }) + '\n\n'));
                   }
@@ -244,7 +285,7 @@ export default async (request, context) => {
 
   const { type, input, model: modelKey, stream: useStream } = body;
   const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen35plus'];
-  const prompts = buildPrompts(type, input);
+  const prompts = buildPrompts(type, input, modelKey);
 
   if (!prompts) {
     return new Response(JSON.stringify({ error: 'INVALID_TYPE: 未知的请求类型' }), {
@@ -252,6 +293,9 @@ export default async (request, context) => {
     });
   }
 
+  // enable_search 仅对 Qwen 系列有效（DashScope 平台级搜索）
+  // MiniMax/Kimi 通过兼容模式调用时不支持此参数，开启反而会导致模型幻觉出 tool_call XML 标签
+  const isQwenModel = modelKey === 'qwen35plus' || modelKey === 'qwenmax';
   const apiBody = {
     model: cfg.id,
     messages: [
@@ -260,9 +304,11 @@ export default async (request, context) => {
     ],
     temperature: 0.7,
     max_tokens: cfg.maxTokens,
-    stream: !!useStream,
-    enable_search: true  // 所有模型开启联网搜索，提升公司信息、财务数据、行业动态的准确性
+    stream: !!useStream
   };
+  if (isQwenModel) {
+    apiBody.enable_search = true;
+  }
 
   try {
     // 显式超时控制（流式模式下给更充足的时间，千问模型首 token 延迟可达 30-40s）
@@ -298,9 +344,10 @@ export default async (request, context) => {
     // 非流式输出（兼容旧版前端）
     const data = await response.json();
     const message = data.choices && data.choices[0] && data.choices[0].message;
-    const content = message
+    let content = message
       ? (message.content || message.reasoning_content || '未能生成内容，请重试')
       : '未能生成内容，请重试';
+    content = cleanToolCallTags(content);
 
     return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
       status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
