@@ -13,7 +13,7 @@ const CORS_HEADERS = {
 
 const MODEL_CONFIG = {
   'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 16000, displayName: 'Qwen3.5-Plus' },
-  'qwenmax': { id: 'qwen-max', maxTokens: 16000, displayName: 'Qwen-Max' },
+  'qwenmax': { id: 'qwen-max', maxTokens: 8192, displayName: 'Qwen-Max' },
   'kimi': { id: 'kimi-k2.5', maxTokens: 16000, displayName: 'Kimi-K2.5' },
   'deepseek': { id: 'deepseek-v3', maxTokens: 16000, displayName: 'DeepSeek-V3' }
 };
@@ -77,7 +77,7 @@ function buildPrompts(type, input, modelKey) {
       '- 上市公司：基于公开财报数据，在表格下方注明"数据来源：XX公司年度报告"\n' +
       '- 非上市公司：写明"该公司为非上市企业，未公开披露财务数据"，然后基于融资轮次、行业地位、员工规模等公开信息估算营收量级区间，注明"此为估算值"\n' +
       '## 业务收入结构分析\n' +
-      '分析该公司主要业务板块的收入占比，用列表或表格展示各业务线的营收贡献。\n' +
+      '分析该公司主要业务板块的收入占比，必须使用Markdown表格展示，列包含：业务板块、主要产品/服务、收入占比（估算）、同比趋势、备注说明。如无精确数据，可基于公开信息合理估算并注明。\n' +
       '## 招投标信息检索\n' +
       '检索该公司近1-3年的招投标信息。如有招投标记录，用Markdown表格展示，列包含：招标项目名称、招标时间、中标公司、中标金额、信息来源链接。【重要】如果无法检索到招投标信息，直接写"暂无公开招投标信息"，不要编造或推测。\n' +
       '## 股权信息检索\n' +
