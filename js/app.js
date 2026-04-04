@@ -1426,15 +1426,20 @@ var _cachedStats = {
 }; // 默认值，确保页面加载时显示 0 而非 "--"
 
 // 向服务端上报事件（fire-and-forget，不阻塞 UI）
-function _trackEvents(events) {
+function _trackEvents(events, callback) {
   if (!events || events.length === 0) return;
   fetch(_statsAPI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ events: events })
-  }).then(function() {
-    // 上报成功后刷新显示
-    _fetchAndRenderStats();
+  }).then(function(resp) {
+    if (!resp.ok) {
+      return resp.text().then(function(t) { console.warn('[stats] POST failed:', resp.status, t); });
+    }
+    return resp.json().then(function(data) {
+      console.log('[stats] POST ok:', data);
+      if (callback) callback();
+    });
   }).catch(function(err) {
     console.error('[stats] track error:', err.message);
   });
@@ -1443,10 +1448,15 @@ function _trackEvents(events) {
 // 从服务端拉取统计数据并渲染
 function _fetchAndRenderStats() {
   fetch(_statsAPI).then(function(resp) {
+    if (!resp.ok) {
+      return resp.text().then(function(t) { console.warn('[stats] GET failed:', resp.status, t); });
+    }
     return resp.json();
   }).then(function(data) {
-    _cachedStats = data;
-    renderStats();
+    if (data && data.today) {
+      _cachedStats = data;
+      renderStats();
+    }
   }).catch(function(err) {
     console.error('[stats] fetch error:', err.message);
   });
@@ -1458,15 +1468,16 @@ function initSiteStats() {
   // 先渲染默认值（避免显示 "--"）
   renderStats();
 
-  // 上报一次访问 + 一次页面浏览
-  _trackEvents(['visit', 'pageView']);
-
-  // 首次拉取数据渲染
-  _fetchAndRenderStats();
+  // 上报一次访问 + 一次页面浏览，完成后再拉取数据渲染
+  _trackEvents(['visit', 'pageView'], function() {
+    _fetchAndRenderStats();
+  });
 
   // 每30秒上报一次使用时长
   _sessionTimer = setInterval(function() {
-    _trackEvents(['duration:30']);
+    _trackEvents(['duration:30'], function() {
+      _fetchAndRenderStats();
+    });
   }, 30000);
 
   // 每秒更新今日时长的本地显示（避免频繁请求服务端）
@@ -1483,12 +1494,12 @@ function initSiteStats() {
 var _origSwitchTab = switchTab;
 switchTab = function(tab) {
   _origSwitchTab(tab);
-  _trackEvents(['pageView']);
+  _trackEvents(['pageView'], function() { _fetchAndRenderStats(); });
 };
 
 // AI 调用计数（公开函数供 callAIStream 调用）
 function incrementAICalls() {
-  _trackEvents(['aiCall']);
+  _trackEvents(['aiCall'], function() { _fetchAndRenderStats(); });
 }
 
 function formatDuration(totalSecs) {
