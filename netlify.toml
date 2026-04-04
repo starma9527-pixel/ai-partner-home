@@ -1,5 +1,6 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
   edge_functions = "netlify/edge-functions"
 
 [build.environment]
@@ -13,13 +14,15 @@
   path = "/api/feedback"
   function = "feedback"
 
-[[edge_functions]]
-  path = "/api/stats"
-  function = "stats"
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200
+  force = true
 
 [[headers]]
   for = "/api/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Headers = "Content-Type"
-    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
