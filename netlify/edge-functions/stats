@@ -11,13 +11,11 @@ const CORS_HEADERS = {
   'Access-Control-Max-Age': '86400'
 };
 
-// 获取当前时间维度的 key
 function getTimeKeys() {
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
-  // ISO 周号
   const tmp = new Date(now);
   tmp.setHours(0, 0, 0, 0);
   tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
@@ -33,50 +31,68 @@ function getTimeKeys() {
 
 const EMPTY = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
 
+function jsonResp(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store' }
+  });
+}
+
 export default async function handler(req, context) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
+  let store;
   try {
-    const store = getStore('site-stats');
+    store = getStore({ name: 'site-stats', consistency: 'strong' });
+  } catch (e1) {
+    console.error('[stats] getStore with options failed, trying simple name:', e1.message);
+    try {
+      store = getStore('site-stats');
+    } catch (e2) {
+      console.error('[stats] getStore simple also failed:', e2.message);
+      return jsonResp({ error: 'Store init failed: ' + e2.message }, 500);
+    }
+  }
 
-    // GET: 返回各时间维度的统计数据
+  try {
     if (req.method === 'GET') {
       const keys = getTimeKeys();
-      const [day, week, month, year] = await Promise.all([
+      const results = await Promise.allSettled([
         store.get(keys.day, { type: 'json' }),
         store.get(keys.week, { type: 'json' }),
         store.get(keys.month, { type: 'json' }),
         store.get(keys.year, { type: 'json' })
       ]);
-      return new Response(JSON.stringify({
+      const [day, week, month, year] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+      return jsonResp({
         today: day || { ...EMPTY },
         week:  week || { ...EMPTY },
         month: month || { ...EMPTY },
-        year:  year || { ...EMPTY }
-      }), {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }
+        year:  year || { ...EMPTY },
+        _keys: keys,
+        _debug: results.map(r => r.status)
       });
     }
 
-    // POST: 记录事件
     if (req.method === 'POST') {
       const body = await req.json();
       const { events } = body;
-      // events: ["visit", "pageView", "aiCall", "duration:30"]
       if (!events || !Array.isArray(events) || events.length === 0) {
-        return new Response(JSON.stringify({ error: '缺少 events 参数' }), {
-          status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-        });
+        return jsonResp({ error: 'Missing events' }, 400);
       }
 
       const keys = getTimeKeys();
       const periodKeys = [keys.day, keys.week, keys.month, keys.year];
 
-      // 读取所有周期的当前值
-      const current = await Promise.all(periodKeys.map(k => store.get(k, { type: 'json' })));
-      const periods = current.map(v => v || { ...EMPTY });
+      // 逐个读取当前值（用 allSettled 避免单个失败导致全部失败）
+      const readResults = await Promise.allSettled(
+        periodKeys.map(k => store.get(k, { type: 'json' }))
+      );
+      const periods = readResults.map(r =>
+        r.status === 'fulfilled' && r.value ? { ...r.value } : { ...EMPTY }
+      );
 
       // 叠加事件
       for (const evt of events) {
@@ -91,19 +107,25 @@ export default async function handler(req, context) {
         }
       }
 
-      // 写回所有周期
-      await Promise.all(periodKeys.map((k, i) => store.setJSON(k, periods[i])));
+      // 逐个写回（用 set + JSON.stringify 作为 setJSON 的替代方案，更稳健）
+      const writeResults = await Promise.allSettled(
+        periodKeys.map((k, i) => store.set(k, JSON.stringify(periods[i])))
+      );
 
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      const writeStatuses = writeResults.map(r => r.status);
+      const allOk = writeStatuses.every(s => s === 'fulfilled');
+
+      return jsonResp({
+        ok: allOk,
+        events: events,
+        _writeStatuses: writeStatuses,
+        _periods: periods
       });
     }
 
-    return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
+    return jsonResp({ error: 'Method not allowed' }, 405);
   } catch (err) {
     console.error('[stats] Error:', err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-    });
+    return jsonResp({ error: err.message, stack: err.stack }, 500);
   }
 }
