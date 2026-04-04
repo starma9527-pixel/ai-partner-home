@@ -133,14 +133,15 @@ exports.handler = async (event, context) => {
   let systemPrompt = '';
   let userPrompt = '';
 
-  // 判断模型是否支持 DashScope 平台级联网搜索（仅 Qwen 系列原生支持）
+  // Qwen 系列：使用强制搜索指令（平台级搜索 + 模型原生理解）
+  // 非 Qwen（Kimi/MiniMax）：搜索由平台注入，但模型可能输出 tool_call XML，需要禁止
   const isQwen = model === 'qwen35plus' || model === 'qwenmax';
-  // 非 Qwen 模型的搜索指令：告知模型不要输出工具调用标签
-  const nonQwenSearchNote = '【重要：输出格式禁令】你没有工具调用能力，绝对禁止在输出中包含任何XML标签（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。如果你想搜索信息，直接根据你的知识回答即可。对于无法确认的工商信息（成立时间、注册资本、法定代表人、股东等），标注"⚠ 建议通过天眼查(tianyancha.com)或企查查(qcc.com)核实"即可，不要输出任何工具调用代码。\n\n';
+  const nonQwenSearchNote = '【重要：输出格式禁令 — 最高优先级】\n' +
+    '系统已为你开启联网搜索，搜索结果会自动提供给你，你无需自行调用任何工具。\n' +
+    '绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。\n' +
+    '你只需要直接输出Markdown格式的报告内容。如果搜索结果中包含了公司工商信息，请直接引用。\n\n';
 
   if (type === 'customer_analysis') {
-    // Qwen 模型：保留强制搜索指令（平台会真正执行搜索）
-    // 非 Qwen 模型：告知禁止输出 tool_call，用训练知识 + 标注建议核实
     const searchBlock = isQwen
       ? ('【强制联网搜索指令 — 最高优先级】\n' +
          '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
@@ -267,8 +268,9 @@ exports.handler = async (event, context) => {
   try {
     console.log('Calling DashScope API...');
 
-    // enable_search 仅对 Qwen 系列有效（DashScope 平台级搜索）
-    // MiniMax/Kimi 通过兼容模式调用时不支持此参数，开启反而会导致模型幻觉出 tool_call XML 标签
+    // enable_search: 所有模型均开启 DashScope 平台级联网搜索
+    // 平台会在模型收到请求前执行搜索并注入结果，对 Qwen/Kimi/MiniMax 均有效
+    // MiniMax 可能输出 tool_call XML 标签的问题已通过 cleanToolCallTags 过滤器解决
     const apiBodyPayload = {
       model: modelId,
       messages: [
@@ -276,11 +278,9 @@ exports.handler = async (event, context) => {
         { role: 'user', content: userPrompt }
       ],
       max_tokens: 8000,
-      temperature: 0.7
+      temperature: 0.7,
+      enable_search: true
     };
-    if (isQwen) {
-      apiBodyPayload.enable_search = true;
-    }
 
     const apiResponse = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
       method: 'POST',
