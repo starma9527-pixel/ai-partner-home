@@ -13,6 +13,25 @@ function cleanToolCallTags(text) {
   text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
   text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
   text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
+  // MiniMax 的 <tool_code>...</tool_code> 格式
+  text = text.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '');
+  text = text.replace(/<tool_code>[\s\S]*$/g, '');
+  text = text.replace(/<query>[^<]*<\/query>/g, '');
+  return text;
+}
+
+// 去除模型输出中混入正文的"思考过程"
+// 规则：找到第一个 Markdown 标题（# 或 ##），去掉前面的思考文本
+function stripThinkingPreamble(text) {
+  if (!text) return text;
+  var match = text.match(/(^|\n)(#{1,2}\s+.+)/);
+  if (match && match.index !== undefined) {
+    var preambleEnd = match.index + (match[1] === '\n' ? 1 : 0);
+    var preamble = text.substring(0, preambleEnd);
+    if (preamble.trim().length > 15) {
+      return text.substring(preambleEnd);
+    }
+  }
   return text;
 }
 
@@ -115,7 +134,7 @@ exports.handler = async (event, context) => {
     qwen35plus: 'qwen3.5-plus',
     qwenmax: 'qwen-max',
     kimi: 'kimi-k2.5',
-    minimax: 'MiniMax-M2.5'
+    deepseek: 'deepseek-v3'
   };
   const modelId = models[model] || 'qwen3.5-plus';
 
@@ -124,7 +143,7 @@ exports.handler = async (event, context) => {
     'qwen3.5-plus': 'Qwen3.5-Plus',
     'qwen-max': 'Qwen-Max',
     'kimi-k2.5': 'Kimi-K2.5',
-    'MiniMax-M2.5': 'MiniMax-M2.5'
+    'deepseek-v3': 'DeepSeek-V3'
   };
 
   console.log('Using model:', modelId);
@@ -133,25 +152,17 @@ exports.handler = async (event, context) => {
   let systemPrompt = '';
   let userPrompt = '';
 
-  // Qwen 系列：使用强制搜索指令（平台级搜索 + 模型原生理解）
-  // 非 Qwen（Kimi/MiniMax）：搜索由平台注入，但模型可能输出 tool_call XML，需要禁止
-  const isQwen = model === 'qwen35plus' || model === 'qwenmax';
-  const nonQwenSearchNote = '【重要：输出格式禁令 — 最高优先级】\n' +
-    '系统已为你开启联网搜索，搜索结果会自动提供给你，你无需自行调用任何工具。\n' +
-    '绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。\n' +
-    '你只需要直接输出Markdown格式的报告内容。如果搜索结果中包含了公司工商信息，请直接引用。\n\n';
-
   if (type === 'customer_analysis') {
-    const searchBlock = isQwen
-      ? ('【强制联网搜索指令 — 最高优先级】\n' +
-         '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
-         '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
-         '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
-         '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
-         '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
-         '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n\n')
-      : nonQwenSearchNote;
-    systemPrompt = searchBlock +
+    // 所有模型统一使用相同的强制搜索指令（enable_search 对所有模型生效）
+    // cleanToolCallTags 过滤器已兜底处理 MiniMax 等模型可能输出的 XML 标签
+    systemPrompt = '【强制联网搜索指令 — 最高优先级】\n' +
+      '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
+      '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
+      '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
+      '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
+      '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
+      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n' +
+      '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。只输出Markdown格式的报告内容。\n\n' +
       '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
       '- 使用 # 作为一级标题（如 # 输出1：客户营收基础信息）\n' +
@@ -277,7 +288,7 @@ exports.handler = async (event, context) => {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      max_tokens: 8000,
+      max_tokens: 16000,
       temperature: 0.7,
       enable_search: true
     };
@@ -304,10 +315,12 @@ exports.handler = async (event, context) => {
 
     const data = await apiResponse.json();
     const message = data.choices?.[0]?.message;
+    // 只取 content，不取 reasoning_content（那是思考过程，不应展示）
     let content = message
-      ? (message.content || message.reasoning_content || '未能生成内容，请重试')
+      ? (message.content || '未能生成内容，请重试')
       : '未能生成内容，请重试';
     content = cleanToolCallTags(content);
+    content = stripThinkingPreamble(content);
 
     console.log('Success, content length:', content.length);
 
