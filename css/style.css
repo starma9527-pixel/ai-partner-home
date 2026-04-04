@@ -1187,6 +1187,64 @@ input, textarea, select { font-family: inherit; }
   margin: 20px 0 10px; padding-bottom: 6px;
   border-bottom: 2px solid var(--accent-purple);
 }
+/* ===== 报告总标题 ===== */
+.report-main-title {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--accent-purple);
+  margin: 0 0 20px 0;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(16,185,129,0.04));
+  border-radius: var(--radius-md);
+  border-bottom: 2px solid var(--accent-purple);
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+/* ===== 折叠/展开功能样式 ===== */
+.ai-markdown-output h1.collapsible-header,
+.ai-markdown-output h2.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s, background 0.2s;
+  padding: 8px 12px 8px 8px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.ai-markdown-output h1.collapsible-header:hover,
+.ai-markdown-output h2.collapsible-header:hover {
+  background: rgba(139,92,246,0.06);
+  color: var(--accent-purple);
+}
+.ai-markdown-output h1.collapsible-header.is-collapsed,
+.ai-markdown-output h2.collapsible-header.is-collapsed {
+  border-bottom-color: var(--border-color);
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+}
+.collapse-indicator {
+  font-size: 0.7rem;
+  color: var(--accent-purple);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+.collapsible-section {
+  overflow: hidden;
+  max-height: 100000px;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  opacity: 1;
+}
+.collapsible-section.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+}
 .ai-markdown-output h2 {
   font-size: 1.05rem; font-weight: 700; color: var(--accent-purple);
   margin: 16px 0 8px;
