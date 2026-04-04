@@ -14,11 +14,9 @@
   path = "/api/feedback"
   function = "feedback"
 
-[[redirects]]
-  from = "/api/stats"
-  to = "/.netlify/functions/stats"
-  status = 200
-  force = true
+[[edge_functions]]
+  path = "/api/stats"
+  function = "stats"
 
 [[headers]]
   for = "/api/*"
