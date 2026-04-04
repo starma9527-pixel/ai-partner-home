@@ -1257,7 +1257,10 @@ function getExportContent(panelId) {
   // 优先取 .ai-markdown-output 中的内容
   var contentEl = panel.querySelector('.ai-markdown-output');
   if (contentEl && contentEl.innerHTML.trim()) {
-    return contentEl.innerHTML;
+    var clone = contentEl.cloneNode(true);
+    var toggleBtn = clone.querySelector('.collapse-toggle-all');
+    if (toggleBtn) toggleBtn.remove();
+    return clone.innerHTML;
   }
   // 降级：克隆整个面板，移除工具栏后取 innerHTML
   var clone = panel.cloneNode(true);
@@ -1357,6 +1360,39 @@ function addCollapsibleSections(panelId) {
       });
     })(heading, section, indicator);
   }
+
+  // 插入"全部折叠/全部展开"按钮
+  var toggleBtn = document.createElement('button');
+  toggleBtn.className = 'collapse-toggle-all';
+  toggleBtn.innerHTML = '📖 全部折叠';
+  toggleBtn.dataset.collapsed = 'false';
+
+  var titleEl = mdOutput.querySelector('.report-main-title');
+  if (titleEl && titleEl.nextSibling) {
+    mdOutput.insertBefore(toggleBtn, titleEl.nextSibling);
+  } else {
+    mdOutput.insertBefore(toggleBtn, mdOutput.firstChild);
+  }
+
+  toggleBtn.addEventListener('click', function() {
+    var sections = mdOutput.querySelectorAll('.collapsible-section');
+    var headers = mdOutput.querySelectorAll('.collapsible-header');
+    var shouldCollapse = toggleBtn.dataset.collapsed === 'false';
+
+    for (var j = 0; j < sections.length; j++) {
+      if (shouldCollapse) sections[j].classList.add('collapsed');
+      else sections[j].classList.remove('collapsed');
+    }
+    for (var j = 0; j < headers.length; j++) {
+      var ind = headers[j].querySelector('.collapse-indicator');
+      if (ind) ind.textContent = shouldCollapse ? '▶' : '▼';
+      if (shouldCollapse) headers[j].classList.add('is-collapsed');
+      else headers[j].classList.remove('is-collapsed');
+    }
+
+    toggleBtn.dataset.collapsed = shouldCollapse ? 'true' : 'false';
+    toggleBtn.innerHTML = shouldCollapse ? '📕 全部展开' : '📖 全部折叠';
+  });
 }
 
 // 导出 Word（.doc 格式，Word 可直接打开的 HTML）
