@@ -73,22 +73,16 @@
         "link": "https://www.maas-nexus.top/"
       },
       {
-        "title": "竞品对比工具",
-        "desc": "阿里云 vs 友商能力对比",
-        "icon": "⚔️",
-        "link": "#"
+        "title": "客户洞察",
+        "desc": "深度洞察客户商业信息",
+        "icon": "🔍",
+        "link": "http://8.137.89.236/"
       },
       {
-        "title": "AI Demo体验",
-        "desc": "一键体验通义系列产品",
-        "icon": "🤖",
-        "link": "#"
-      },
-      {
-        "title": "方案模板库",
-        "desc": "行业解决方案PPT模板",
-        "icon": "📑",
-        "link": "#"
+        "title": "伙伴展业常见问题",
+        "desc": "展业常见问题解答汇总",
+        "icon": "❓",
+        "link": "https://alidocs.dingtalk.com/i/nodes/0eMKjyp813y4eq01CKKMw6ygVxAZB1Gv"
       }
     ],
     "knowledge": [],
