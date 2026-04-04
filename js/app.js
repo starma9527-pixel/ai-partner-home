@@ -83,22 +83,16 @@ const SITE_DATA = {
         "link": "https://www.maas-nexus.top/"
       },
       {
-        "title": "竞品对比工具",
-        "desc": "阿里云 vs 友商能力对比",
-        "icon": "⚔️",
-        "link": "#"
+        "title": "客户洞察",
+        "desc": "深度洞察客户商业信息",
+        "icon": "🔍",
+        "link": "http://8.137.89.236/"
       },
       {
-        "title": "AI Demo体验",
-        "desc": "一键体验通义系列产品",
-        "icon": "🤖",
-        "link": "#"
-      },
-      {
-        "title": "方案模板库",
-        "desc": "行业解决方案PPT模板",
-        "icon": "📑",
-        "link": "#"
+        "title": "伙伴展业常见问题",
+        "desc": "展业常见问题解答汇总",
+        "icon": "❓",
+        "link": "https://alidocs.dingtalk.com/i/nodes/0eMKjyp813y4eq01CKKMw6ygVxAZB1Gv"
       }
     ],
     "knowledge": [],
@@ -426,7 +420,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderWeapons();
   renderMaas();
   renderRank();
-  renderFeedback();
   renderStats();
 });
 
@@ -662,25 +655,7 @@ function renderRank() {
   });
 }
 
-// ===== Render: Feedback =====
-function renderFeedback() {
-  const messages = (siteData.feedback && siteData.feedback.messages) || [];
-  const msgList = document.getElementById('msgList');
-  messages.forEach(item => {
-    msgList.innerHTML += `
-      <div class="msg-item">
-        <div class="msg-header">
-          <span class="msg-author">${item.author}</span>
-          <span class="msg-date">${item.date}</span>
-        </div>
-        <div class="msg-content">${item.content}</div>
-        <div class="msg-footer">
-          <button class="btn-like" onclick="handleLike(this, ${item.likes})">❤️ ${item.likes}</button>
-        </div>
-      </div>
-    `;
-  });
-}
+
 
 // ===== Mobile Navigation =====
 function toggleMobileNav() {
@@ -703,26 +678,13 @@ function mobileNavTo(tab) {
 
 // ===== 客户分析报告（多模型Tab切换）=====
 // Markdown 格式指令，附加到前端请求确保 AI 返回格式化内容
-const MD_FORMAT_HINT_CUSTOMER = '\n\n【输出格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
-  '- 使用 # 作为一级标题（如 # 输出1：云+AI预算评估）\n' +
-  '- 使用 ## 作为二级标题（如 ## 1. 客户业务概况）\n' +
-  '- 使用 ### 作为三级子标题\n' +
-  '- 使用 **加粗** 突出关键数据和结论\n' +
-  '- 使用 - 作为无序列表，1. 2. 作为有序列表\n' +
-  '- 多维度对比内容使用Markdown表格（| 列1 | 列2 |）\n' +
-  '请务必在每个章节标题前加 # 或 ## 符号，不要输出纯文本。';
-
-const MD_FORMAT_HINT_VISIT = '\n\n【输出格式要求】请严格使用Markdown格式输出：\n' +
-  '- 使用 ## 作为每个章节标题（如 ## 一、拜访目标）\n' +
-  '- 使用 ### 作为子标题\n' +
-  '- 使用 **加粗** 突出关键信息\n' +
-  '- 使用 - 作为无序列表，1. 2. 作为有序列表\n' +
-  '- 信息获取、会议议程等使用Markdown表格（| 列1 | 列2 |）\n' +
-  '请务必在每个章节标题前加 ## 符号，不要输出纯文本。';
+// 格式提示已移至后端 systemPrompt，前端不再重复追加（减少 token 消耗，加快响应）
 
 function handleCustomerAnalysis() {
   const val = document.getElementById('analysisInput').value.trim();
-  if (!val) { showToast('请输入客户名称'); return; }
+  if (!val) { showToast('请输入客户公司全称'); return; }
+  const productName = (document.getElementById('analysisProduct') || {}).value || '';
+  const website = (document.getElementById('analysisWebsite') || {}).value || '';
 
   // 读取选中的模型
   const checked = document.querySelectorAll('input[name="analysisModel"]:checked');
@@ -751,21 +713,26 @@ function handleCustomerAnalysis() {
       ).join('') +
     '</div>';
 
-  // 错开调用各模型（间隔3秒，避免触发百炼API并发限流）
+  var inputPayload = { customerName: val, productName: productName.trim(), website: website.trim() };
+
+  // 错开调用各模型（间隔6秒，避免触发百炼API并发限流）
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
-      callAIStream('customer_analysis', { customerName: val + MD_FORMAT_HINT_CUSTOMER }, m, 'panel-customer-' + m)
+      const panelId = 'panel-customer-' + m;
+      const statusId = 'status-customer-' + m;
+      const fileName = '客户分析报告_' + val + '_' + (MODEL_LABELS[m] || m);
+      const retryKey = 'customer_' + m + '_' + Date.now();
+      _retryRegistry[retryKey] = { type: 'customer_analysis', input: inputPayload, model: m, panelId: panelId, statusId: statusId, fileName: fileName };
+
+      callWithRetry('customer_analysis', inputPayload, m, panelId, statusId)
         .then(() => {
-          const statusEl = document.getElementById('status-customer-' + m);
+          const statusEl = document.getElementById(statusId);
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
-          insertExportToolbar('panel-customer-' + m, '客户分析报告_' + val + '_' + (MODEL_LABELS[m] || m));
+          insertExportToolbar(panelId, fileName);
+          delete _retryRegistry[retryKey];
         })
         .catch(err => {
-          const panel = document.getElementById('panel-customer-' + m);
-          const friendlyMsg = friendlyError(err.message);
-          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ ' + escapeHtml(friendlyMsg) + '</div>';
-          const statusEl = document.getElementById('status-customer-' + m);
-          if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
+          renderFailPanel(panelId, statusId, err.message, retryKey);
         });
     }, index * 6000);
   });
@@ -819,21 +786,24 @@ function handleVisitPlan() {
       ).join('') +
     '</div>';
 
-  // 错开调用各模型（间隔3秒，避免触发百炼API并发限流）
+  // 错开调用各模型（间隔6秒，避免触发百炼API并发限流）
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
-      callAIStream('visit_plan', { scene, role: roleSelect.value, details: details + MD_FORMAT_HINT_VISIT }, m, 'panel-visit-' + m)
+      const panelId = 'panel-visit-' + m;
+      const statusId = 'status-visit-' + m;
+      const fileName = '拜访计划_' + (MODEL_LABELS[m] || m);
+      const retryKey = 'visit_' + m + '_' + Date.now();
+      _retryRegistry[retryKey] = { type: 'visit_plan', input: { scene, role: roleSelect.value, details: details }, model: m, panelId: panelId, statusId: statusId, fileName: fileName };
+
+      callWithRetry('visit_plan', { scene, role: roleSelect.value, details: details }, m, panelId, statusId)
         .then(() => {
-          const statusEl = document.getElementById('status-visit-' + m);
+          const statusEl = document.getElementById(statusId);
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
-          insertExportToolbar('panel-visit-' + m, '拜访计划_' + (MODEL_LABELS[m] || m));
+          insertExportToolbar(panelId, fileName);
+          delete _retryRegistry[retryKey];
         })
         .catch(err => {
-          const panel = document.getElementById('panel-visit-' + m);
-          const friendlyMsg = friendlyError(err.message);
-          if (panel) panel.innerHTML = '<div style="color:#ef4444;">⚠ ' + escapeHtml(friendlyMsg) + '</div>';
-          const statusEl = document.getElementById('status-visit-' + m);
-          if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
+          renderFailPanel(panelId, statusId, err.message, retryKey);
         });
     }, index * 6000);
   });
@@ -854,36 +824,15 @@ function switchOutputTab(prefix, model) {
 function handleFeedback() {
   const content = document.getElementById('feedbackContent').value.trim();
   if (!content) { showToast('请输入反馈内容'); return; }
-  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
   const company = document.getElementById('feedbackCompany').value.trim();
-  const author = company ? name + ' · ' + company : name;
-  const today = new Date().toISOString().split('T')[0];
-  const msgList = document.getElementById('msgList');
-  const newMsg = document.createElement('div');
-  newMsg.className = 'msg-item';
-  newMsg.innerHTML = `
-    <div class="msg-header">
-      <span class="msg-author">${author}</span>
-      <span class="msg-date">${today}</span>
-    </div>
-    <div class="msg-content">${escapeHtml(content)}</div>
-    <div class="msg-footer">
-      <button class="btn-like" onclick="handleLike(this, 0)">❤️ 0</button>
-    </div>
-  `;
-  msgList.insertBefore(newMsg, msgList.firstChild);
+  if (!company) { showToast('请输入所属伙伴公司'); return; }
+  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
+  const author = name + ' · ' + company;
   document.getElementById('feedbackContent').value = '';
   document.getElementById('feedbackName').value = '';
   document.getElementById('feedbackCompany').value = '';
   showToast('感谢反馈！已通知管理员');
   sendFeedbackToAdmin(author, content);
-}
-
-function handleLike(btn, currentLikes) {
-  if (btn.dataset.liked) return;
-  btn.dataset.liked = '1';
-  btn.textContent = '❤️ ' + (currentLikes + 1);
-  btn.style.background = 'rgba(239,68,68,0.2)';
 }
 
 // ===== AI API Call =====
@@ -1035,6 +984,67 @@ function mdInline(text) {
   return text;
 }
 
+// ===== 自动重试包装器 =====
+// 对 callAIStream 做顶层重试：失败后等待 delay 再试，最多 maxRetries 次
+var _retryRegistry = {}; // 存储重试参数，避免 onclick 中复杂的 JSON 转义
+
+async function callWithRetry(type, input, model, panelId, statusId, maxRetries, delay) {
+  maxRetries = maxRetries || 2;
+  delay = delay || 8000;
+  let lastError = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const statusEl = document.getElementById(statusId);
+        if (statusEl) { statusEl.textContent = '⏳ 重试中(' + attempt + '/' + maxRetries + ')'; statusEl.className = 'output-tab-status'; }
+        const panelEl = document.getElementById(panelId);
+        if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> 第' + (attempt + 1) + '次尝试，请稍候...';
+        console.log('[callWithRetry] model=' + model + ' retry ' + attempt + '/' + maxRetries + ', waiting ' + delay + 'ms');
+        await new Promise(r => setTimeout(r, delay));
+      }
+      return await callAIStream(type, input, model, panelId);
+    } catch (err) {
+      lastError = err;
+      console.error('[callWithRetry] model=' + model + ' attempt=' + attempt + ' failed:', err.message);
+    }
+  }
+  throw lastError || new Error('所有重试均失败');
+}
+
+// 渲染失败面板（含重试按钮）
+function renderFailPanel(panelId, statusId, errMsg, retryKey) {
+  const panel = document.getElementById(panelId);
+  const friendlyMsg = friendlyError(errMsg);
+  if (panel) {
+    panel.innerHTML = '<div style="color:#ef4444;">⚠ ' + escapeHtml(friendlyMsg) + '</div>' +
+      '<button class="retry-btn" onclick="retryModel(\'' + retryKey + '\')">🔄 重试该模型</button>';
+  }
+  const statusEl = document.getElementById(statusId);
+  if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
+}
+
+// 手动重试按钮回调
+function retryModel(retryKey) {
+  var params = _retryRegistry[retryKey];
+  if (!params) { showToast('重试参数丢失，请重新提交'); return; }
+  var type = params.type, input = params.input, model = params.model;
+  var panelId = params.panelId, statusId = params.statusId, fileName = params.fileName;
+
+  const statusEl = document.getElementById(statusId);
+  if (statusEl) { statusEl.textContent = '⏳ 重试中'; statusEl.className = 'output-tab-status'; }
+  const panelEl = document.getElementById(panelId);
+  if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> 正在重试...';
+
+  callWithRetry(type, input, model, panelId, statusId, 2, 5000)
+    .then(function() {
+      if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
+      insertExportToolbar(panelId, fileName);
+    })
+    .catch(function(err) {
+      renderFailPanel(panelId, statusId, err.message, retryKey);
+    });
+}
+
 // ===== 流式 AI 调用（SSE）=====
 // 流式调用：内容逐步显示，大幅降低等待时间
 // onChunk(content) 在每次收到新内容时调用
@@ -1133,7 +1143,7 @@ async function callAIStream(type, input, model, panelId) {
   }
 
   // 非流式 fallback（本地 file:// 或流式失败时）
-  const MAX_RETRIES = 1;
+  const MAX_RETRIES = 2;
   let attempt = 0;
 
   while (attempt <= MAX_RETRIES) {
@@ -1404,63 +1414,67 @@ function sendFeedbackToAdmin(author, content) {
   }
 }
 
-// ===== 网站活跃度统计 (localStorage) =====
-const STATS_KEY = 'aihome_stats';
-let _sessionStart = Date.now();
-let _sessionTimer = null;
+// ===== 网站活跃度统计 (服务端全局统计) =====
+var _sessionStart = Date.now();
+var _sessionTimer = null;
+var _statsAPI = '/api/stats';
+var _cachedStats = {
+  today: { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
+  week:  { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
+  month: { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
+  year:  { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 }
+}; // 默认值，确保页面加载时显示 0 而非 "--"
 
-function getStats() {
-  try {
-    return JSON.parse(localStorage.getItem(STATS_KEY)) || {};
-  } catch (e) { return {}; }
+// 向服务端上报事件（fire-and-forget，不阻塞 UI）
+function _trackEvents(events) {
+  if (!events || events.length === 0) return;
+  fetch(_statsAPI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ events: events })
+  }).then(function() {
+    // 上报成功后刷新显示
+    _fetchAndRenderStats();
+  }).catch(function(err) {
+    console.error('[stats] track error:', err.message);
+  });
 }
 
-function saveStats(stats) {
-  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {}
+// 从服务端拉取统计数据并渲染
+function _fetchAndRenderStats() {
+  fetch(_statsAPI).then(function(resp) {
+    return resp.json();
+  }).then(function(data) {
+    _cachedStats = data;
+    renderStats();
+  }).catch(function(err) {
+    console.error('[stats] fetch error:', err.message);
+  });
 }
 
 function initSiteStats() {
-  var stats = getStats();
-  var today = new Date().toISOString().split('T')[0];
-
-  // 累计访问次数
-  stats.totalVisits = (stats.totalVisits || 0) + 1;
-
-  // 今日访问
-  if (stats.lastVisitDate !== today) {
-    stats.todayVisits = 1;
-  } else {
-    stats.todayVisits = (stats.todayVisits || 0) + 1;
-  }
-
-  // 记录上次访问日期（展示用，在更新 lastVisitDate 之前保存）
-  stats.prevVisitDate = stats.lastVisitDate || today;
-  stats.lastVisitDate = today;
-
-  // 页面浏览量（每次页面加载 +1）
-  stats.pageViews = (stats.pageViews || 0) + 1;
-
-  // AI 调用次数（初始化，后续在 callAIStream 中累加）
-  if (!stats.aiCalls) stats.aiCalls = 0;
-
-  // 累计使用时长（秒）
-  if (!stats.totalDuration) stats.totalDuration = 0;
-
   _sessionStart = Date.now();
-  saveStats(stats);
 
-  // 每秒更新本次会话时长显示
+  // 先渲染默认值（避免显示 "--"）
+  renderStats();
+
+  // 上报一次访问 + 一次页面浏览
+  _trackEvents(['visit', 'pageView']);
+
+  // 首次拉取数据渲染
+  _fetchAndRenderStats();
+
+  // 每30秒上报一次使用时长
   _sessionTimer = setInterval(function() {
-    var el = document.getElementById('statSessionTime');
-    if (el) {
-      var secs = Math.floor((Date.now() - _sessionStart) / 1000);
-      el.textContent = formatDuration(secs);
-    }
-    // 每30秒保存一次累计时长
-    if (Math.floor((Date.now() - _sessionStart) / 1000) % 30 === 0) {
-      var s = getStats();
-      s.totalDuration = (s.totalDuration || 0) + 30;
-      saveStats(s);
+    _trackEvents(['duration:30']);
+  }, 30000);
+
+  // 每秒更新今日时长的本地显示（避免频繁请求服务端）
+  setInterval(function() {
+    var el = document.getElementById('statTodayDuration');
+    if (el && _cachedStats && _cachedStats.today) {
+      var localSecs = Math.floor((Date.now() - _sessionStart) / 1000);
+      el.textContent = formatDuration((_cachedStats.today.duration || 0) + localSecs);
     }
   }, 1000);
 }
@@ -1469,20 +1483,12 @@ function initSiteStats() {
 var _origSwitchTab = switchTab;
 switchTab = function(tab) {
   _origSwitchTab(tab);
-  var stats = getStats();
-  stats.pageViews = (stats.pageViews || 0) + 1;
-  saveStats(stats);
-  var el = document.getElementById('statPageViews');
-  if (el) el.textContent = stats.pageViews;
+  _trackEvents(['pageView']);
 };
 
 // AI 调用计数（公开函数供 callAIStream 调用）
 function incrementAICalls() {
-  var stats = getStats();
-  stats.aiCalls = (stats.aiCalls || 0) + 1;
-  saveStats(stats);
-  var el = document.getElementById('statAICalls');
-  if (el) el.textContent = stats.aiCalls;
+  _trackEvents(['aiCall']);
 }
 
 function formatDuration(totalSecs) {
@@ -1496,32 +1502,26 @@ function formatDuration(totalSecs) {
 }
 
 function renderStats() {
-  var stats = getStats();
-  var el;
+  if (!_cachedStats) return;
+  var rows = [
+    { prefix: 'Today', data: _cachedStats.today },
+    { prefix: 'Week',  data: _cachedStats.week },
+    { prefix: 'Month', data: _cachedStats.month },
+    { prefix: 'Year',  data: _cachedStats.year }
+  ];
 
-  el = document.getElementById('statTotalVisits');
-  if (el) el.textContent = stats.totalVisits || 0;
-
-  el = document.getElementById('statTodayVisits');
-  if (el) el.textContent = stats.todayVisits || 0;
-
-  el = document.getElementById('statSessionTime');
-  if (el) el.textContent = '0秒';
-
-  el = document.getElementById('statPageViews');
-  if (el) el.textContent = stats.pageViews || 0;
-
-  el = document.getElementById('statAICalls');
-  if (el) el.textContent = stats.aiCalls || 0;
-
-  el = document.getElementById('statLastVisit');
-  if (el) {
-    var prev = stats.prevVisitDate;
-    if (prev && prev !== stats.lastVisitDate) {
-      el.textContent = prev;
-    } else {
-      el.textContent = '首次访问';
-    }
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var p = r.data || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
+    var el;
+    el = document.getElementById('stat' + r.prefix + 'Visits');
+    if (el) el.textContent = p.visits || 0;
+    el = document.getElementById('stat' + r.prefix + 'Duration');
+    if (el) el.textContent = formatDuration(p.duration || 0);
+    el = document.getElementById('stat' + r.prefix + 'PageViews');
+    if (el) el.textContent = p.pageViews || 0;
+    el = document.getElementById('stat' + r.prefix + 'AICalls');
+    if (el) el.textContent = p.aiCalls || 0;
   }
 }
 
