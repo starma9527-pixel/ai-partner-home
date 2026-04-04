@@ -1,0 +1,109 @@
+/**
+ * Netlify Edge Function: Site Stats (全局访问统计)
+ * 使用 Netlify Blobs 做服务端持久化存储，汇总所有用户数据
+ */
+import { getStore } from "@netlify/blobs";
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400'
+};
+
+// 获取当前时间维度的 key
+function getTimeKeys() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  // ISO 周号
+  const tmp = new Date(now);
+  tmp.setHours(0, 0, 0, 0);
+  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+  const week1 = new Date(tmp.getFullYear(), 0, 4);
+  const wn = 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return {
+    day:   `${y}-${m}-${d}`,
+    week:  `${y}-W${String(wn).padStart(2, '0')}`,
+    month: `${y}-${m}`,
+    year:  `${y}`
+  };
+}
+
+const EMPTY = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
+
+export default async function handler(req, context) {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+
+  try {
+    const store = getStore('site-stats');
+
+    // GET: 返回各时间维度的统计数据
+    if (req.method === 'GET') {
+      const keys = getTimeKeys();
+      const [day, week, month, year] = await Promise.all([
+        store.get(keys.day, { type: 'json' }),
+        store.get(keys.week, { type: 'json' }),
+        store.get(keys.month, { type: 'json' }),
+        store.get(keys.year, { type: 'json' })
+      ]);
+      return new Response(JSON.stringify({
+        today: day || { ...EMPTY },
+        week:  week || { ...EMPTY },
+        month: month || { ...EMPTY },
+        year:  year || { ...EMPTY }
+      }), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }
+      });
+    }
+
+    // POST: 记录事件
+    if (req.method === 'POST') {
+      const body = await req.json();
+      const { events } = body;
+      // events: ["visit", "pageView", "aiCall", "duration:30"]
+      if (!events || !Array.isArray(events) || events.length === 0) {
+        return new Response(JSON.stringify({ error: '缺少 events 参数' }), {
+          status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const keys = getTimeKeys();
+      const periodKeys = [keys.day, keys.week, keys.month, keys.year];
+
+      // 读取所有周期的当前值
+      const current = await Promise.all(periodKeys.map(k => store.get(k, { type: 'json' })));
+      const periods = current.map(v => v || { ...EMPTY });
+
+      // 叠加事件
+      for (const evt of events) {
+        for (const p of periods) {
+          if (evt === 'visit') p.visits += 1;
+          else if (evt === 'pageView') p.pageViews += 1;
+          else if (evt === 'aiCall') p.aiCalls += 1;
+          else if (evt.startsWith('duration:')) {
+            const secs = parseInt(evt.split(':')[1], 10) || 0;
+            p.duration += secs;
+          }
+        }
+      }
+
+      // 写回所有周期
+      await Promise.all(periodKeys.map((k, i) => store.setJSON(k, periods[i])));
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+      });
+    }
+
+    return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
+  } catch (err) {
+    console.error('[stats] Error:', err);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    });
+  }
+}
