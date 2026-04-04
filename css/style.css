@@ -1245,6 +1245,22 @@ input, textarea, select { font-family: inherit; }
   margin: 0;
   padding: 0;
 }
+.collapse-toggle-all {
+  display: block;
+  margin: 0 auto 16px;
+  padding: 6px 20px;
+  background: rgba(139,92,246,0.08);
+  color: var(--accent-purple);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+.collapse-toggle-all:hover {
+  background: rgba(139,92,246,0.15);
+  border-color: rgba(139,92,246,0.4);
+}
 .ai-markdown-output h2 {
   font-size: 1.05rem; font-weight: 700; color: var(--accent-purple);
   margin: 16px 0 8px;
