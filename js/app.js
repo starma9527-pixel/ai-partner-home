@@ -1414,78 +1414,176 @@ function sendFeedbackToAdmin(author, content) {
   }
 }
 
-// ===== 网站活跃度统计 (服务端全局统计) =====
+// ===== 网站活跃度统计 (服务端全局统计 + localStorage 本地回退) =====
 var _sessionStart = Date.now();
 var _sessionTimer = null;
 var _statsAPI = '/api/stats';
+var _STATS_LOCAL_KEY = 'siteStats_local_v2';
+var _serverAvailable = false; // 标记服务端是否可用
 var _cachedStats = {
   today: { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
   week:  { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
   month: { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
   year:  { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 }
-}; // 默认值，确保页面加载时显示 0 而非 "--"
+};
 
-// 向服务端上报事件（fire-and-forget，不阻塞 UI）
-function _trackEvents(events, callback) {
+// ---- 时间周期 key（与服务端逻辑一致） ----
+function _getTimeKeys() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = String(now.getMonth() + 1).padStart(2, '0');
+  var d = String(now.getDate()).padStart(2, '0');
+  // ISO week
+  var tmp = new Date(now);
+  tmp.setHours(0, 0, 0, 0);
+  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+  var week1 = new Date(tmp.getFullYear(), 0, 4);
+  var wn = 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return {
+    day:   y + '-' + m + '-' + d,
+    week:  y + '-W' + String(wn).padStart(2, '0'),
+    month: y + '-' + m,
+    year:  '' + y
+  };
+}
+
+// ---- localStorage 本地统计 ----
+function _loadLocalStats() {
+  try {
+    var s = localStorage.getItem(_STATS_LOCAL_KEY);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return {};
+}
+function _saveLocalStats(store) {
+  try { localStorage.setItem(_STATS_LOCAL_KEY, JSON.stringify(store)); } catch(e) {}
+}
+
+// 从本地统计构建与服务端相同格式的 stats 对象
+function _buildLocalCachedStats() {
+  var store = _loadLocalStats();
+  var keys = _getTimeKeys();
+  var EMPTY = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
+  return {
+    today: store[keys.day]   || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
+    week:  store[keys.week]  || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
+    month: store[keys.month] || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
+    year:  store[keys.year]  || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 }
+  };
+}
+
+// 本地记录事件（各时间周期同步累加）
+function _trackEventsLocally(events) {
   if (!events || events.length === 0) return;
+  var store = _loadLocalStats();
+  var keys = _getTimeKeys();
+  var allKeys = [keys.day, keys.week, keys.month, keys.year];
+  for (var k = 0; k < allKeys.length; k++) {
+    var key = allKeys[k];
+    if (!store[key]) store[key] = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
+    for (var i = 0; i < events.length; i++) {
+      var evt = events[i];
+      if (evt === 'visit') store[key].visits += 1;
+      else if (evt === 'pageView') store[key].pageViews += 1;
+      else if (evt === 'aiCall') store[key].aiCalls += 1;
+      else if (typeof evt === 'string' && evt.indexOf('duration:') === 0) {
+        store[key].duration += (parseInt(evt.split(':')[1], 10) || 0);
+      }
+    }
+  }
+  _saveLocalStats(store);
+}
+
+// ---- 服务端上报 + 本地回退 ----
+function _trackEvents(events) {
+  if (!events || events.length === 0) return;
+  // 始终记录到本地（作为回退数据源）
+  _trackEventsLocally(events);
+  // 本地回退模式：直接用本地数据渲染
+  if (!_serverAvailable) {
+    _cachedStats = _buildLocalCachedStats();
+    renderStats();
+    return;
+  }
+  // 服务端模式：POST 到服务端
   fetch(_statsAPI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ events: events })
   }).then(function(resp) {
     if (!resp.ok) {
-      return resp.text().then(function(t) { console.warn('[stats] POST failed:', resp.status, t); });
+      return resp.text().then(function(t) { console.warn('[stats] POST ' + resp.status + ':', t); });
     }
-    return resp.json().then(function(data) {
-      console.log('[stats] POST ok:', data);
-      if (callback) callback();
-    });
+    _fetchAndRenderStats();
   }).catch(function(err) {
-    console.error('[stats] track error:', err.message);
+    console.warn('[stats] POST error:', err.message);
   });
 }
 
-// 从服务端拉取统计数据并渲染
+// 从服务端拉取统计数据
 function _fetchAndRenderStats() {
   fetch(_statsAPI).then(function(resp) {
-    if (!resp.ok) {
-      return resp.text().then(function(t) { console.warn('[stats] GET failed:', resp.status, t); });
-    }
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return resp.json();
   }).then(function(data) {
     if (data && data.today) {
+      _serverAvailable = true;
       _cachedStats = data;
       renderStats();
+      console.log('[stats] server data loaded');
     }
   }).catch(function(err) {
-    console.error('[stats] fetch error:', err.message);
+    console.warn('[stats] server unavailable:', err.message, '- using local stats');
+    _serverAvailable = false;
+    _cachedStats = _buildLocalCachedStats();
+    renderStats();
   });
 }
 
 function initSiteStats() {
   _sessionStart = Date.now();
 
-  // 先渲染默认值（避免显示 "--"）
+  // 先用本地数据渲染（避免显示全 0）
+  _cachedStats = _buildLocalCachedStats();
   renderStats();
 
-  // 上报一次访问 + 一次页面浏览，完成后再拉取数据渲染
-  _trackEvents(['visit', 'pageView'], function() {
-    _fetchAndRenderStats();
-  });
+  // 尝试拉取服务端数据（成功则标记 _serverAvailable=true）
+  _fetchAndRenderStats();
+
+  // 上报访问+页面浏览
+  _trackEvents(['visit', 'pageView']);
 
   // 每30秒上报一次使用时长
   _sessionTimer = setInterval(function() {
-    _trackEvents(['duration:30'], function() {
-      _fetchAndRenderStats();
-    });
+    _trackEvents(['duration:30']);
   }, 30000);
 
-  // 每秒更新今日时长的本地显示（避免频繁请求服务端）
+  // 页面关闭/刷新前，保存当前会话剩余时长（避免 30 秒间隔内的时长丢失）
+  window.addEventListener('beforeunload', function() {
+    var elapsed = Math.floor((Date.now() - _sessionStart) / 1000);
+    // 已通过 30 秒定时器上报的秒数
+    var reported = Math.floor(elapsed / 30) * 30;
+    var remaining = elapsed - reported;
+    if (remaining > 0) {
+      _trackEventsLocally(['duration:' + remaining]);
+    }
+  });
+
+  // 每秒更新所有行的时长显示（今日 + 本周 + 本月 + 年度）
   setInterval(function() {
-    var el = document.getElementById('statTodayDuration');
-    if (el && _cachedStats && _cachedStats.today) {
-      var localSecs = Math.floor((Date.now() - _sessionStart) / 1000);
-      el.textContent = formatDuration((_cachedStats.today.duration || 0) + localSecs);
+    var localSecs = Math.floor((Date.now() - _sessionStart) / 1000);
+    var pairs = [
+      ['statTodayDuration', _cachedStats.today],
+      ['statWeekDuration',  _cachedStats.week],
+      ['statMonthDuration', _cachedStats.month],
+      ['statYearDuration',  _cachedStats.year]
+    ];
+    for (var i = 0; i < pairs.length; i++) {
+      var el = document.getElementById(pairs[i][0]);
+      var data = pairs[i][1];
+      if (el && data) {
+        el.textContent = formatDuration((data.duration || 0) + localSecs);
+      }
     }
   }, 1000);
 }
@@ -1494,12 +1592,12 @@ function initSiteStats() {
 var _origSwitchTab = switchTab;
 switchTab = function(tab) {
   _origSwitchTab(tab);
-  _trackEvents(['pageView'], function() { _fetchAndRenderStats(); });
+  _trackEvents(['pageView']);
 };
 
 // AI 调用计数（公开函数供 callAIStream 调用）
 function incrementAICalls() {
-  _trackEvents(['aiCall'], function() { _fetchAndRenderStats(); });
+  _trackEvents(['aiCall']);
 }
 
 function formatDuration(totalSecs) {
