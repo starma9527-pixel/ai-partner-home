@@ -722,13 +722,15 @@ function handleCustomerAnalysis() {
       const statusId = 'status-customer-' + m;
       const fileName = '客户分析报告_' + val + '_' + (MODEL_LABELS[m] || m);
       const retryKey = 'customer_' + m + '_' + Date.now();
-      _retryRegistry[retryKey] = { type: 'customer_analysis', input: inputPayload, model: m, panelId: panelId, statusId: statusId, fileName: fileName };
+      const reportTitle = '【' + val + '】客户分析报告';
+      _retryRegistry[retryKey] = { type: 'customer_analysis', input: inputPayload, model: m, panelId: panelId, statusId: statusId, fileName: fileName, reportTitle: reportTitle };
 
       callWithRetry('customer_analysis', inputPayload, m, panelId, statusId)
         .then(() => {
           const statusEl = document.getElementById(statusId);
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
           insertExportToolbar(panelId, fileName);
+          injectReportTitle(panelId, reportTitle);
           delete _retryRegistry[retryKey];
         })
         .catch(err => {
@@ -787,19 +789,25 @@ function handleVisitPlan() {
     '</div>';
 
   // 错开调用各模型（间隔6秒，避免触发百炼API并发限流）
+  const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
+  const sceneName = sceneLabels[scene] || '客户拜访';
+  const firstInputVal = inputs.length > 0 ? inputs[0].value.trim() : '';
+
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
       const panelId = 'panel-visit-' + m;
       const statusId = 'status-visit-' + m;
       const fileName = '拜访计划_' + (MODEL_LABELS[m] || m);
       const retryKey = 'visit_' + m + '_' + Date.now();
-      _retryRegistry[retryKey] = { type: 'visit_plan', input: { scene, role: roleSelect.value, details: details }, model: m, panelId: panelId, statusId: statusId, fileName: fileName };
+      const reportTitle = firstInputVal + ' ' + sceneName + ' 拜访计划';
+      _retryRegistry[retryKey] = { type: 'visit_plan', input: { scene, role: roleSelect.value, details: details }, model: m, panelId: panelId, statusId: statusId, fileName: fileName, reportTitle: reportTitle };
 
       callWithRetry('visit_plan', { scene, role: roleSelect.value, details: details }, m, panelId, statusId)
         .then(() => {
           const statusEl = document.getElementById(statusId);
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
           insertExportToolbar(panelId, fileName);
+          injectReportTitle(panelId, reportTitle);
           delete _retryRegistry[retryKey];
         })
         .catch(err => {
@@ -840,25 +848,53 @@ const MODEL_LABELS = {
   qwen35plus: 'Qwen3.5-Plus',
   qwenmax:    'Qwen-Max',
   kimi:       'Kimi-K2.5',
-  minimax:    'MiniMax-M2.5',
+  deepseek:   'DeepSeek-V3',
 };
 
 // 格式化AI输出内容
 // 优先使用 marked.js，否则使用内置简易 Markdown 渲染器
+// ===== 清理模型输出内容 =====
+// 1. 去除思考过程（正文第一个 # 标题之前的内容）
+// 2. 去除工具调用标签（<tool_code>、<tool_call>、<minimax:tool_call> 等）
+function cleanAIContent(text) {
+  if (!text) return text;
+  // 去除工具调用标签
+  text = text.replace(/<\/?minimax:tool_call>/g, '');
+  text = text.replace(/<invoke\s+name="[^"]*">/g, '');
+  text = text.replace(/<\/invoke>/g, '');
+  text = text.replace(/<parameter\s+name="[^"]*">[^<]*<\/parameter>/g, '');
+  text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
+  text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
+  text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
+  text = text.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '');
+  text = text.replace(/<tool_code>[\s\S]*$/g, '');
+  text = text.replace(/<query>[^<]*<\/query>/g, '');
+  // 去除思考过程：找到第一个 Markdown 标题，去掉前面的文字
+  var headingMatch = text.match(/(^|\n)(#{1,2}\s+.+)/);
+  if (headingMatch && headingMatch.index !== undefined) {
+    var preambleEnd = headingMatch.index + (headingMatch[1] === '\n' ? 1 : 0);
+    var preamble = text.substring(0, preambleEnd);
+    if (preamble.trim().length > 15) {
+      text = text.substring(preambleEnd);
+    }
+  }
+  return text.trim();
+}
+
 function formatAIOutput(content) {
   if (!content) return '';
+
+  // 先清理思考过程和工具标签
+  content = cleanAIContent(content);
 
   // 优先使用 marked 库（如果加载成功）
   if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
     try {
       var rendered = marked.parse(content);
-      console.log('[formatAIOutput] 使用 marked.js 渲染');
       return '<div class="ai-markdown-output">' + rendered + '</div>';
     } catch (e) {
       console.error('[formatAIOutput] marked.parse 出错, 降级到内置渲染:', e);
     }
-  } else {
-    console.log('[formatAIOutput] marked.js 未加载, 使用内置渲染器');
   }
 
   // 内置简易 Markdown 渲染器（不依赖外部库）
@@ -1039,6 +1075,7 @@ function retryModel(retryKey) {
     .then(function() {
       if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
       insertExportToolbar(panelId, fileName);
+      if (params.reportTitle) injectReportTitle(panelId, params.reportTitle);
     })
     .catch(function(err) {
       renderFailPanel(panelId, statusId, err.message, retryKey);
@@ -1243,6 +1280,83 @@ function insertExportToolbar(panelId, fileName) {
     '<button class="btn-export" onclick="exportToWord(\'' + panelId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')">📄 导出 Word</button>' +
     '<button class="btn-export" onclick="exportToPDF(\'' + panelId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')">📑 导出 PDF</button>';
   panel.appendChild(toolbar);
+  // 插入导出工具栏后，添加折叠功能
+  addCollapsibleSections(panelId);
+}
+
+// ===== 报告章节折叠/展开功能 =====
+// 将 h1 标题变为可点击的折叠控件，点击后折叠/展开该章节的内容
+
+// 在报告顶部注入居中总标题
+function injectReportTitle(panelId, title) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return;
+  var mdOutput = panel.querySelector('.ai-markdown-output');
+  if (!mdOutput) return;
+  // 防止重复注入
+  if (mdOutput.querySelector('.report-main-title')) return;
+  var titleEl = document.createElement('div');
+  titleEl.className = 'report-main-title';
+  titleEl.textContent = title;
+  mdOutput.insertBefore(titleEl, mdOutput.firstChild);
+}
+
+function addCollapsibleSections(panelId) {
+  var panel = document.getElementById(panelId);
+  if (!panel) return;
+  var mdOutput = panel.querySelector('.ai-markdown-output');
+  if (!mdOutput) return;
+  // 防止重复处理
+  if (mdOutput.dataset.collapsible === 'true') return;
+  mdOutput.dataset.collapsible = 'true';
+
+  // 自动检测顶层标题级别：客户分析用 h1，拜访计划用 h2
+  var headings = mdOutput.querySelectorAll('h1');
+  var headingTag = 'H1';
+  if (headings.length === 0) {
+    headings = mdOutput.querySelectorAll('h2');
+    headingTag = 'H2';
+  }
+  if (headings.length === 0) return;
+
+  // 对每个顶层标题，收集它后面到下一个同级标题之间的所有元素，包裹在一个 section 中
+  for (var i = 0; i < headings.length; i++) {
+    var heading = headings[i];
+    // 添加折叠指示器和样式
+    heading.classList.add('collapsible-header');
+    heading.setAttribute('title', '点击折叠/展开');
+    // 创建展开/折叠指示器
+    var indicator = document.createElement('span');
+    indicator.className = 'collapse-indicator';
+    indicator.textContent = '▼';
+    heading.insertBefore(indicator, heading.firstChild);
+
+    // 创建内容包裹容器
+    var section = document.createElement('div');
+    section.className = 'collapsible-section';
+
+    // 收集标题后面到下一个同级标题之间的所有兄弟节点
+    var next = heading.nextSibling;
+    while (next) {
+      var current = next;
+      next = current.nextSibling;
+      // 遇到下一个同级标题就停止
+      if (current.nodeType === 1 && current.tagName === headingTag) break;
+      section.appendChild(current);
+    }
+
+    // 将 section 插入到标题后面
+    heading.parentNode.insertBefore(section, heading.nextSibling);
+
+    // 绑定点击事件
+    (function(header, content, ind) {
+      header.addEventListener('click', function() {
+        var isCollapsed = content.classList.toggle('collapsed');
+        ind.textContent = isCollapsed ? '▶' : '▼';
+        header.classList.toggle('is-collapsed', isCollapsed);
+      });
+    })(heading, section, indicator);
+  }
 }
 
 // 导出 Word（.doc 格式，Word 可直接打开的 HTML）
