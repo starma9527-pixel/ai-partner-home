@@ -699,11 +699,35 @@ input, textarea, select { font-family: inherit; }
 }
 .scene-form { display: none; }
 .scene-form.active { display: block; }
+
+/* ===== Visit Form Row (水平一行布局) ===== */
+.visit-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+.visit-form-row > .form-group {
+  flex: 0 0 auto;
+  min-width: 140px;
+  margin-bottom: 0;
+}
+.visit-form-row .scene-form.active {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.visit-form-row .scene-form .form-group {
+  flex: 1;
+  margin-bottom: 0;
+  min-width: 0;
+}
 .btn-generate {
   background: var(--gradient-purple);
   color: #fff; border-radius: var(--radius-md);
   padding: 12px 32px; font-size: 0.95rem; font-weight: 600;
-  width: 100%;
+  width: 100%; margin-top: 20px;
   transition: opacity var(--transition);
 }
 .btn-generate:hover { opacity: 0.9; }
@@ -1019,6 +1043,11 @@ input, textarea, select { font-family: inherit; }
   .form-card { padding: 20px 16px; }
   .scene-selector { flex-direction: column; }
   .scene-btn { text-align: center; }
+  .visit-form-row { flex-direction: column; align-items: stretch; }
+  .visit-form-row > .form-group { min-width: 100%; }
+  .visit-form-row .scene-form.active { flex-direction: column; }
+  .model-selector { flex-wrap: wrap; }
+  .model-selector .model-option { flex: 0 0 calc(50% - 6px); }
   .btn-hamburger { display: flex; }
   .search-results-dropdown { width: calc(100% - 32px); }
 }
@@ -1054,21 +1083,11 @@ input, textarea, select { font-family: inherit; }
 
 /* ===== Model Selector ===== */
 .model-selector {
-  display: flex; gap: 10px; flex-wrap: wrap;
-}
-.model-selector-2col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.model-selector-2col .model-option {
-  width: 100%;
-}
-.model-selector-2col .model-chip {
-  width: 100%;
-  justify-content: center;
+  display: flex; gap: 12px;
+  margin-top: 18px;
 }
 .model-option {
+  flex: 1; min-width: 0;
   cursor: pointer; display: flex; align-items: center;
 }
 .model-option input[type="checkbox"] {
@@ -1076,6 +1095,7 @@ input, textarea, select { font-family: inherit; }
 }
 .model-chip {
   display: inline-flex; align-items: center; gap: 6px;
+  width: 100%; justify-content: center;
   background: var(--bg-primary);
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-xl);
