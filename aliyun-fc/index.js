@@ -290,7 +290,9 @@ exports.handler = async (event, context) => {
 
     // enable_search: 所有模型均开启联网搜索
     // search_options（forced_search/search_strategy）仅千问系列支持，第三方模型（Kimi/DeepSeek）不支持
+    // temperature: Kimi 系列模型不支持自定义温度值（非思考模式固定 0.6），其他模型使用 0.3
     const isQwen = modelId.startsWith('qwen');
+    const isKimi = modelId.toLowerCase().includes('kimi') || modelId.toLowerCase().includes('moonshot');
     const apiBodyPayload = {
       model: modelId,
       messages: [
@@ -298,9 +300,12 @@ exports.handler = async (event, context) => {
         { role: 'user', content: userPrompt }
       ],
       max_tokens: maxTokens,
-      temperature: 0.3,
       enable_search: true
     };
+    // Kimi 模型不支持自定义 temperature，使用其默认值 0.6（不传则自动使用默认值）
+    if (!isKimi) {
+      apiBodyPayload.temperature = 0.3;
+    }
     if (isQwen) {
       apiBodyPayload.search_options = {
         forced_search: true,
