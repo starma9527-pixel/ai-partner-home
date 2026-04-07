@@ -289,8 +289,8 @@ exports.handler = async (event, context) => {
     console.log('Calling DashScope API...');
 
     // enable_search: 所有模型均开启联网搜索
-    // forced_search: 强制每次请求都执行搜索，不依赖模型自行判断
-    // search_strategy: "max" 使用最全面的搜索策略，确保数据准确
+    // search_options（forced_search/search_strategy）仅千问系列支持，第三方模型（Kimi/DeepSeek）不支持
+    const isQwen = modelId.startsWith('qwen');
     const apiBodyPayload = {
       model: modelId,
       messages: [
@@ -299,12 +299,14 @@ exports.handler = async (event, context) => {
       ],
       max_tokens: maxTokens,
       temperature: 0.3,
-      enable_search: true,
-      search_options: {
+      enable_search: true
+    };
+    if (isQwen) {
+      apiBodyPayload.search_options = {
         forced_search: true,
         search_strategy: 'max'
-      }
-    };
+      };
+    }
 
     const apiResponse = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
       method: 'POST',
