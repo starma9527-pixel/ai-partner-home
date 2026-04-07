@@ -307,12 +307,9 @@ export default async (request, context) => {
     });
   }
 
-  // enable_search: 所有模型均开启 DashScope 平台级联网搜索
-  // 平台会在模型收到请求前执行搜索并注入结果，对 Qwen/Kimi/MiniMax 均有效
-  // MiniMax 可能输出 tool_call XML 标签的问题已通过 cleanToolCallTags 过滤器解决
   // enable_search: 所有模型均开启联网搜索
-  // forced_search: 强制每次请求都执行搜索，不依赖模型自行判断
-  // search_strategy: "max" 使用最全面的搜索策略，确保数据准确
+  // search_options（forced_search/search_strategy）仅千问系列支持，第三方模型（Kimi/DeepSeek）不支持
+  const isQwen = cfg.id.startsWith('qwen');
   const apiBody = {
     model: cfg.id,
     messages: [
@@ -322,12 +319,14 @@ export default async (request, context) => {
     temperature: 0.3,
     max_tokens: cfg.maxTokens,
     stream: !!useStream,
-    enable_search: true,
-    search_options: {
+    enable_search: true
+  };
+  if (isQwen) {
+    apiBody.search_options = {
       forced_search: true,
       search_strategy: 'max'
-    }
-  };
+    };
+  }
 
   try {
     // 显式超时控制（流式模式下给更充足的时间，千问模型首 token 延迟可达 30-40s）
