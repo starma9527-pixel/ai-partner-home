@@ -1566,7 +1566,7 @@ function sendFeedbackToAdmin(author, content) {
   }
 }
 
-// ===== 网站活跃度统计 (服务端全局统计 + localStorage 本地回退) =====
+// ===== 网站活跃度统计 (服务端全局统计 — 所有用户汇总) =====
 var _sessionStart = Date.now();
 var _sessionTimer = null;
 var _statsAPI = '/api/stats';
@@ -1646,18 +1646,12 @@ function _trackEventsLocally(events) {
   _saveLocalStats(store);
 }
 
-// ---- 服务端上报 + 本地回退 ----
+// ---- 服务端上报（始终尝试 POST，不依赖 _serverAvailable 状态） ----
 function _trackEvents(events) {
   if (!events || events.length === 0) return;
-  // 始终记录到本地（作为回退数据源）
+  // 本地缓冲（仅作为事件暂存，不用于渲染）
   _trackEventsLocally(events);
-  // 本地回退模式：直接用本地数据渲染
-  if (!_serverAvailable) {
-    _cachedStats = _buildLocalCachedStats();
-    renderStats();
-    return;
-  }
-  // 服务端模式：POST 到服务端
+  // 始终尝试 POST 到服务端（确保全局计数器累加）
   fetch(_statsAPI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1666,13 +1660,14 @@ function _trackEvents(events) {
     if (!resp.ok) {
       return resp.text().then(function(t) { console.warn('[stats] POST ' + resp.status + ':', t); });
     }
+    _serverAvailable = true;
     _fetchAndRenderStats();
   }).catch(function(err) {
     console.warn('[stats] POST error:', err.message);
   });
 }
 
-// 从服务端拉取统计数据
+// 从服务端拉取统计数据（只显示全局数据，不回退到本地个人数据）
 function _fetchAndRenderStats() {
   fetch(_statsAPI).then(function(resp) {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -1682,24 +1677,19 @@ function _fetchAndRenderStats() {
       _serverAvailable = true;
       _cachedStats = data;
       renderStats();
-      console.log('[stats] server data loaded');
+      console.log('[stats] server global data loaded');
     }
   }).catch(function(err) {
-    console.warn('[stats] server unavailable:', err.message, '- using local stats');
+    console.warn('[stats] server unavailable:', err.message);
     _serverAvailable = false;
-    _cachedStats = _buildLocalCachedStats();
-    renderStats();
+    // 不回退到 localStorage 个人数据，保持显示 '--' 或上次服务端数据
   });
 }
 
 function initSiteStats() {
   _sessionStart = Date.now();
 
-  // 先用本地数据渲染（避免显示全 0）
-  _cachedStats = _buildLocalCachedStats();
-  renderStats();
-
-  // 尝试拉取服务端数据（成功则标记 _serverAvailable=true）
+  // 直接从服务端拉取全局统计数据（HTML 默认显示 '--'，等服务端返回后渲染）
   _fetchAndRenderStats();
 
   // 上报访问+页面浏览
@@ -1710,13 +1700,19 @@ function initSiteStats() {
     _trackEvents(['duration:30']);
   }, 30000);
 
-  // 页面关闭/刷新前，保存当前会话剩余时长（避免 30 秒间隔内的时长丢失）
+  // 页面关闭/刷新前，上报当前会话剩余时长到服务端
   window.addEventListener('beforeunload', function() {
     var elapsed = Math.floor((Date.now() - _sessionStart) / 1000);
-    // 已通过 30 秒定时器上报的秒数
     var reported = Math.floor(elapsed / 30) * 30;
     var remaining = elapsed - reported;
     if (remaining > 0) {
+      // sendBeacon 不阻塞页面关闭，确保全局计数器累加
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(_statsAPI, new Blob(
+          [JSON.stringify({ events: ['duration:' + remaining] })],
+          { type: 'application/json' }
+        ));
+      }
       _trackEventsLocally(['duration:' + remaining]);
     }
   });
