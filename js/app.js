@@ -1646,24 +1646,35 @@ function _trackEventsLocally(events) {
   _saveLocalStats(store);
 }
 
-// ---- 服务端上报（始终尝试 POST，不依赖 _serverAvailable 状态） ----
+// ---- 服务端上报（POST 后直接从响应获取最新全局统计数据） ----
 function _trackEvents(events) {
   if (!events || events.length === 0) return;
   // 本地缓冲（仅作为事件暂存，不用于渲染）
   _trackEventsLocally(events);
-  // 始终尝试 POST 到服务端（确保全局计数器累加）
+  // POST 到服务端，响应中包含更新后的全局统计数据
   fetch(_statsAPI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ events: events })
   }).then(function(resp) {
     if (!resp.ok) {
-      return resp.text().then(function(t) { console.warn('[stats] POST ' + resp.status + ':', t); });
+      console.warn('[stats] POST ' + resp.status);
+      // POST 失败也尝试 GET 拉取当前全局数据
+      _fetchAndRenderStats();
+      return;
     }
-    _serverAvailable = true;
-    _fetchAndRenderStats();
+    return resp.json();
+  }).then(function(data) {
+    if (data && data.stats) {
+      _serverAvailable = true;
+      _cachedStats = data.stats;
+      renderStats();
+      console.log('[stats] server global data updated');
+    }
   }).catch(function(err) {
     console.warn('[stats] POST error:', err.message);
+    // 网络错误也尝试 GET
+    _fetchAndRenderStats();
   });
 }
 
@@ -1689,8 +1700,8 @@ function _fetchAndRenderStats() {
 function initSiteStats() {
   _sessionStart = Date.now();
 
-  // 直接从服务端拉取全局统计数据（HTML 默认显示 '--'，等服务端返回后渲染）
-  _fetchAndRenderStats();
+  // 上报访问+页面浏览到服务端，POST 响应中直接返回更新后的全局统计数据并渲染
+  // 不再单独发 GET 请求，避免 GET/POST 竞态导致显示 0
 
   // 上报访问+页面浏览
   _trackEvents(['visit', 'pageView']);
