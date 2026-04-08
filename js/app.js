@@ -1646,34 +1646,32 @@ function _trackEventsLocally(events) {
   _saveLocalStats(store);
 }
 
-// ---- 服务端上报（POST 后直接从响应获取最新全局统计数据） ----
+// ---- 服务端上报（POST 后获取最新全局统计数据） ----
 function _trackEvents(events) {
   if (!events || events.length === 0) return;
   // 本地缓冲（仅作为事件暂存，不用于渲染）
   _trackEventsLocally(events);
-  // POST 到服务端，响应中包含更新后的全局统计数据
+  // POST 到服务端
   fetch(_statsAPI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ events: events })
   }).then(function(resp) {
-    if (!resp.ok) {
-      console.warn('[stats] POST ' + resp.status);
-      // POST 失败也尝试 GET 拉取当前全局数据
-      _fetchAndRenderStats();
-      return;
-    }
+    if (!resp.ok) throw new Error('POST ' + resp.status);
     return resp.json();
   }).then(function(data) {
+    _serverAvailable = true;
     if (data && data.stats) {
-      _serverAvailable = true;
+      // 新版服务端：POST 响应直接包含更新后的全局统计
       _cachedStats = data.stats;
       renderStats();
-      console.log('[stats] server global data updated');
+    } else {
+      // 兼容旧版服务端：POST 成功后用 GET 拉取全局数据
+      _fetchAndRenderStats();
     }
   }).catch(function(err) {
     console.warn('[stats] POST error:', err.message);
-    // 网络错误也尝试 GET
+    // POST 失败也尝试 GET 拉取当前全局数据
     _fetchAndRenderStats();
   });
 }
