@@ -64,7 +64,7 @@ export default async (request, context) => {
       });
     }
 
-    // POST: 记录事件
+    // POST: 记录事件并返回更新后的统计数据
     if (request.method === "POST") {
       let body;
       try {
@@ -80,6 +80,7 @@ export default async (request, context) => {
 
       const allKeys = [keys.day, keys.week, keys.month, keys.year];
       const errors = [];
+      const updated = {};
 
       // 顺序读取-更新-写回（避免并发竞态）
       for (const key of allKeys) {
@@ -97,13 +98,24 @@ export default async (request, context) => {
           }
 
           await store.setJSON(key, data);
+          updated[key] = data;
         } catch (e) {
           console.error("[stats] key=" + key + " error:", e.message);
           errors.push(key + ": " + e.message);
         }
       }
 
-      return jsonResp({ ok: errors.length === 0, errors: errors.length > 0 ? errors : undefined });
+      // 返回更新后的统计数据（客户端可直接渲染，无需再发 GET）
+      return jsonResp({
+        ok: errors.length === 0,
+        errors: errors.length > 0 ? errors : undefined,
+        stats: {
+          today: updated[keys.day]   || { ...EMPTY },
+          week:  updated[keys.week]  || { ...EMPTY },
+          month: updated[keys.month] || { ...EMPTY },
+          year:  updated[keys.year]  || { ...EMPTY }
+        }
+      });
     }
 
     return jsonResp({ error: "Method not allowed" }, 405);
