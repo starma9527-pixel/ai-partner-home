@@ -26,15 +26,22 @@ function buildPrompts(type, input, modelKey) {
   let userPrompt = '';
 
   if (type === 'customer_analysis') {
-    // 所有模型统一使用相同的强制搜索指令（enable_search 对所有模型生效）
+    // Kimi/DeepSeek 通过 DashScope 不支持 enable_search，只能用训练数据
+    const hasSearch = modelKey === 'qwen35plus' || modelKey === 'qwenmax';
+    const searchPreamble = hasSearch
+      ? '【强制联网搜索指令 — 最高优先级】\n' +
+        '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
+        '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
+        '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
+        '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
+        '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
+        '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n'
+      : '【重要声明 — 数据来源】\n' +
+        '你当前未开启联网搜索能力，以下信息基于你的训练数据。\n' +
+        '对于公司基本信息（成立时间、注册资本、法定代表人等工商登记信息），你必须在相关表格下方注明"⚠ 以上工商信息来自AI训练数据，可能与最新工商登记不一致，建议通过天眼查(tianyancha.com)或企查查(qcc.com)核实"。\n' +
+        '对于你不确定的信息，直接写"未确认（建议核实）"，不要编造。\n';
     // cleanToolCallTags 过滤器已兜底处理 MiniMax 等模型可能输出的 XML 标签
-    systemPrompt = '【强制联网搜索指令 — 最高优先级】\n' +
-      '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
-      '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
-      '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
-      '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
-      '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
-      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n' +
+    systemPrompt = searchPreamble +
       '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。只输出Markdown格式的报告内容。\n\n' +
       '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
@@ -317,10 +324,9 @@ export default async (request, context) => {
   const isQwen = cfg.id.startsWith('qwen');
   const isKimi = cfg.id.toLowerCase().includes('kimi') || cfg.id.toLowerCase().includes('moonshot');
 
-  // Kimi: 只传最基础参数（model/messages/max_tokens/stream=false）
-  //        — 不传 enable_search / temperature（Kimi 对非标准参数敏感，多传就 400）
-  // 其他模型: 正常传 enable_search + temperature + stream
-  const actualStream = isKimi ? false : !!useStream;
+  // Kimi: 不传 enable_search / temperature（Kimi 对非标准参数敏感，多传就 400）
+  // 但流式输出 Kimi 是支持的，恢复流式以提升响应速度
+  const actualStream = !!useStream;
   const apiBody = {
     model: cfg.id,
     messages: [
@@ -383,24 +389,6 @@ export default async (request, context) => {
       : '未能生成内容，请重试';
     content = cleanToolCallTags(content);
     content = stripThinkingPreamble(content);
-
-    // 如果前端要求流式但实际走了非流式（如 Kimi），将内容封装为 SSE 格式返回
-    if (useStream && !actualStream) {
-      const encoder = new TextEncoder();
-      const ssePayload =
-        'data: ' + JSON.stringify({ type: 'start', model: cfg.displayName }) + '\n\n' +
-        'data: ' + JSON.stringify({ type: 'chunk', content: content }) + '\n\n' +
-        'data: [DONE]\n\n';
-      return new Response(ssePayload, {
-        status: 200,
-        headers: {
-          ...CORS_HEADERS,
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
-        }
-      });
-    }
 
     return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
       status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
