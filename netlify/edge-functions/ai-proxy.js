@@ -14,7 +14,7 @@ const CORS_HEADERS = {
 const MODEL_CONFIG = {
   'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 16000, displayName: 'Qwen3.5-Plus' },
   'qwenmax': { id: 'qwen-max', maxTokens: 8192, displayName: 'Qwen-Max' },
-  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 16000, displayName: 'Kimi-K2.5' },
+  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 8192, displayName: 'Kimi-K2.5' },
   'deepseek': { id: 'deepseek-v3', maxTokens: 16000, displayName: 'DeepSeek-V3' }
 };
 
@@ -97,21 +97,27 @@ function buildPrompts(type, input, modelKey) {
       '用Markdown表格展示，列包含：用户结果目标、关键战略举措、KPIs、典型Use Case\n' +
       '## 5. 公共云与生成式 AI（GenAI）的应用构想\n' +
       '先用 ### 子标题说明公有云潜在价值，再用Markdown表格展示3-5个GenAI应用场景，列包含：场景、业务痛点、解决思路、预期价值与指标。最后可简要讨论实施路径和关键成功要素';
-    userPrompt = '【搜索指令 — 请立即执行】\n' +
-      '在生成报告前，请先联网搜索以下关键词获取该公司的真实工商信息：\n' +
-      '1. "' + input.customerName + ' 天眼查"\n' +
-      '2. "' + input.customerName + ' 企查查"\n' +
-      '3. "' + input.customerName + ' 工商信息 成立时间 注册资本 法定代表人"\n' +
-      '4. "' + input.customerName + ' 股东信息 股权结构"\n' +
-      '将搜索到的成立时间、注册资本、法定代表人、股东持股比例等信息直接填入报告的"公司基本信息"和"股权信息"表格中。\n\n' +
+    userPrompt = '【第一步：确认公司全称 — 最高优先级】\n' +
+      '用户输入的名称是："' + input.customerName + '"。\n' +
+      '这可能是简称、品牌名或产品名。你必须先搜索"' + input.customerName + ' 工商注册全称"，确认该公司在国家企业信用信息公示系统中的**完整工商注册名称**（含"有限公司""股份有限公司"等后缀）。\n' +
+      '后续所有搜索都必须使用确认后的工商全称，不要用简称搜索（简称容易匹配到错误的公司）。\n\n' +
+      '【第二步：搜索工商信息 — 请立即执行】\n' +
+      '确认工商全称后，请搜索以下关键词获取该公司的真实工商信息：\n' +
+      '1. "[确认的工商全称] 天眼查"\n' +
+      '2. "[确认的工商全称] 企查查"\n' +
+      '3. "[确认的工商全称] 成立时间 注册资本 法定代表人"\n' +
+      '4. "[确认的工商全称] 股东信息 股权结构"\n' +
+      '将搜索到的成立时间、注册资本、法定代表人、股东持股比例等信息直接填入报告中。\n\n' +
       '【数据来源硬性约束 — 极其重要】\n' +
-      '公司基本信息表格中的每一项（成立时间、注册资本、法定代表人、注册地址等）必须且只能来自本次联网搜索返回的结果。' +
-      '你的训练数据中可能存储了过时或错误的公司信息，绝对禁止使用。' +
-      '判断标准：如果某项数据不在本次搜索结果中出现，就写"未查询到公开信息"，不要凭记忆填写。\n\n' +
-      '请分析以下客户的AI转型潜力：\n客户公司全称：' + input.customerName +
+      '1. 公司基本信息表格中的每一项（成立时间、注册资本、法定代表人、注册地址等）必须且只能来自本次联网搜索返回的结果。\n' +
+      '2. 你的训练数据中可能存储了过时或错误的公司信息，绝对禁止使用训练数据中的工商信息。\n' +
+      '3. 判断标准：如果某项数据不在本次搜索结果中出现，就写"未查询到公开信息"，不要凭记忆填写。\n' +
+      '4. 每条工商信息后面必须标注来源（如 "来源：天眼查" 或 "来源：企查查"）。\n' +
+      '5. 【防混淆】如果搜索结果中出现多家名称相似的公司，必须选择与用户输入最匹配的那一家，并在报告开头说明"经搜索确认，该公司工商全称为：XXX"。\n\n' +
+      '请分析以下客户的AI转型潜力：\n客户名称：' + input.customerName +
       (input.productName ? '\n产品/APP名称：' + input.productName : '') +
       (input.website ? '\n公司官网：' + input.website : '') +
-      '\n\n请务必先识别出该客户的完整公司名称，然后进行深入分析。' +
+      '\n\n请务必先通过搜索识别出该客户的完整工商注册名称，然后基于该全称进行所有后续搜索和分析。' +
       (input.productName ? '请特别关注其产品"' + input.productName + '"的业务模式和AI应用潜力。' : '') +
       (input.website ? '可参考其官网获取更多信息。' : '') +
       '请严格按照Markdown格式输出，包含#一级标题、##二级标题、###三级标题、**加粗**、列表和表格。';
@@ -307,20 +313,29 @@ export default async (request, context) => {
     });
   }
 
-  // enable_search: 所有模型均开启联网搜索
-  // search_options（forced_search/search_strategy）仅千问系列支持，第三方模型（Kimi/DeepSeek）不支持
+  // 构建 API 请求体（不同模型参数兼容性差异大）
   const isQwen = cfg.id.startsWith('qwen');
+  const isKimi = cfg.id.toLowerCase().includes('kimi') || cfg.id.toLowerCase().includes('moonshot');
+
+  // Kimi: 只传最基础参数（model/messages/max_tokens/stream=false）
+  //        — 不传 enable_search / temperature（Kimi 对非标准参数敏感，多传就 400）
+  // 其他模型: 正常传 enable_search + temperature + stream
+  const actualStream = isKimi ? false : !!useStream;
   const apiBody = {
     model: cfg.id,
     messages: [
       { role: 'system', content: prompts.systemPrompt },
       { role: 'user', content: prompts.userPrompt }
     ],
-    temperature: 0.3,
     max_tokens: cfg.maxTokens,
-    stream: !!useStream,
-    enable_search: true
+    stream: actualStream
   };
+
+  if (!isKimi) {
+    apiBody.temperature = 0.3;
+    apiBody.enable_search = true;
+  }
+
   if (isQwen) {
     apiBody.search_options = {
       forced_search: true,
@@ -355,11 +370,11 @@ export default async (request, context) => {
     }
 
     // 流式输出
-    if (useStream) {
+    if (actualStream) {
       return handleStream(response, cfg);
     }
 
-    // 非流式输出（兼容旧版前端）
+    // 非流式输出：解析 JSON 响应
     const data = await response.json();
     const message = data.choices && data.choices[0] && data.choices[0].message;
     // 只取 content，不取 reasoning_content（那是思考过程，不应展示）
@@ -368,6 +383,24 @@ export default async (request, context) => {
       : '未能生成内容，请重试';
     content = cleanToolCallTags(content);
     content = stripThinkingPreamble(content);
+
+    // 如果前端要求流式但实际走了非流式（如 Kimi），将内容封装为 SSE 格式返回
+    if (useStream && !actualStream) {
+      const encoder = new TextEncoder();
+      const ssePayload =
+        'data: ' + JSON.stringify({ type: 'start', model: cfg.displayName }) + '\n\n' +
+        'data: ' + JSON.stringify({ type: 'chunk', content: content }) + '\n\n' +
+        'data: [DONE]\n\n';
+      return new Response(ssePayload, {
+        status: 200,
+        headers: {
+          ...CORS_HEADERS,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      });
+    }
 
     return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
       status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
