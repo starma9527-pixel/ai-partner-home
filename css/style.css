@@ -468,11 +468,10 @@ input, textarea, select { font-family: inherit; }
 @media (max-width: 600px) {
   .top-bar { padding: 12px 12px; }
   .top-bar-text { font-size: 0.8rem; letter-spacing: 1.5px; }
-  .stats-table-wrap { overflow-x: auto; }
-  .stats-table { min-width: 420px; font-size: 0.8rem; }
-  .stats-table thead th { padding: 10px 8px; font-size: 0.75rem; }
-  .stats-table tbody td { padding: 10px 8px; font-size: 0.85rem; }
-  .stats-row-label { font-size: 0.78rem !important; padding-left: 12px !important; }
+  .stats-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stats-card { padding: 14px 10px; }
+  .stats-card-value { font-size: 1.4rem; }
+  .stats-card-label { font-size: 0.75rem; }
   .home-nav-grid {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -883,57 +882,42 @@ input, textarea, select { font-family: inherit; }
   color: var(--accent-green);
 }
 
-/* ===== Stats Dashboard (Table) ===== */
-.stats-table-wrap {
+/* ===== Stats Dashboard (Cards) ===== */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   margin-bottom: 28px;
+}
+.stats-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  padding: 20px 16px;
+  text-align: center;
   box-shadow: var(--shadow-card);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-.stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139,92,246,0.12);
 }
-.stats-table thead th {
-  background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(99,102,241,0.08));
+.stats-card-icon {
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+.stats-card-value {
+  font-size: 1.8rem;
+  font-weight: 800;
   color: var(--accent-purple);
-  font-weight: 700;
-  padding: 14px 12px;
-  text-align: center;
-  border-bottom: 2px solid var(--border-color);
-  font-size: 0.82rem;
-  white-space: nowrap;
-}
-.stats-table thead th:first-child {
-  text-align: left;
-  padding-left: 20px;
-  width: 100px;
-}
-.stats-table tbody td {
-  padding: 14px 12px;
-  text-align: center;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-weight: 700;
-  font-size: 1rem;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  margin-bottom: 4px;
 }
-.stats-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.stats-table tbody tr:hover {
-  background: rgba(139,92,246,0.03);
-}
-.stats-row-label {
-  text-align: left !important;
-  padding-left: 20px !important;
-  color: var(--text-secondary) !important;
-  font-weight: 600 !important;
-  font-size: 0.85rem !important;
-  white-space: nowrap;
+.stats-card-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 /* ===== Feedback Tab ===== */
