@@ -1121,7 +1121,11 @@ async function callAIStream(type, input, model, panelId) {
       if (!resp.ok) {
         const errText = await resp.text();
         let errMsg = '请求失败 HTTP ' + resp.status;
-        try { const j = JSON.parse(errText); errMsg = j.error || errMsg; } catch(e) {}
+        try {
+          const j = JSON.parse(errText);
+          errMsg = j.error || errMsg;
+          if (j.detail) errMsg += '\n' + j.detail;
+        } catch(e) {}
         throw new Error(errMsg);
       }
 
@@ -1566,92 +1570,16 @@ function sendFeedbackToAdmin(author, content) {
   }
 }
 
-// ===== 网站活跃度统计 (服务端全局统计 — 所有用户汇总) =====
+// ===== 网站活跃度统计 (服务端全局统计 — 所有用户汇总，简化版) =====
 var _sessionStart = Date.now();
 var _sessionTimer = null;
 var _statsAPI = '/api/stats';
-var _STATS_LOCAL_KEY = 'siteStats_local_v2';
-var _serverAvailable = false; // 标记服务端是否可用
-var _cachedStats = {
-  today: { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
-  week:  { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
-  month: { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
-  year:  { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 }
-};
+var _serverAvailable = false;
+var _cachedStats = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
 
-// ---- 时间周期 key（与服务端逻辑一致） ----
-function _getTimeKeys() {
-  var now = new Date();
-  var y = now.getFullYear();
-  var m = String(now.getMonth() + 1).padStart(2, '0');
-  var d = String(now.getDate()).padStart(2, '0');
-  // ISO week
-  var tmp = new Date(now);
-  tmp.setHours(0, 0, 0, 0);
-  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
-  var week1 = new Date(tmp.getFullYear(), 0, 4);
-  var wn = 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
-  return {
-    day:   y + '-' + m + '-' + d,
-    week:  y + '-W' + String(wn).padStart(2, '0'),
-    month: y + '-' + m,
-    year:  '' + y
-  };
-}
-
-// ---- localStorage 本地统计 ----
-function _loadLocalStats() {
-  try {
-    var s = localStorage.getItem(_STATS_LOCAL_KEY);
-    if (s) return JSON.parse(s);
-  } catch(e) {}
-  return {};
-}
-function _saveLocalStats(store) {
-  try { localStorage.setItem(_STATS_LOCAL_KEY, JSON.stringify(store)); } catch(e) {}
-}
-
-// 从本地统计构建与服务端相同格式的 stats 对象
-function _buildLocalCachedStats() {
-  var store = _loadLocalStats();
-  var keys = _getTimeKeys();
-  var EMPTY = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-  return {
-    today: store[keys.day]   || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
-    week:  store[keys.week]  || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
-    month: store[keys.month] || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 },
-    year:  store[keys.year]  || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 }
-  };
-}
-
-// 本地记录事件（各时间周期同步累加）
-function _trackEventsLocally(events) {
-  if (!events || events.length === 0) return;
-  var store = _loadLocalStats();
-  var keys = _getTimeKeys();
-  var allKeys = [keys.day, keys.week, keys.month, keys.year];
-  for (var k = 0; k < allKeys.length; k++) {
-    var key = allKeys[k];
-    if (!store[key]) store[key] = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-    for (var i = 0; i < events.length; i++) {
-      var evt = events[i];
-      if (evt === 'visit') store[key].visits += 1;
-      else if (evt === 'pageView') store[key].pageViews += 1;
-      else if (evt === 'aiCall') store[key].aiCalls += 1;
-      else if (typeof evt === 'string' && evt.indexOf('duration:') === 0) {
-        store[key].duration += (parseInt(evt.split(':')[1], 10) || 0);
-      }
-    }
-  }
-  _saveLocalStats(store);
-}
-
-// ---- 服务端上报（POST 后获取最新全局统计数据） ----
+// ---- 服务端上报 ----
 function _trackEvents(events) {
   if (!events || events.length === 0) return;
-  // 本地缓冲（仅作为事件暂存，不用于渲染）
-  _trackEventsLocally(events);
-  // POST 到服务端
   fetch(_statsAPI, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1662,85 +1590,58 @@ function _trackEvents(events) {
   }).then(function(data) {
     _serverAvailable = true;
     if (data && data.stats) {
-      // 新版服务端：POST 响应直接包含更新后的全局统计
       _cachedStats = data.stats;
       renderStats();
-    } else {
-      // 兼容旧版服务端：POST 成功后用 GET 拉取全局数据
-      _fetchAndRenderStats();
     }
   }).catch(function(err) {
     console.warn('[stats] POST error:', err.message);
-    // POST 失败也尝试 GET 拉取当前全局数据
+    // POST 失败尝试 GET
     _fetchAndRenderStats();
   });
 }
 
-// 从服务端拉取统计数据（只显示全局数据，不回退到本地个人数据）
 function _fetchAndRenderStats() {
   fetch(_statsAPI).then(function(resp) {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return resp.json();
   }).then(function(data) {
-    if (data && data.today) {
+    if (data && data.stats) {
       _serverAvailable = true;
-      _cachedStats = data;
+      _cachedStats = data.stats;
       renderStats();
-      console.log('[stats] server global data loaded');
     }
   }).catch(function(err) {
     console.warn('[stats] server unavailable:', err.message);
     _serverAvailable = false;
-    // 不回退到 localStorage 个人数据，保持显示 '--' 或上次服务端数据
   });
 }
 
 function initSiteStats() {
   _sessionStart = Date.now();
-
-  // 上报访问+页面浏览到服务端，POST 响应中直接返回更新后的全局统计数据并渲染
-  // 不再单独发 GET 请求，避免 GET/POST 竞态导致显示 0
-
-  // 上报访问+页面浏览
   _trackEvents(['visit', 'pageView']);
 
-  // 每30秒上报一次使用时长
   _sessionTimer = setInterval(function() {
     _trackEvents(['duration:30']);
   }, 30000);
 
-  // 页面关闭/刷新前，上报当前会话剩余时长到服务端
   window.addEventListener('beforeunload', function() {
     var elapsed = Math.floor((Date.now() - _sessionStart) / 1000);
     var reported = Math.floor(elapsed / 30) * 30;
     var remaining = elapsed - reported;
-    if (remaining > 0) {
-      // sendBeacon 不阻塞页面关闭，确保全局计数器累加
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(_statsAPI, new Blob(
-          [JSON.stringify({ events: ['duration:' + remaining] })],
-          { type: 'application/json' }
-        ));
-      }
-      _trackEventsLocally(['duration:' + remaining]);
+    if (remaining > 0 && navigator.sendBeacon) {
+      navigator.sendBeacon(_statsAPI, new Blob(
+        [JSON.stringify({ events: ['duration:' + remaining] })],
+        { type: 'application/json' }
+      ));
     }
   });
 
-  // 每秒更新所有行的时长显示（今日 + 本周 + 本月 + 年度）
+  // 每秒更新时长显示
   setInterval(function() {
-    var localSecs = Math.floor((Date.now() - _sessionStart) / 1000);
-    var pairs = [
-      ['statTodayDuration', _cachedStats.today],
-      ['statWeekDuration',  _cachedStats.week],
-      ['statMonthDuration', _cachedStats.month],
-      ['statYearDuration',  _cachedStats.year]
-    ];
-    for (var i = 0; i < pairs.length; i++) {
-      var el = document.getElementById(pairs[i][0]);
-      var data = pairs[i][1];
-      if (el && data) {
-        el.textContent = formatDuration((data.duration || 0) + localSecs);
-      }
+    var el = document.getElementById('statDuration');
+    if (el) {
+      var localSecs = Math.floor((Date.now() - _sessionStart) / 1000);
+      el.textContent = formatDuration((_cachedStats.duration || 0) + localSecs);
     }
   }, 1000);
 }
@@ -1752,7 +1653,7 @@ switchTab = function(tab) {
   _trackEvents(['pageView']);
 };
 
-// AI 调用计数（公开函数供 callAIStream 调用）
+// AI 调用计数
 function incrementAICalls() {
   _trackEvents(['aiCall']);
 }
@@ -1769,26 +1670,15 @@ function formatDuration(totalSecs) {
 
 function renderStats() {
   if (!_cachedStats) return;
-  var rows = [
-    { prefix: 'Today', data: _cachedStats.today },
-    { prefix: 'Week',  data: _cachedStats.week },
-    { prefix: 'Month', data: _cachedStats.month },
-    { prefix: 'Year',  data: _cachedStats.year }
-  ];
-
-  for (var i = 0; i < rows.length; i++) {
-    var r = rows[i];
-    var p = r.data || { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-    var el;
-    el = document.getElementById('stat' + r.prefix + 'Visits');
-    if (el) el.textContent = p.visits || 0;
-    el = document.getElementById('stat' + r.prefix + 'Duration');
-    if (el) el.textContent = formatDuration(p.duration || 0);
-    el = document.getElementById('stat' + r.prefix + 'PageViews');
-    if (el) el.textContent = p.pageViews || 0;
-    el = document.getElementById('stat' + r.prefix + 'AICalls');
-    if (el) el.textContent = p.aiCalls || 0;
-  }
+  var el;
+  el = document.getElementById('statVisits');
+  if (el) el.textContent = _cachedStats.visits || 0;
+  el = document.getElementById('statDuration');
+  if (el) el.textContent = formatDuration(_cachedStats.duration || 0);
+  el = document.getElementById('statPageViews');
+  if (el) el.textContent = _cachedStats.pageViews || 0;
+  el = document.getElementById('statAICalls');
+  if (el) el.textContent = _cachedStats.aiCalls || 0;
 }
 
 // ===== Offline AI Templates (fallback) =====
