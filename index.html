@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 先锋·伙伴之家</title>
-  <link rel="stylesheet" href="css/style.css?v=20260411b" />
+  <link rel="stylesheet" href="css/style.css?v=20260412" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 </head>
 <body>
@@ -320,49 +320,28 @@
   <div class="tab-panel" id="tab-feedback">
 
     <!-- FY27网站活跃度统计 -->
-    <div class="sub-title">📊 FY27网站活跃度统计</div>
-    <div class="stats-table-wrap" id="statsDashboard">
-      <table class="stats-table">
-        <thead>
-          <tr>
-            <th></th>
-            <th>访问次数</th>
-            <th>使用时长</th>
-            <th>页面浏览量</th>
-            <th>AI调用次数</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="stats-row-label">今日访问</td>
-            <td id="statTodayVisits">--</td>
-            <td id="statTodayDuration">--</td>
-            <td id="statTodayPageViews">--</td>
-            <td id="statTodayAICalls">--</td>
-          </tr>
-          <tr>
-            <td class="stats-row-label">本周访问</td>
-            <td id="statWeekVisits">--</td>
-            <td id="statWeekDuration">--</td>
-            <td id="statWeekPageViews">--</td>
-            <td id="statWeekAICalls">--</td>
-          </tr>
-          <tr>
-            <td class="stats-row-label">本月访问</td>
-            <td id="statMonthVisits">--</td>
-            <td id="statMonthDuration">--</td>
-            <td id="statMonthPageViews">--</td>
-            <td id="statMonthAICalls">--</td>
-          </tr>
-          <tr>
-            <td class="stats-row-label">年度累计</td>
-            <td id="statYearVisits">--</td>
-            <td id="statYearDuration">--</td>
-            <td id="statYearPageViews">--</td>
-            <td id="statYearAICalls">--</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="sub-title">FY27网站活跃度统计</div>
+    <div class="stats-cards" id="statsDashboard">
+      <div class="stats-card">
+        <div class="stats-card-icon">👥</div>
+        <div class="stats-card-value" id="statVisits">--</div>
+        <div class="stats-card-label">访问次数</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-icon">⏱️</div>
+        <div class="stats-card-value" id="statDuration">--</div>
+        <div class="stats-card-label">使用时长</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-icon">📄</div>
+        <div class="stats-card-value" id="statPageViews">--</div>
+        <div class="stats-card-label">页面浏览量</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-icon">🤖</div>
+        <div class="stats-card-value" id="statAICalls">--</div>
+        <div class="stats-card-label">AI调用次数</div>
+      </div>
     </div>
 
     <div class="sub-title" style="margin-top: 28px;">📨 伙伴心声</div>
@@ -403,6 +382,6 @@
 <script src="js/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="js/app.js?v=20260411b"></script>
+<script src="js/app.js?v=20260412"></script>
 </body>
 </html>
