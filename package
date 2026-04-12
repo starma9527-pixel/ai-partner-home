@@ -1,4 +1,7 @@
 {
   "name": "ai-partner-home",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0"
+  }
 }
