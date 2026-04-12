@@ -14,6 +14,13 @@
   path = "/api/feedback"
   function = "feedback"
 
+# Stats 使用 Serverless Function (Node.js)，不用 Edge Function
+# 因为 @netlify/blobs 的上下文只在 Serverless Functions 中可用
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200
+
 [[headers]]
   for = "/api/*"
   [headers.values]
