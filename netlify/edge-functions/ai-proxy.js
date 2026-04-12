@@ -13,8 +13,8 @@ const CORS_HEADERS = {
 
 const MODEL_CONFIG = {
   'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 16000, displayName: 'Qwen3.5-Plus' },
-  'qwenmax': { id: 'qwen-max', maxTokens: 16000, displayName: 'Qwen-Max' },
-  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 16000, displayName: 'Kimi-K2.5' },
+  'qwenmax': { id: 'qwen-max', maxTokens: 8192, displayName: 'Qwen-Max' },
+  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 8192, displayName: 'Kimi-K2.5' },
   'deepseek': { id: 'deepseek-v3', maxTokens: 16000, displayName: 'DeepSeek-V3' }
 };
 
