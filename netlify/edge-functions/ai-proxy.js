@@ -13,8 +13,8 @@ const CORS_HEADERS = {
 
 const MODEL_CONFIG = {
   'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 16000, displayName: 'Qwen3.5-Plus' },
-  'qwenmax': { id: 'qwen-max', maxTokens: 8192, displayName: 'Qwen-Max' },
-  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 8192, displayName: 'Kimi-K2.5' },
+  'qwenmax': { id: 'qwen-max', maxTokens: 16000, displayName: 'Qwen-Max' },
+  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 16000, displayName: 'Kimi-K2.5' },
   'deepseek': { id: 'deepseek-v3', maxTokens: 16000, displayName: 'DeepSeek-V3' }
 };
 
@@ -167,6 +167,47 @@ function buildPrompts(type, input, modelKey) {
   }
 
   return { systemPrompt, userPrompt };
+}
+
+// ===== Pre-search：用 Qwen-turbo 为无搜索能力的模型预先获取公司工商信息 =====
+// Kimi/DeepSeek 通过 DashScope 不支持 enable_search，会返回训练数据（经常是错的）。
+// 解决方案：先用快速、廉价的 qwen-turbo-latest（支持搜索）获取真实工商信息，
+// 然后将搜索结果注入 Kimi/DeepSeek 的 system prompt，确保基础数据准确。
+async function prefetchCompanyInfo(apiKey, customerName) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'qwen-turbo-latest',
+        messages: [
+          { role: 'system', content: '你是一个企业工商信息查询助手。请通过联网搜索获取用户询问的公司真实工商登记信息。只输出搜索到的事实数据，不要分析，不要编造。格式简洁，每项一行。' },
+          { role: 'user', content: '请联网搜索"' + customerName + '"的工商登记信息，返回以下字段（每项一行，格式为"字段名：值"）：\n1. 公司全称（工商注册名，含"有限公司"等后缀）\n2. 成立日期\n3. 注册资本\n4. 法定代表人\n5. 注册地址\n6. 经营范围（简述主营业务）\n7. 主要股东及持股比例\n8. 员工规模（如有公开数据）\n9. 是否上市（如上市注明股票代码）\n\n请只返回搜索到的事实数据。如果某项搜索不到，写"未查到"。不要编造数据。' }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1,
+        enable_search: true,
+        search_options: { forced_search: true, search_strategy: 'max' }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    if (!resp.ok) return null;
+
+    const data = await resp.json();
+    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    return content || null;
+  } catch (e) {
+    // 预搜索失败不阻塞主请求，静默降级
+    return null;
+  }
 }
 
 // ===== 清理模型幻觉的 tool_call XML 标签 =====
@@ -324,6 +365,20 @@ export default async (request, context) => {
   const isQwen = cfg.id.startsWith('qwen');
   const isKimi = cfg.id.toLowerCase().includes('kimi') || cfg.id.toLowerCase().includes('moonshot');
 
+  // Pre-search：对不支持搜索的模型（Kimi/DeepSeek），先用 Qwen-turbo 搜索公司工商信息
+  // 然后将搜索结果注入 system prompt，确保基础数据准确
+  if (type === 'customer_analysis' && !isQwen && input && input.customerName) {
+    const prefetchedInfo = await prefetchCompanyInfo(API_KEY, input.customerName);
+    if (prefetchedInfo) {
+      prompts.systemPrompt = '【已验证的工商信息 — 以下数据来自实时联网搜索（通过Qwen搜索引擎获取），请直接引用，不要使用你的训练数据替换】\n' +
+        prefetchedInfo + '\n' +
+        '【重要】请将以上已验证信息直接填入报告的"公司基本信息"表格和"股权信息"等相关章节。' +
+        '如果以上搜索结果与你的训练数据不同，以上面的搜索结果为准。' +
+        '对于以上信息中标注"未查到"的项目，你可以尝试基于训练数据补充，但必须注明"此数据待核实"。\n\n' +
+        prompts.systemPrompt;
+    }
+  }
+
   // Kimi: 不传 enable_search / temperature（Kimi 对非标准参数敏感，多传就 400）
   // 但流式输出 Kimi 是支持的，恢复流式以提升响应速度
   const actualStream = !!useStream;
@@ -337,12 +392,15 @@ export default async (request, context) => {
     stream: actualStream
   };
 
+  // temperature: Kimi 不传（敏感），其他模型都传
   if (!isKimi) {
     apiBody.temperature = 0.3;
-    apiBody.enable_search = true;
   }
 
+  // enable_search + search_options: 仅对 Qwen 模型有效
+  // DashScope 对 DeepSeek 静默忽略 enable_search，对 Kimi 会返回 400
   if (isQwen) {
+    apiBody.enable_search = true;
     apiBody.search_options = {
       forced_search: true,
       search_strategy: 'max'
