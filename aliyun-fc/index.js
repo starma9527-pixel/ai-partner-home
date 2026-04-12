@@ -35,6 +35,46 @@ function stripThinkingPreamble(text) {
   return text;
 }
 
+const DASHSCOPE_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+
+// Pre-search：用 Qwen-turbo 为无搜索能力的模型预先获取公司工商信息
+async function prefetchCompanyInfo(apiKey, customerName) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const resp = await fetch(DASHSCOPE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'qwen-turbo-latest',
+        messages: [
+          { role: 'system', content: '你是一个企业工商信息查询助手。请通过联网搜索获取用户询问的公司真实工商登记信息。只输出搜索到的事实数据，不要分析，不要编造。格式简洁，每项一行。' },
+          { role: 'user', content: '请联网搜索"' + customerName + '"的工商登记信息，返回以下字段（每项一行，格式为"字段名：值"）：\n1. 公司全称（工商注册名，含"有限公司"等后缀）\n2. 成立日期\n3. 注册资本\n4. 法定代表人\n5. 注册地址\n6. 经营范围（简述主营业务）\n7. 主要股东及持股比例\n8. 员工规模（如有公开数据）\n9. 是否上市（如上市注明股票代码）\n\n请只返回搜索到的事实数据。如果某项搜索不到，写"未查到"。不要编造数据。' }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1,
+        enable_search: true,
+        search_options: { forced_search: true, search_strategy: 'max' }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    if (!resp.ok) return null;
+
+    const data = await resp.json();
+    const content = data.choices?.[0]?.message?.content;
+    return content || null;
+  } catch (e) {
+    console.log('prefetchCompanyInfo failed:', e.message);
+    return null;
+  }
+}
+
 exports.handler = async (event, context) => {
   // FC 3.0: event 可能是 Buffer，需要先转为对象
   let evt = event;
@@ -139,7 +179,7 @@ exports.handler = async (event, context) => {
   const modelId = models[model] || 'qwen3.5-plus';
 
   // 各模型最大输出 Token
-  const modelMaxTokens = { 'qwen-max': 8192, 'Moonshot-Kimi-K2-Instruct': 8192 };
+  const modelMaxTokens = { 'qwen-max': 16000, 'Moonshot-Kimi-K2-Instruct': 16000 };
   const maxTokens = modelMaxTokens[modelId] || 16000;
 
   // 模型显示名称
@@ -305,6 +345,19 @@ exports.handler = async (event, context) => {
     const isQwen = modelId.startsWith('qwen');
     const isKimi = modelId.toLowerCase().includes('kimi') || modelId.toLowerCase().includes('moonshot');
 
+    // Pre-search：对不支持搜索的模型（Kimi/DeepSeek），先用 Qwen-turbo 搜索公司工商信息
+    if (type === 'customer_analysis' && !isQwen && input && input.customerName) {
+      const prefetchedInfo = await prefetchCompanyInfo(DASHSCOPE_KEY, input.customerName);
+      if (prefetchedInfo) {
+        systemPrompt = '【已验证的工商信息 — 以下数据来自实时联网搜索（通过Qwen搜索引擎获取），请直接引用，不要使用你的训练数据替换】\n' +
+          prefetchedInfo + '\n' +
+          '【重要】请将以上已验证信息直接填入报告的"公司基本信息"表格和"股权信息"等相关章节。' +
+          '如果以上搜索结果与你的训练数据不同，以上面的搜索结果为准。' +
+          '对于以上信息中标注"未查到"的项目，你可以尝试基于训练数据补充，但必须注明"此数据待核实"。\n\n' +
+          systemPrompt;
+      }
+    }
+
     // Kimi: 只传最基础参数（model/messages/max_tokens），不传 enable_search/temperature
     const apiBodyPayload = {
       model: modelId,
@@ -315,19 +368,21 @@ exports.handler = async (event, context) => {
       max_tokens: maxTokens
     };
 
+    // temperature: Kimi 不传（敏感），其他模型都传
     if (!isKimi) {
       apiBodyPayload.temperature = 0.3;
-      apiBodyPayload.enable_search = true;
     }
 
+    // enable_search + search_options: 仅对 Qwen 模型有效
     if (isQwen) {
+      apiBodyPayload.enable_search = true;
       apiBodyPayload.search_options = {
         forced_search: true,
         search_strategy: 'max'
       };
     }
 
-    const apiResponse = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
+    const apiResponse = await fetch(DASHSCOPE_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
