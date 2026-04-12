@@ -2,6 +2,6 @@
   "name": "ai-partner-home",
   "private": true,
   "dependencies": {
-    "@netlify/blobs": "^8.0.0"
+    "@netlify/blobs": "^7.0.0"
   }
 }
