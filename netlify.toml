@@ -14,8 +14,9 @@
   path = "/api/feedback"
   function = "feedback"
 
-# Stats 使用 Serverless Function (Node.js)，不用 Edge Function
-# 因为 @netlify/blobs 的上下文只在 Serverless Functions 中可用
+# Stats 使用 Serverless Function (Node.js)
+# 零 npm 依赖，用原生 fetch 直接调用 Blobs HTTP API
+# NETLIFY_BLOBS_CONTEXT 环境变量只在 Serverless Functions 中自动注入
 [[redirects]]
   from = "/api/stats"
   to = "/.netlify/functions/stats"
