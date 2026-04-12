@@ -1,41 +1,32 @@
 /**
- * Netlify Edge Function: Site Stats (全局访问统计)
- * 使用 @netlify/blobs 官方 SDK（Edge Function 内置，无需 npm install）
+ * Netlify Serverless Function (v2): Site Stats
+ *
+ * 全局访问统计 — 所有用户的数据汇总存储在 Netlify Blobs 中。
+ *
+ * 为什么用 Serverless Function 而不是 Edge Function？
+ * Edge Functions (Deno) 中 Netlify Blobs 的上下文变量不可用，
+ * 导致 getStore / getBlobContext 永远返回 null → 数据始终为 0。
+ * Serverless Functions (Node.js) 是 @netlify/blobs 的官方支持运行时。
  */
+
 import { getStore } from "@netlify/blobs";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Content-Type": "application/json",
-  "Cache-Control": "no-cache, no-store"
 };
 
-const EMPTY = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-
-function getTimeKeys() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  // ISO week number
-  const tmp = new Date(now);
-  tmp.setHours(0, 0, 0, 0);
-  tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
-  const week1 = new Date(tmp.getFullYear(), 0, 4);
-  const wn = 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
-  return {
-    day:   y + "-" + m + "-" + d,
-    week:  y + "-W" + String(wn).padStart(2, "0"),
-    month: y + "-" + m,
-    year:  "" + y
-  };
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
 }
 
-function jsonResp(data, status) {
-  return new Response(JSON.stringify(data), { status: status || 200, headers: CORS_HEADERS });
-}
+const EMPTY_STATS = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
+const STORE_NAME = "site-stats";
+const STORE_KEY = "total";
 
 export default async (request, context) => {
   // CORS preflight
@@ -43,72 +34,75 @@ export default async (request, context) => {
     return new Response("", { status: 204, headers: CORS_HEADERS });
   }
 
+  // Initialize blob store
+  let store;
   try {
-    const store = getStore("site-stats");
-    const keys = getTimeKeys();
-
-    // GET: 返回各时间维度的统计数据
-    if (request.method === "GET") {
-      const [day, week, month, year] = await Promise.all([
-        store.get(keys.day, { type: "json" }).catch(() => null),
-        store.get(keys.week, { type: "json" }).catch(() => null),
-        store.get(keys.month, { type: "json" }).catch(() => null),
-        store.get(keys.year, { type: "json" }).catch(() => null)
-      ]);
-
-      return jsonResp({
-        today: day  || { ...EMPTY },
-        week:  week || { ...EMPTY },
-        month: month || { ...EMPTY },
-        year:  year  || { ...EMPTY }
-      });
-    }
-
-    // POST: 记录事件
-    if (request.method === "POST") {
-      let body;
-      try {
-        body = await request.json();
-      } catch (e) {
-        return jsonResp({ error: "Invalid JSON body" }, 400);
-      }
-
-      const events = body.events;
-      if (!events || !Array.isArray(events) || events.length === 0) {
-        return jsonResp({ error: "Missing events array" }, 400);
-      }
-
-      const allKeys = [keys.day, keys.week, keys.month, keys.year];
-      const errors = [];
-
-      // 顺序读取-更新-写回（避免并发竞态）
-      for (const key of allKeys) {
-        try {
-          let data = await store.get(key, { type: "json" }).catch(() => null);
-          if (!data) data = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-
-          for (const evt of events) {
-            if (evt === "visit") data.visits += 1;
-            else if (evt === "pageView") data.pageViews += 1;
-            else if (evt === "aiCall") data.aiCalls += 1;
-            else if (typeof evt === "string" && evt.startsWith("duration:")) {
-              data.duration += (parseInt(evt.split(":")[1], 10) || 0);
-            }
-          }
-
-          await store.setJSON(key, data);
-        } catch (e) {
-          console.error("[stats] key=" + key + " error:", e.message);
-          errors.push(key + ": " + e.message);
-        }
-      }
-
-      return jsonResp({ ok: errors.length === 0, errors: errors.length > 0 ? errors : undefined });
-    }
-
-    return jsonResp({ error: "Method not allowed" }, 405);
-  } catch (err) {
-    console.error("[stats] Error:", err);
-    return jsonResp({ error: err.message, type: err.constructor?.name || "Error" }, 500);
+    store = getStore(STORE_NAME);
+  } catch (e) {
+    console.error("[stats] getStore failed:", e.message);
+    return jsonResponse({ stats: { ...EMPTY_STATS }, _storeError: e.message });
   }
+
+  // GET: return current stats
+  if (request.method === "GET") {
+    try {
+      const data = await store.get(STORE_KEY, { type: "json" });
+      return jsonResponse({ stats: data || { ...EMPTY_STATS } });
+    } catch (e) {
+      console.error("[stats] GET failed:", e.message);
+      return jsonResponse({ stats: { ...EMPTY_STATS } });
+    }
+  }
+
+  // POST: increment stats and return updated data
+  if (request.method === "POST") {
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return jsonResponse({ error: "Invalid JSON" }, 400);
+    }
+
+    const events = body.events;
+    if (!events || !Array.isArray(events) || events.length === 0) {
+      return jsonResponse({ error: "Missing events array" }, 400);
+    }
+
+    // Read current stats
+    let current;
+    try {
+      current = await store.get(STORE_KEY, { type: "json" });
+    } catch (e) {
+      console.error("[stats] read failed:", e.message);
+      current = null;
+    }
+    if (!current) {
+      current = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
+    }
+
+    // Process events
+    for (const evt of events) {
+      if (evt === "visit") current.visits += 1;
+      else if (evt === "pageView") current.pageViews += 1;
+      else if (evt === "aiCall") current.aiCalls += 1;
+      else if (typeof evt === "string" && evt.startsWith("duration:")) {
+        current.duration += parseInt(evt.split(":")[1], 10) || 0;
+      }
+    }
+
+    // Write back
+    try {
+      await store.setJSON(STORE_KEY, current);
+    } catch (e) {
+      console.error("[stats] write failed:", e.message);
+    }
+
+    return jsonResponse({ ok: true, stats: current });
+  }
+
+  return jsonResponse({ error: "Method not allowed" }, 405);
+};
+
+export const config = {
+  path: "/api/stats",
 };
