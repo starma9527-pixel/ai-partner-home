@@ -179,7 +179,7 @@ exports.handler = async (event, context) => {
   const modelId = models[model] || 'qwen3.5-plus';
 
   // 各模型最大输出 Token
-  const modelMaxTokens = { 'qwen-max': 16000, 'Moonshot-Kimi-K2-Instruct': 16000 };
+  const modelMaxTokens = { 'qwen-max': 8192, 'Moonshot-Kimi-K2-Instruct': 8192 };
   const maxTokens = modelMaxTokens[modelId] || 16000;
 
   // 模型显示名称
