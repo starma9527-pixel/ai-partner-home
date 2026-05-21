@@ -162,20 +162,20 @@
         </div>
         <div class="model-selector">
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwen35plus" />
-            <span class="model-chip">Qwen3.5-Plus<em>均衡</em></span>
+            <input type="checkbox" name="analysisModel" value="qwen3max" checked />
+            <span class="model-chip">Qwen3-Max<em>旗舰</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwenmax" checked />
-            <span class="model-chip">Qwen-Max<em>旗舰</em></span>
+            <input type="checkbox" name="analysisModel" value="qwenplus" checked />
+            <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="kimi" checked />
-            <span class="model-chip">Kimi-K2.5<em>长文本</em></span>
+            <input type="checkbox" name="analysisModel" value="kimi" />
+            <span class="model-chip">Kimi-K2.6<em>Agent</em></span>
           </label>
           <label class="model-option">
             <input type="checkbox" name="analysisModel" value="deepseek" />
-            <span class="model-chip">DeepSeek-V3<em>推理</em></span>
+            <span class="model-chip">DeepSeek-V3.2<em>推理</em></span>
           </label>
         </div>
         <button class="btn-generate" onclick="handleCustomerAnalysis()">🤖 生成客户分析报告</button>
@@ -260,20 +260,20 @@
 
         <div class="model-selector">
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="qwen35plus" />
-            <span class="model-chip">Qwen3.5-Plus<em>均衡</em></span>
+            <input type="checkbox" name="visitModel" value="qwen3max" checked />
+            <span class="model-chip">Qwen3-Max<em>旗舰</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="qwenmax" checked />
-            <span class="model-chip">Qwen-Max<em>旗舰</em></span>
+            <input type="checkbox" name="visitModel" value="qwenplus" checked />
+            <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="kimi" checked />
-            <span class="model-chip">Kimi-K2.5<em>长文本</em></span>
+            <input type="checkbox" name="visitModel" value="kimi" />
+            <span class="model-chip">Kimi-K2.6<em>Agent</em></span>
           </label>
           <label class="model-option">
             <input type="checkbox" name="visitModel" value="deepseek" />
-            <span class="model-chip">DeepSeek-V3<em>推理</em></span>
+            <span class="model-chip">DeepSeek-V3.2<em>推理</em></span>
           </label>
         </div>
 
@@ -313,38 +313,21 @@
     </div>
     <div class="rank-panel" id="rank-battle">
       <div class="battle-list" id="battleList"></div>
+      <a href="xibao.html" class="kb-banner" style="margin-top:16px;">
+        <span class="kb-banner-icon">🎉</span>
+        <div class="kb-banner-text">
+          <div class="kb-banner-title">MaaS喜报生成器</div>
+          <div class="kb-banner-desc">一键生成高燃销售战报海报，分享至钉钉/微信</div>
+        </div>
+        <span class="kb-banner-arrow">→</span>
+      </a>
     </div>
   </div>
 
   <!-- ===== FEEDBACK TAB ===== -->
   <div class="tab-panel" id="tab-feedback">
 
-    <!-- FY27网站活跃度统计 -->
-    <div class="sub-title">FY27网站活跃度统计</div>
-    <div class="stats-cards" id="statsDashboard">
-      <div class="stats-card">
-        <div class="stats-card-icon">👥</div>
-        <div class="stats-card-value" id="statVisits">--</div>
-        <div class="stats-card-label">访问次数</div>
-      </div>
-      <div class="stats-card">
-        <div class="stats-card-icon">⏱️</div>
-        <div class="stats-card-value" id="statDuration">--</div>
-        <div class="stats-card-label">使用时长</div>
-      </div>
-      <div class="stats-card">
-        <div class="stats-card-icon">📄</div>
-        <div class="stats-card-value" id="statPageViews">--</div>
-        <div class="stats-card-label">页面浏览量</div>
-      </div>
-      <div class="stats-card">
-        <div class="stats-card-icon">🤖</div>
-        <div class="stats-card-value" id="statAICalls">--</div>
-        <div class="stats-card-label">AI调用次数</div>
-      </div>
-    </div>
-
-    <div class="sub-title" style="margin-top: 28px;">📨 伙伴心声</div>
+    <div class="sub-title">📨 伙伴心声</div>
     <div class="feedback-form">
       <textarea id="feedbackContent" placeholder="说说你的想法、建议或需求...一句话也行！"></textarea>
       <div class="form-row">
