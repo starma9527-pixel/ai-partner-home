@@ -468,10 +468,6 @@ input, textarea, select { font-family: inherit; }
 @media (max-width: 600px) {
   .top-bar { padding: 12px 12px; }
   .top-bar-text { font-size: 0.8rem; letter-spacing: 1.5px; }
-  .stats-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .stats-card { padding: 14px 10px; }
-  .stats-card-value { font-size: 1.4rem; }
-  .stats-card-label { font-size: 0.75rem; }
   .home-nav-grid {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -880,44 +876,6 @@ input, textarea, select { font-family: inherit; }
 .battle-item .battle-amount {
   font-size: 1.1rem; font-weight: 700;
   color: var(--accent-green);
-}
-
-/* ===== Stats Dashboard (Cards) ===== */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
-}
-.stats-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 20px 16px;
-  text-align: center;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.stats-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139,92,246,0.12);
-}
-.stats-card-icon {
-  font-size: 1.6rem;
-  margin-bottom: 8px;
-}
-.stats-card-value {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--accent-purple);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-  margin-bottom: 4px;
-}
-.stats-card-label {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  font-weight: 600;
 }
 
 /* ===== Feedback Tab ===== */
