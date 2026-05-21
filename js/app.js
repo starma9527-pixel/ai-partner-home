@@ -417,12 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initRankTabs();
   initSceneSelector();
-  initSiteStats();
   renderHome();
   renderWeapons();
   renderMaas();
   renderRank();
-  renderStats();
 });
 
 // ===== Load Data =====
@@ -847,10 +845,10 @@ function handleFeedback() {
 
 // ===== AI API Call =====
 const MODEL_LABELS = {
-  qwen35plus: 'Qwen3.5-Plus',
-  qwenmax:    'Qwen-Max',
-  kimi:       'Kimi-K2.5',
-  deepseek:   'DeepSeek-V3',
+  qwen3max:  'Qwen3-Max',
+  qwenplus:  'Qwen3-Plus',
+  kimi:      'Kimi-K2.6',
+  deepseek:  'DeepSeek-V3.2',
 };
 
 // 格式化AI输出内容
@@ -1114,7 +1112,7 @@ async function callAIStream(type, input, model, panelId) {
         mode: 'cors',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-        body: JSON.stringify({ type, input, model: model || 'qwen35plus', stream: true }),
+        body: JSON.stringify({ type, input, model: model || 'qwen3max', stream: true }),
         signal: streamCtrl.signal
       });
 
@@ -1177,7 +1175,6 @@ async function callAIStream(type, input, model, panelId) {
       if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
       if (!fullContent) throw new Error('未收到有效内容');
       if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
-      if (typeof incrementAICalls === 'function') incrementAICalls();
       return { content: fullContent, model: model };
     } catch (err) {
       console.error(`[stream] 流式调用失败:`, err.message, '降级到非流式');
@@ -1204,7 +1201,7 @@ async function callAIStream(type, input, model, panelId) {
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ type, input, model: model || 'qwen35plus' }),
+          body: JSON.stringify({ type, input, model: model || 'qwen3max' }),
           signal: controller.signal
         });
 
@@ -1216,7 +1213,6 @@ async function callAIStream(type, input, model, panelId) {
         }
         if (!resp.ok || data.error) throw new Error(data.error || '请求失败 HTTP ' + resp.status);
         if (panelEl) panelEl.innerHTML = formatAIOutput(data.content);
-        if (typeof incrementAICalls === 'function') incrementAICalls();
         return { content: data.content, model: data.model };
       } catch (err) {
         lastError = err;
@@ -1568,117 +1564,6 @@ function sendFeedbackToAdmin(author, content) {
       console.warn('[Feedback] Edge Function 不可用:', err.message);
     });
   }
-}
-
-// ===== 网站活跃度统计 (服务端全局统计 — 所有用户汇总，简化版) =====
-var _sessionStart = Date.now();
-var _sessionTimer = null;
-var _statsAPI = '/api/stats';
-var _serverAvailable = false;
-var _cachedStats = { visits: 0, duration: 0, pageViews: 0, aiCalls: 0 };
-
-// ---- 服务端上报 ----
-function _trackEvents(events) {
-  if (!events || events.length === 0) return;
-  fetch(_statsAPI, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ events: events })
-  }).then(function(resp) {
-    if (!resp.ok) throw new Error('POST ' + resp.status);
-    return resp.json();
-  }).then(function(data) {
-    _serverAvailable = true;
-    if (data && data.stats) {
-      _cachedStats = data.stats;
-      renderStats();
-    }
-  }).catch(function(err) {
-    console.warn('[stats] POST error:', err.message);
-    // POST 失败尝试 GET
-    _fetchAndRenderStats();
-  });
-}
-
-function _fetchAndRenderStats() {
-  fetch(_statsAPI).then(function(resp) {
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    return resp.json();
-  }).then(function(data) {
-    if (data && data.stats) {
-      _serverAvailable = true;
-      _cachedStats = data.stats;
-      renderStats();
-    }
-  }).catch(function(err) {
-    console.warn('[stats] server unavailable:', err.message);
-    _serverAvailable = false;
-  });
-}
-
-function initSiteStats() {
-  _sessionStart = Date.now();
-  _trackEvents(['visit', 'pageView']);
-
-  _sessionTimer = setInterval(function() {
-    _trackEvents(['duration:30']);
-  }, 30000);
-
-  window.addEventListener('beforeunload', function() {
-    var elapsed = Math.floor((Date.now() - _sessionStart) / 1000);
-    var reported = Math.floor(elapsed / 30) * 30;
-    var remaining = elapsed - reported;
-    if (remaining > 0 && navigator.sendBeacon) {
-      navigator.sendBeacon(_statsAPI, new Blob(
-        [JSON.stringify({ events: ['duration:' + remaining] })],
-        { type: 'application/json' }
-      ));
-    }
-  });
-
-  // 每秒更新时长显示
-  setInterval(function() {
-    var el = document.getElementById('statDuration');
-    if (el) {
-      var localSecs = Math.floor((Date.now() - _sessionStart) / 1000);
-      el.textContent = formatDuration((_cachedStats.duration || 0) + localSecs);
-    }
-  }, 1000);
-}
-
-// Tab 切换时记录页面浏览
-var _origSwitchTab = switchTab;
-switchTab = function(tab) {
-  _origSwitchTab(tab);
-  _trackEvents(['pageView']);
-};
-
-// AI 调用计数
-function incrementAICalls() {
-  _trackEvents(['aiCall']);
-}
-
-function formatDuration(totalSecs) {
-  if (totalSecs < 60) return totalSecs + '秒';
-  var m = Math.floor(totalSecs / 60);
-  var s = totalSecs % 60;
-  if (m < 60) return m + '分' + (s > 0 ? s + '秒' : '');
-  var h = Math.floor(m / 60);
-  m = m % 60;
-  return h + '时' + (m > 0 ? m + '分' : '');
-}
-
-function renderStats() {
-  if (!_cachedStats) return;
-  var el;
-  el = document.getElementById('statVisits');
-  if (el) el.textContent = _cachedStats.visits || 0;
-  el = document.getElementById('statDuration');
-  if (el) el.textContent = formatDuration(_cachedStats.duration || 0);
-  el = document.getElementById('statPageViews');
-  if (el) el.textContent = _cachedStats.pageViews || 0;
-  el = document.getElementById('statAICalls');
-  if (el) el.textContent = _cachedStats.aiCalls || 0;
 }
 
 // ===== Offline AI Templates (fallback) =====
