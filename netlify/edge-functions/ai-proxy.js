@@ -1,7 +1,18 @@
 /**
  * Netlify Edge Function: AI Proxy for DashScope
  * 支持流式输出 (SSE) + 非流式输出
- * 支持 qwen3.5-plus / qwen-max / kimi-k2.5 / deepseek-v3 多模型
+ * 支持 qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2 多模型
+ *
+ * 模型选型说明（2025年5月）：
+ *   qwen3max   → qwen3-max       百炼旗舰，原生联网搜索，复杂推理首选
+ *   qwenplus   → qwen-plus       千问次旗舰，联网搜索，速度/质量平衡
+ *   kimi       → kimi-k2.6       K2.5直接升级版，Agent能力强，结构化输出好
+ *   deepseek   → deepseek-v3.2   混合推理，媲美GPT-5，性价比最高
+ *
+ * 联网搜索说明：
+ *   百炼文档确认：qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2
+ *   均通过 Chat Completions API 的 enable_search 参数支持联网搜索。
+ *   无需 pre-search 机制，所有模型直接开启。
  */
 
 const CORS_HEADERS = {
@@ -12,10 +23,10 @@ const CORS_HEADERS = {
 };
 
 const MODEL_CONFIG = {
-  'qwen35plus': { id: 'qwen3.5-plus', maxTokens: 16000, displayName: 'Qwen3.5-Plus' },
-  'qwenmax': { id: 'qwen-max', maxTokens: 8192, displayName: 'Qwen-Max' },
-  'kimi': { id: 'Moonshot-Kimi-K2-Instruct', maxTokens: 8192, displayName: 'Kimi-K2.5' },
-  'deepseek': { id: 'deepseek-v3', maxTokens: 16000, displayName: 'DeepSeek-V3' }
+  'qwen3max':  { id: 'qwen3-max',     maxTokens: 16000, displayName: 'Qwen3-Max' },
+  'qwenplus':  { id: 'qwen-plus',     maxTokens: 16000, displayName: 'Qwen3-Plus' },
+  'kimi':      { id: 'kimi-k2.6',     maxTokens: 8192,  displayName: 'Kimi-K2.6' },
+  'deepseek':  { id: 'deepseek-v3.2', maxTokens: 16000, displayName: 'DeepSeek-V3.2' }
 };
 
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
@@ -26,21 +37,18 @@ function buildPrompts(type, input, modelKey) {
   let userPrompt = '';
 
   if (type === 'customer_analysis') {
-    // Kimi/DeepSeek 通过 DashScope 不支持 enable_search，只能用训练数据
-    const hasSearch = modelKey === 'qwen35plus' || modelKey === 'qwenmax';
-    const searchPreamble = hasSearch
-      ? '【强制联网搜索指令 — 最高优先级】\n' +
-        '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
-        '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
-        '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
-        '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
-        '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
-        '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n'
-      : '【重要声明 — 数据来源】\n' +
-        '你当前未开启联网搜索能力，以下信息基于你的训练数据。\n' +
-        '对于公司基本信息（成立时间、注册资本、法定代表人等工商登记信息），你必须在相关表格下方注明"⚠ 以上工商信息来自AI训练数据，可能与最新工商登记不一致，建议通过天眼查(tianyancha.com)或企查查(qcc.com)核实"。\n' +
-        '对于你不确定的信息，直接写"未确认（建议核实）"，不要编造。\n';
-    // cleanToolCallTags 过滤器已兜底处理 MiniMax 等模型可能输出的 XML 标签
+    // 所有4个模型（qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2）均通过
+    // DashScope Chat Completions API 的 enable_search 参数支持联网搜索。
+    // 统一使用联网搜索声明，无需区分模型。
+    const searchPreamble =
+      '【强制联网搜索指令 — 最高优先级】\n' +
+      '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
+      '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
+      '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
+      '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
+      '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
+      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n';
+
     systemPrompt = searchPreamble +
       '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。只输出Markdown格式的报告内容。\n\n' +
       '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
@@ -65,7 +73,16 @@ function buildPrompts(type, input, modelKey) {
       '9. 【营收数据规则】\n' +
       '   - 上市公司：必须联网搜索其最新年报数据，注明"数据来源：XX公司20XX年年度报告"。\n' +
       '   - 非上市公司：先联网搜索是否有公开的融资、营收报道。如有，引用并注明来源。如确实无公开数据，写"该公司为非上市企业，未公开披露财务数据"，然后基于行业地位、融资规模、员工规模等估算营收量级区间，注明"此为基于公开信息的估算"。\n' +
-      '   - 禁止编造精确到小数点的营收、利润数字。\n\n' +
+      '   - 禁止编造精确到小数点的营收、利润数字。\n' +
+      '10. 【GenAI+Agent应用场景覆盖 — 极其重要】在第"输出2"的第5节中，除生成式AI外，还必须覆盖以下两类Agent提效场景：\n' +
+      '   【一】编程提效（开发者场景）：重点介绍通义灵码（Tongyi Lingma）——阿里云官方AI代码助手，支持代码补全、代码生成、代码审查、单元测试生成、技术问答等功能，可集成到VSCode/JetBrains IDE中。\n' +
+      '   【二】办公提效（全员场景）：重点介绍钉钉AI助理（企业协作）、通义听悟（会议转录/摘要）、通义万相（图像生成）等阿里巴巴集团旗下产品，以及基于百炼平台为企业定制的行业智能体。\n' +
+      '   【三】生成式AI业务场景：结合客户行业的核心业务流程，基于百炼平台（Model Studio）、PAI、通义千问API等构建行业应用。\n' +
+      '   - GenAI/Agent场景必须基于该客户的真实业务痛点，联网搜索最新信息生成，不可使用通用模板。\n' +
+      '   - 阿里云产品须使用2024年后的现役产品名称，每个场景须说明具体产品/API及可量化的业务收益。\n' +
+      '   - 【禁止推荐以下内容作为阿里云产品】：Cursor、GitHub Copilot、ChatGPT等非阿里系第三方AI工具。\n' +
+      '   - 【编程提效代表产品】通义灵码（Tongyi Lingma）和 Qoder 均为阿里云官方AI编程助手，应作为阿里云产品积极推荐。\n' +
+      '   - 【行业趋势时效性】所有行业趋势数据必须优先引用2024年至2025年的最新数据，不得使用2023年及以前的过时统计。\n\n' +
       '请生成一份专业的客户云与AI合作战略分析报告，严格按以下结构输出：\n\n' +
       '# 输出1：客户营收基础信息\n' +
       '## 公司基本信息\n' +
@@ -97,13 +114,20 @@ function buildPrompts(type, input, modelKey) {
       '## 1. 客户业务概况\n' +
       '分别用 ### 三级标题列出以下子项，每个子项下用列表展开：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、客户触达与服务模式、企业整体业务方向与中长期发展战略、2026年工作重点\n' +
       '## 2. 影响客户业务的关键行业趋势（未来 6-24 个月）\n' +
-      '用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑、与客户的相关性\n' +
+      '【必须联网搜索】请搜索该行业2024-2025年的最新趋势报告和新闻，用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑、与客户的相关性。趋势描述必须基于真实的行业事件或报告，不要使用泛泛的通用描述。\n' +
       '## 3. 从客户视角分析的机会与挑战\n' +
       '分"关键业务机会"和"主要挑战"两个 ### 子标题，各用列表展开3-5项\n' +
       '## 4. 从"用户结果"反推关键举措、指标和 Use Cases\n' +
       '用Markdown表格展示，列包含：用户结果目标、关键战略举措、KPIs、典型Use Case\n' +
-      '## 5. 公共云与生成式 AI（GenAI）的应用构想\n' +
-      '先用 ### 子标题说明公有云潜在价值，再用Markdown表格展示3-5个GenAI应用场景，列包含：场景、业务痛点、解决思路、预期价值与指标。最后可简要讨论实施路径和关键成功要素';
+      '## 5. 公共云与 GenAI+Agent 应用构想\n' +
+      '先用 ### 子标题说明公有云潜在价值。\n' +
+      '再分三个 ### 子标题分别展示应用场景，每个子标题下用Markdown表格输出2-3个场景，表格列包含：场景名称、业务痛点、阿里云解决方案（具体产品名称）、预期价值与指标：\n' +
+      '### 5.1 编程提效（开发者场景）— 通义灵码 / Qoder\n' +
+      '### 5.2 办公提效（全员场景）— 重点介绍钉钉AI助理、通义听悟等\n' +
+      '### 5.3 生成式AI业务创新（行业核心场景）— 基于百炼/PAI/Qwen API\n' +
+      '【重要】所有场景须：①基于客户真实业务痛点而非通用模板；②使用阿里云或阿里巴巴集团现役产品；③包含可量化的业务收益；④不推荐Cursor、GitHub Copilot等非阿里系第三方AI工具。\n' +
+      '最后简要讨论实施路径和关键成功要素。';
+
     userPrompt = '【第一步：确认公司全称 — 最高优先级】\n' +
       '用户输入的名称是："' + input.customerName + '"。\n' +
       '这可能是简称、品牌名或产品名。你必须先搜索"' + input.customerName + ' 工商注册全称"，确认该公司在国家企业信用信息公示系统中的**完整工商注册名称**（含"有限公司""股份有限公司"等后缀）。\n' +
@@ -134,7 +158,7 @@ function buildPrompts(type, input, modelKey) {
     const sceneName = sceneLabels[input.scene] || '客户拜访';
     systemPrompt = '你是阿里云西部大区资深AI销售教练，擅长帮助渠道伙伴制定高质量的客户拜访计划。\n\n' +
       '【会前调研规则】\n' +
-      '在生成拜访计划前，你必须先基于用户提供的客户名称，联网搜索该公司的真实业务信息，包括但不限于：主营业务、行业地位、近期新闻动态、融资/上市状态、业务规模。将这些真实信息融入拜访计划各章节，特别是"信息分享"和"会议议程"部分，确保价值点和议题基于客户的实际业务场景，而非通用模板。\n\n' +
+      '在生成拜访计划前，你必须先基于用户提供的客户名称，联网搜索该公司的真实业务信息，包括但不限于：主营业务、行业地位、近期新闻动态（2024-2025年）、融资/上市状态、业务规模。将这些真实信息融入拜访计划各章节，特别是"信息分享"和"会议议程"部分，确保价值点和议题基于客户的实际业务场景，而非通用模板。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
       '- 使用 ## 作为每个章节的标题（如 ## 一、拜访目标）\n' +
       '- 使用 ### 作为章节内的子标题\n' +
@@ -148,10 +172,11 @@ function buildPrompts(type, input, modelKey) {
       '1. 所有内容必须紧密围绕用户提供的具体客户信息，不要给出泛化的通用建议。\n' +
       '2. 内容必须结合"项目阶段+拜访对象角色+触发事件"，禁止通用套话。\n' +
       '3. 行动建议必须具体到可执行的步骤。\n' +
-      '4. 【客户信息准确性】当拜访计划中引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、竞争格局等），必须使用联网搜索获取的信息，不要依赖训练数据编造。如果第一次搜索未找到，换关键词再搜（如加"天眼查""企查查""官网"等后缀），主动多次尝试直到找到答案。\n' +
+      '4. 【客户信息准确性】当拜访计划中引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、竞争格局等），必须使用联网搜索获取的最新信息（优先2024-2025年），不要依赖训练数据编造。如果第一次搜索未找到，换关键词再搜（如加"天眼查""企查查""官网"等后缀），主动多次尝试直到找到答案。\n' +
       '5. 【禁止编造数据】不要虚构具体的财务数字、员工人数、市场份额百分比或竞品公司名称。无法获取时，将其列为"缺失信息"纳入第七章"会前补齐建议"。\n' +
-      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于真实、可验证的事件或报告，不要使用泛泛的通用趋势描述。\n' +
-      '7. 【不确定信息处理】遇到不确定的客户信息时，不要简单标注"待核实"。你必须先尝试通过搜索找到答案。只有在穷尽搜索仍无法确认时，才将该信息列入第七章"缺失信息与会前补齐建议"，并给出具体的验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n\n' +
+      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于真实、可验证的事件或报告（2024-2025年），不要使用泛泛的通用趋势描述。\n' +
+      '7. 【不确定信息处理】遇到不确定的客户信息时，不要简单标注"待核实"。你必须先尝试通过搜索找到答案。只有在穷尽搜索仍无法确认时，才将该信息列入第七章"缺失信息与会前补齐建议"，并给出具体的验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n' +
+      '8. 【阿里云产品准确性】在价值点分享中提及阿里云产品时，只使用现役产品（百炼/Qwen模型/PAI/函数计算/容器服务/云效等）。不推荐非阿里云品牌的AI工具。\n\n' +
       '请生成一份专业的拜访计划，严格按以下7个章节结构输出：\n' +
       '## 一、拜访目标\n从以下目标类型中选择1-2个主目标，输出一句话目标陈述。可选目标类型：认知塑造与教育（先教后卖）、商机确认（资格验证：需求/决策链/预算/时间）、决策推进（明确路径并获取下一步承诺）、价值交付与风险管理（交付价值/风险化解）、关系与影响力拓展（关键人覆盖与信任强化）。\n' +
       '## 二、用户行动承诺（Customer Commitment）\n这是客户（被拜访方）的行动承诺，不是阿里云的承诺。为这场拜访设计两层承诺，用表格展示：最高承诺（理想）和最低承诺（保底），每条承诺包含：用户做什么/谁负责/截止时间/交付物。承诺必须与项目阶段匹配。\n' +
@@ -169,47 +194,6 @@ function buildPrompts(type, input, modelKey) {
   return { systemPrompt, userPrompt };
 }
 
-// ===== Pre-search：用 Qwen-turbo 为无搜索能力的模型预先获取公司工商信息 =====
-// Kimi/DeepSeek 通过 DashScope 不支持 enable_search，会返回训练数据（经常是错的）。
-// 解决方案：先用快速、廉价的 qwen-turbo-latest（支持搜索）获取真实工商信息，
-// 然后将搜索结果注入 Kimi/DeepSeek 的 system prompt，确保基础数据准确。
-async function prefetchCompanyInfo(apiKey, customerName) {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const resp = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        model: 'qwen-turbo-latest',
-        messages: [
-          { role: 'system', content: '你是一个企业工商信息查询助手。请通过联网搜索获取用户询问的公司真实工商登记信息。只输出搜索到的事实数据，不要分析，不要编造。格式简洁，每项一行。' },
-          { role: 'user', content: '请联网搜索"' + customerName + '"的工商登记信息，返回以下字段（每项一行，格式为"字段名：值"）：\n1. 公司全称（工商注册名，含"有限公司"等后缀）\n2. 成立日期\n3. 注册资本\n4. 法定代表人\n5. 注册地址\n6. 经营范围（简述主营业务）\n7. 主要股东及持股比例\n8. 员工规模（如有公开数据）\n9. 是否上市（如上市注明股票代码）\n\n请只返回搜索到的事实数据。如果某项搜索不到，写"未查到"。不要编造数据。' }
-        ],
-        max_tokens: 2000,
-        temperature: 0.1,
-        enable_search: true,
-        search_options: { forced_search: true, search_strategy: 'max' }
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    if (!resp.ok) return null;
-
-    const data = await resp.json();
-    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    return content || null;
-  } catch (e) {
-    // 预搜索失败不阻塞主请求，静默降级
-    return null;
-  }
-}
-
 // ===== 清理模型幻觉的 tool_call XML 标签 =====
 function cleanToolCallTags(text) {
   if (!text) return text;
@@ -220,7 +204,6 @@ function cleanToolCallTags(text) {
   text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
   text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
   text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
-  // MiniMax 的 <tool_code>...</tool_code> 格式
   text = text.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '');
   text = text.replace(/<tool_code>[\s\S]*$/g, '');
   text = text.replace(/<query>[^<]*<\/query>/g, '');
@@ -249,7 +232,6 @@ function handleStream(apiResponse, cfg) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      // 先发送模型信息
       controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'start', model: cfg.displayName }) + '\n\n'));
 
       const reader = apiResponse.body.getReader();
@@ -278,7 +260,7 @@ function handleStream(apiResponse, cfg) {
                 const json = JSON.parse(trimmed.slice(6));
                 const delta = json.choices && json.choices[0] && json.choices[0].delta;
                 if (delta) {
-                  // 只取 content，不取 reasoning_content（那是思考过程，不应展示）
+                  // 只取 content，不取 reasoning_content（思考过程不展示）
                   let content = delta.content || '';
                   content = cleanToolCallTags(content);
                   if (content) {
@@ -319,6 +301,7 @@ export default async (request, context) => {
     return new Response(JSON.stringify({
       status: 'Edge Function is working!',
       hasApiKey: !!API_KEY,
+      models: Object.keys(MODEL_CONFIG),
       streaming: true,
       timestamp: new Date().toISOString()
     }, null, 2), { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
@@ -352,7 +335,8 @@ export default async (request, context) => {
   }
 
   const { type, input, model: modelKey, stream: useStream } = body;
-  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen35plus'];
+  // 默认模型改为 qwen3max
+  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen3max'];
   const prompts = buildPrompts(type, input, modelKey);
 
   if (!prompts) {
@@ -361,26 +345,10 @@ export default async (request, context) => {
     });
   }
 
-  // 构建 API 请求体（不同模型参数兼容性差异大）
-  const isQwen = cfg.id.startsWith('qwen');
-  const isKimi = cfg.id.toLowerCase().includes('kimi') || cfg.id.toLowerCase().includes('moonshot');
+  // 判断模型类型（用于参数兼容性处理）
+  const isKimi = cfg.id.toLowerCase().includes('kimi');
+  const isDeepSeek = cfg.id.toLowerCase().includes('deepseek');
 
-  // Pre-search：对不支持搜索的模型（Kimi/DeepSeek），先用 Qwen-turbo 搜索公司工商信息
-  // 然后将搜索结果注入 system prompt，确保基础数据准确
-  if (type === 'customer_analysis' && !isQwen && input && input.customerName) {
-    const prefetchedInfo = await prefetchCompanyInfo(API_KEY, input.customerName);
-    if (prefetchedInfo) {
-      prompts.systemPrompt = '【已验证的工商信息 — 以下数据来自实时联网搜索（通过Qwen搜索引擎获取），请直接引用，不要使用你的训练数据替换】\n' +
-        prefetchedInfo + '\n' +
-        '【重要】请将以上已验证信息直接填入报告的"公司基本信息"表格和"股权信息"等相关章节。' +
-        '如果以上搜索结果与你的训练数据不同，以上面的搜索结果为准。' +
-        '对于以上信息中标注"未查到"的项目，你可以尝试基于训练数据补充，但必须注明"此数据待核实"。\n\n' +
-        prompts.systemPrompt;
-    }
-  }
-
-  // Kimi: 不传 enable_search / temperature（Kimi 对非标准参数敏感，多传就 400）
-  // 但流式输出 Kimi 是支持的，恢复流式以提升响应速度
   const actualStream = !!useStream;
   const apiBody = {
     model: cfg.id,
@@ -392,23 +360,20 @@ export default async (request, context) => {
     stream: actualStream
   };
 
-  // temperature: Kimi 不传（敏感），其他模型都传
+  // temperature: Kimi 对此参数敏感，不传；其他模型传 0.3
   if (!isKimi) {
     apiBody.temperature = 0.3;
   }
 
-  // enable_search + search_options: 仅对 Qwen 模型有效
-  // DashScope 对 DeepSeek 静默忽略 enable_search，对 Kimi 会返回 400
-  if (isQwen) {
-    apiBody.enable_search = true;
-    apiBody.search_options = {
-      forced_search: true,
-      search_strategy: 'max'
-    };
-  }
+  // enable_search: 百炼文档确认 qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2
+  // 均通过 Chat Completions API 支持 enable_search，全部开启联网搜索。
+  apiBody.enable_search = true;
+  apiBody.search_options = {
+    forced_search: true,
+    search_strategy: 'max'
+  };
 
   try {
-    // 显式超时控制（流式模式下给更充足的时间，千问模型首 token 延迟可达 30-40s）
     const timeoutMs = useStream ? 120000 : 60000;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -433,15 +398,13 @@ export default async (request, context) => {
       }), { status: response.status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
     }
 
-    // 流式输出
     if (actualStream) {
       return handleStream(response, cfg);
     }
 
-    // 非流式输出：解析 JSON 响应
     const data = await response.json();
     const message = data.choices && data.choices[0] && data.choices[0].message;
-    // 只取 content，不取 reasoning_content（那是思考过程，不应展示）
+    // 只取 content，不取 reasoning_content（思考过程不展示）
     let content = message
       ? (message.content || '未能生成内容，请重试')
       : '未能生成内容，请重试';
@@ -455,7 +418,7 @@ export default async (request, context) => {
   } catch (err) {
     const isAbort = err.name === 'AbortError' || (err.message && err.message.includes('aborted'));
     const errorMsg = isAbort
-      ? '模型响应超时(25秒)，该模型可能正忙，请稍后重试'
+      ? '模型响应超时，该模型可能正忙，请稍后重试'
       : err.message;
     return new Response(JSON.stringify({ error: 'ERROR: ' + errorMsg }), {
       status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
