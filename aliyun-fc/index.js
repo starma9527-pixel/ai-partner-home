@@ -37,43 +37,6 @@ function stripThinkingPreamble(text) {
 
 const DASHSCOPE_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
-// Pre-search：用 Qwen-turbo 为无搜索能力的模型预先获取公司工商信息
-async function prefetchCompanyInfo(apiKey, customerName) {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const resp = await fetch(DASHSCOPE_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        model: 'qwen-turbo-latest',
-        messages: [
-          { role: 'system', content: '你是一个企业工商信息查询助手。请通过联网搜索获取用户询问的公司真实工商登记信息。只输出搜索到的事实数据，不要分析，不要编造。格式简洁，每项一行。' },
-          { role: 'user', content: '请联网搜索"' + customerName + '"的工商登记信息，返回以下字段（每项一行，格式为"字段名：值"）：\n1. 公司全称（工商注册名，含"有限公司"等后缀）\n2. 成立日期\n3. 注册资本\n4. 法定代表人\n5. 注册地址\n6. 经营范围（简述主营业务）\n7. 主要股东及持股比例\n8. 员工规模（如有公开数据）\n9. 是否上市（如上市注明股票代码）\n\n请只返回搜索到的事实数据。如果某项搜索不到，写"未查到"。不要编造数据。' }
-        ],
-        max_tokens: 2000,
-        temperature: 0.1,
-        enable_search: true,
-        search_options: { forced_search: true, search_strategy: 'max' }
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    if (!resp.ok) return null;
-
-    const data = await resp.json();
-    const content = data.choices?.[0]?.message?.content;
-    return content || null;
-  } catch (e) {
-    console.log('prefetchCompanyInfo failed:', e.message);
-    return null;
-  }
-}
 
 exports.handler = async (event, context) => {
   // FC 3.0: event 可能是 Buffer，需要先转为对象
@@ -170,26 +133,15 @@ exports.handler = async (event, context) => {
   }
 
   // 模型映射（前端 key → 百炼模型 ID）
-  const models = {
-    qwen35plus: 'qwen3.5-plus',
-    qwenmax: 'qwen-max',
-    kimi: 'Moonshot-Kimi-K2-Instruct',
-    deepseek: 'deepseek-v3'
+  const MODEL_CONFIG = {
+    'qwen3max':  { id: 'qwen3-max',     maxTokens: 16000, displayName: 'Qwen3-Max' },
+    'qwenplus':  { id: 'qwen-plus',     maxTokens: 16000, displayName: 'Qwen3-Plus' },
+    'kimi':      { id: 'kimi-k2.6',     maxTokens: 8192,  displayName: 'Kimi-K2.6' },
+    'deepseek':  { id: 'deepseek-v3.2', maxTokens: 16000, displayName: 'DeepSeek-V3.2' }
   };
-  const modelId = models[model] || 'qwen3.5-plus';
-
-  // 各模型最大输出 Token
-  const modelMaxTokens = { 'qwen-max': 8192, 'Moonshot-Kimi-K2-Instruct': 8192 };
-  const maxTokens = modelMaxTokens[modelId] || 16000;
-
-  // 模型显示名称
-  const displayNames = {
-    'qwen3.5-plus': 'Qwen3.5-Plus',
-    'qwen-max': 'Qwen-Max',
-    'kimi-k2.5': 'Kimi-K2.5',
-    'Moonshot-Kimi-K2-Instruct': 'Kimi-K2.5',
-    'deepseek-v3': 'DeepSeek-V3'
-  };
+  const cfg = MODEL_CONFIG[model] || MODEL_CONFIG['qwen3max'];
+  const modelId = cfg.id;
+  const maxTokens = cfg.maxTokens;
 
   console.log('Using model:', modelId);
 
@@ -198,20 +150,13 @@ exports.handler = async (event, context) => {
   let userPrompt = '';
 
   if (type === 'customer_analysis') {
-    // Kimi/DeepSeek 通过 DashScope 不支持 enable_search，只能用训练数据
-    const hasSearch = model === 'qwen35plus' || model === 'qwenmax';
-    const searchPreamble = hasSearch
-      ? '【强制联网搜索指令 — 最高优先级】\n' +
-        '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
-        '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
-        '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
-        '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
-        '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
-        '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n'
-      : '【重要声明 — 数据来源】\n' +
-        '你当前未开启联网搜索能力，以下信息基于你的训练数据。\n' +
-        '对于公司基本信息（成立时间、注册资本、法定代表人等工商登记信息），你必须在相关表格下方注明"⚠ 以上工商信息来自AI训练数据，可能与最新工商登记不一致，建议通过天眼查(tianyancha.com)或企查查(qcc.com)核实"。\n' +
-        '对于你不确定的信息，直接写"未确认（建议核实）"，不要编造。\n';
+    const searchPreamble = '【强制联网搜索指令 — 最高优先级】\n' +
+      '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
+      '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
+      '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
+      '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
+      '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
+      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n';
     // cleanToolCallTags 过滤器已兜底处理 MiniMax 等模型可能输出的 XML 标签
     systemPrompt = searchPreamble +
       '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。只输出Markdown格式的报告内容。\n\n' +
@@ -237,7 +182,16 @@ exports.handler = async (event, context) => {
       '9. 【营收数据规则】\n' +
       '   - 上市公司：必须联网搜索其最新年报数据，注明"数据来源：XX公司20XX年年度报告"。\n' +
       '   - 非上市公司：先联网搜索是否有公开的融资、营收报道。如有，引用并注明来源。如确实无公开数据，写"该公司为非上市企业，未公开披露财务数据"，然后基于行业地位、融资规模、员工规模等估算营收量级区间，注明"此为基于公开信息的估算"。\n' +
-      '   - 禁止编造精确到小数点的营收、利润数字。\n\n' +
+      '   - 禁止编造精确到小数点的营收、利润数字。\n' +
+      '10. 【GenAI+Agent应用场景覆盖 — 极其重要】在第"输出2"的第5节中，除生成式AI外，还必须覆盖以下两类Agent提效场景：\n' +
+      '   【一】编程提效（开发者场景）：重点介绍通义灵码（Tongyi Lingma）——阿里云官方AI代码助手，支持代码补全、代码生成、代码审查、单元测试生成、技术问答等功能，可集成到VSCode/JetBrains IDE中。\n' +
+      '   【二】办公提效（全员场景）：重点介绍钉钉AI助理（企业协作）、通义听悟（会议转录/摘要）、通义万相（图像生成）等阿里巴巴集团旗下产品，以及基于百炼平台为企业定制的行业智能体。\n' +
+      '   【三】生成式AI业务创新（行业核心场景）：结合客户行业的核心业务流程，基于百炼平台（Model Studio）、PAI、通义千问API等构建行业应用。\n' +
+      '   - GenAI/Agent场景必须基于该客户的真实业务痛点，联网搜索最新信息生成，不可使用通用模板。\n' +
+      '   - 阿里云产品须使用2024年后的现役产品名称，每个场景须说明具体产品/API及可量化的业务收益。\n' +
+      '   - 【禁止推荐以下内容作为阿里云产品】：Cursor、GitHub Copilot、ChatGPT等非阿里系第三方AI工具。\n' +
+      '   - 【编程提效代表产品】通义灵码（Tongyi Lingma）和 Qoder 均为阿里云官方AI编程助手，应作为阿里云产品积极推荐。\n' +
+      '   - 【行业趋势时效性】所有行业趋势数据必须优先引用2024年至2025年的最新数据，不得使用2023年及以前的过时统计。\n\n' +
       '请生成一份专业的客户云与AI合作战略分析报告，严格按以下结构输出：\n\n' +
       '# 输出1：客户营收基础信息\n' +
       '## 公司基本信息\n' +
@@ -269,13 +223,19 @@ exports.handler = async (event, context) => {
       '## 1. 客户业务概况\n' +
       '分别用 ### 三级标题列出以下子项，每个子项下用列表展开：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、客户触达与服务模式、企业整体业务方向与中长期发展战略、2026年工作重点\n' +
       '## 2. 影响客户业务的关键行业趋势（未来 6-24 个月）\n' +
-      '用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑、与客户的相关性\n' +
+      '【时效性要求】必须优先引用2024年至2025年的最新行业数据和报告。用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑（含数据来源年份）、与客户的相关性\n' +
       '## 3. 从客户视角分析的机会与挑战\n' +
       '分"关键业务机会"和"主要挑战"两个 ### 子标题，各用列表展开3-5项\n' +
       '## 4. 从"用户结果"反推关键举措、指标和 Use Cases\n' +
       '用Markdown表格展示，列包含：用户结果目标、关键战略举措、KPIs、典型Use Case\n' +
-      '## 5. 公共云与生成式 AI（GenAI）的应用构想\n' +
-      '先用 ### 子标题说明公有云潜在价值，再用Markdown表格展示3-5个GenAI应用场景，列包含：场景、业务痛点、解决思路、预期价值与指标。最后可简要讨论实施路径和关键成功要素';
+      '## 5. 公共云与 GenAI+Agent 应用构想\n' +
+      '先用 ### 子标题说明公有云潜在价值。\n' +
+      '再分三个 ### 子标题分别展示应用场景，每个子标题下用Markdown表格输出2-3个场景，表格列包含：场景名称、业务痛点、阿里云解决方案（具体产品名称）、预期价值与指标：\n' +
+      '### 5.1 编程提效（开发者场景）— 通义灵码 / Qoder\n' +
+      '### 5.2 办公提效（全员场景）— 重点介绍钉钉AI助理、通义听悟等\n' +
+      '### 5.3 生成式AI业务创新（行业核心场景）— 基于百炼/PAI/Qwen API\n' +
+      '【重要】所有场景须：①基于客户真实业务痛点而非通用模板；②使用阿里云或阿里巴巴集团现役产品；③包含可量化的业务收益；④不推荐Cursor、GitHub Copilot等非阿里系第三方AI工具。\n' +
+      '最后简要讨论实施路径和关键成功要素';
     userPrompt = '【第一步：确认公司全称 — 最高优先级】\n' +
       '用户输入的名称是："' + (input?.customerName || '未知') + '"。\n' +
       '这可能是简称、品牌名或产品名。你必须先搜索"' + (input?.customerName || '未知') + ' 工商注册全称"，确认该公司在国家企业信用信息公示系统中的**完整工商注册名称**（含"有限公司""股份有限公司"等后缀）。\n' +
@@ -322,7 +282,7 @@ exports.handler = async (event, context) => {
       '3. 行动建议必须具体到可执行的步骤。\n' +
       '4. 【客户信息准确性】当拜访计划中引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、竞争格局等），必须使用联网搜索获取的信息，不要依赖训练数据编造。如果第一次搜索未找到，换关键词再搜（如加"天眼查""企查查""官网"等后缀），主动多次尝试直到找到答案。\n' +
       '5. 【禁止编造数据】不要虚构具体的财务数字、员工人数、市场份额百分比或竞品公司名称。无法获取时，将其列为"缺失信息"纳入第七章"会前补齐建议"。\n' +
-      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于真实、可验证的事件或报告，不要使用泛泛的通用趋势描述。\n' +
+      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于2024年至2025年真实、可验证的事件或报告，不要使用泛泛的通用趋势描述。\n' +
       '7. 【不确定信息处理】遇到不确定的客户信息时，不要简单标注"待核实"。你必须先尝试通过搜索找到答案。只有在穷尽搜索仍无法确认时，才将该信息列入第七章"缺失信息与会前补齐建议"，并给出具体的验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n\n' +
       '请生成一份专业的拜访计划，严格按以下7个章节结构输出：\n' +
       '## 一、拜访目标\n从以下目标类型中选择1-2个主目标，输出一句话目标陈述。可选目标类型：认知塑造与教育（先教后卖）、商机确认（资格验证：需求/决策链/预算/时间）、决策推进（明确路径并获取下一步承诺）、价值交付与风险管理（交付价值/风险化解）、关系与影响力拓展（关键人覆盖与信任强化）。\n' +
@@ -341,24 +301,9 @@ exports.handler = async (event, context) => {
   try {
     console.log('Calling DashScope API...');
 
-    // 构建 API 请求体（不同模型参数兼容性差异大）
-    const isQwen = modelId.startsWith('qwen');
-    const isKimi = modelId.toLowerCase().includes('kimi') || modelId.toLowerCase().includes('moonshot');
+    const isKimi = modelId === 'kimi-k2.6';
 
-    // Pre-search：对不支持搜索的模型（Kimi/DeepSeek），先用 Qwen-turbo 搜索公司工商信息
-    if (type === 'customer_analysis' && !isQwen && input && input.customerName) {
-      const prefetchedInfo = await prefetchCompanyInfo(DASHSCOPE_KEY, input.customerName);
-      if (prefetchedInfo) {
-        systemPrompt = '【已验证的工商信息 — 以下数据来自实时联网搜索（通过Qwen搜索引擎获取），请直接引用，不要使用你的训练数据替换】\n' +
-          prefetchedInfo + '\n' +
-          '【重要】请将以上已验证信息直接填入报告的"公司基本信息"表格和"股权信息"等相关章节。' +
-          '如果以上搜索结果与你的训练数据不同，以上面的搜索结果为准。' +
-          '对于以上信息中标注"未查到"的项目，你可以尝试基于训练数据补充，但必须注明"此数据待核实"。\n\n' +
-          systemPrompt;
-      }
-    }
-
-    // Kimi: 只传最基础参数（model/messages/max_tokens），不传 enable_search/temperature
+    // 构建 API 请求体
     const apiBodyPayload = {
       model: modelId,
       messages: [
@@ -368,19 +313,17 @@ exports.handler = async (event, context) => {
       max_tokens: maxTokens
     };
 
-    // temperature: Kimi 不传（敏感），其他模型都传
+    // temperature: Kimi 不传（参数敏感），其他模型都传
     if (!isKimi) {
       apiBodyPayload.temperature = 0.3;
     }
 
-    // enable_search + search_options: 仅对 Qwen 模型有效
-    if (isQwen) {
-      apiBodyPayload.enable_search = true;
-      apiBodyPayload.search_options = {
-        forced_search: true,
-        search_strategy: 'max'
-      };
-    }
+    // enable_search：所有4个模型均支持，统一开启
+    apiBodyPayload.enable_search = true;
+    apiBodyPayload.search_options = {
+      forced_search: true,
+      search_strategy: 'max'
+    };
 
     const apiResponse = await fetch(DASHSCOPE_API_URL, {
       method: 'POST',
@@ -415,7 +358,7 @@ exports.handler = async (event, context) => {
 
     return resp(200, {
       content,
-      model: displayNames[modelId] || modelId,
+      model: cfg.displayName,
       usage: data.usage
     });
 
