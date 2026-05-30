@@ -130,17 +130,8 @@ const SITE_DATA = {
         "icon": "💰",
         "name": "赛道1 · 财税",
         "desc": "面向财税行业的MaaS解决方案，助力伙伴快速拓展财税数字化市场",
-        "scenarios": [
-          "智能发票识别与录入",
-          "财务报表自动生成",
-          "税务风险AI预警",
-          "智能记账与对账"
-        ],
-        "products": [
-          "通义千问API",
-          "OCR文字识别",
-          "智能对话机器人"
-        ],
+        "scenarios": ["智能发票识别与录入","财务报表自动生成","税务风险AI预警","智能记账与对账"],
+        "products": ["通义千问API","OCR文字识别","智能对话机器人"],
         "cases": "已有3家伙伴落地财税AI项目，累计合同额超200万",
         "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
@@ -149,17 +140,8 @@ const SITE_DATA = {
         "icon": "🎬",
         "name": "赛道2 · AI短剧",
         "desc": "AI驱动短剧/漫剧内容生产，从剧本到成片全链路赋能",
-        "scenarios": [
-          "AI剧本创作与改编",
-          "AI角色形象生成",
-          "智能配音与语音合成",
-          "AI视频剪辑与特效"
-        ],
-        "products": [
-          "通义万相",
-          "CosyVoice语音合成",
-          "通义千问API"
-        ],
+        "scenarios": ["AI剧本创作与改编","AI角色形象生成","智能配音与语音合成","AI视频剪辑与特效"],
+        "products": ["通义万相","CosyVoice语音合成","通义千问API"],
         "cases": "AI短剧制作成本降低60%，单集产出效率提升5倍",
         "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
@@ -168,17 +150,8 @@ const SITE_DATA = {
         "icon": "🎙️",
         "name": "赛道3 · 智能语音",
         "desc": "基于大模型的智能语音解决方案，覆盖客服、外呼、质检等场景",
-        "scenarios": [
-          "智能客服语音机器人",
-          "AI外呼与营销",
-          "通话质检与合规分析",
-          "语音转文字与会议纪要"
-        ],
-        "products": [
-          "语音识别ASR",
-          "语音合成TTS",
-          "通义千问API"
-        ],
+        "scenarios": ["智能客服语音机器人","AI外呼与营销","通话质检与合规分析","语音转文字与会议纪要"],
+        "products": ["语音识别ASR","语音合成TTS","通义千问API"],
         "cases": "智能语音客服替代率达70%，客户满意度提升25%",
         "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
@@ -187,19 +160,8 @@ const SITE_DATA = {
         "icon": "🛒",
         "name": "赛道4 · 电商/跨境电商",
         "desc": "AI赋能电商与跨境电商全链路，从智能选品、内容生成到客服运营，助力商家降本增效出海",
-        "scenarios": [
-          "AI商品图与商品视频生成",
-          "AI智能选品与市场趋势分析",
-          "商品自动上架与多语言文案生成（标题/详情）",
-          "智能客服与多语言售后支持",
-          "商品图侵权检测与跨境合规智能报关"
-        ],
-        "products": [
-          "通义千问API",
-          "机器翻译",
-          "智能客服",
-          "向量检索服务"
-        ],
+        "scenarios": ["AI商品图与商品视频生成","AI智能选品与市场趋势分析","商品自动上架与多语言文案生成（标题/详情）","智能客服与多语言售后支持","商品图侵权检测与跨境合规智能报关"],
+        "products": ["通义千问API","机器翻译","智能客服","向量检索服务"],
         "cases": "跨境电商客户接入AI多语言客服后，客服响应效率提升60%，人力成本降低40%",
         "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
@@ -208,17 +170,8 @@ const SITE_DATA = {
         "icon": "💬",
         "name": "赛道5 · 社交陪伴",
         "desc": "AI驱动的虚拟陪伴与社交互动解决方案，覆盖情感陪伴、虚拟角色、社群运营等场景",
-        "scenarios": [
-          "AI虚拟伴侣与情感陪伴",
-          "虚拟IP角色对话互动",
-          "智能社群运营与管理",
-          "游戏NPC智能对话"
-        ],
-        "products": [
-          "通义千问API",
-          "语音合成TTS",
-          "数字人形象生成"
-        ],
+        "scenarios": ["AI虚拟伴侣与情感陪伴","虚拟IP角色对话互动","智能社群运营与管理","游戏NPC智能对话"],
+        "products": ["通义千问API","语音合成TTS","数字人形象生成"],
         "cases": "虚拟陪伴用户日均使用时长超2小时，用户留存率提升40%",
         "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       },
@@ -227,17 +180,8 @@ const SITE_DATA = {
         "icon": "🤖",
         "name": "赛道6 · SaaS Agent",
         "desc": "基于大模型的智能SaaS助手，为各类SaaS产品注入AI能力，提升用户体验与效率",
-        "scenarios": [
-          "智能文档助手与内容生成",
-          "数据分析与可视化洞察",
-          "自动化工作流与任务执行",
-          "智能客服与工单处理"
-        ],
-        "products": [
-          "通义千问API",
-          "Function Calling工具调用",
-          "知识库RAG检索"
-        ],
+        "scenarios": ["智能文档助手与内容生成","数据分析与可视化洞察","自动化工作流与任务执行","智能客服与工单处理"],
+        "products": ["通义千问API","Function Calling工具调用","知识库RAG检索"],
         "cases": "SaaS产品接入AI助手后，用户付费转化率提升35%，操作效率提升3倍",
         "link": "https://alidocs.dingtalk.com/i/spaces/O5pXB2qoKqZoBX7Z/overview"
       }
@@ -245,164 +189,46 @@ const SITE_DATA = {
   },
   "rank": {
     "tokenRank": [
-      {
-        "rank": 1,
-        "name": "四川捷云",
-        "score": "25%"
-      },
-      {
-        "rank": 2,
-        "name": "成都端木",
-        "score": "17%"
-      },
-      {
-        "rank": 3,
-        "name": "长虹佳华",
-        "score": "14%"
-      },
-      {
-        "rank": 4,
-        "name": "四川柏盛云途",
-        "score": "14%"
-      },
-      {
-        "rank": 5,
-        "name": "重庆羋游",
-        "score": "10%"
-      },
-      {
-        "rank": 6,
-        "name": "重庆云之渝",
-        "score": "9%"
-      },
-      {
-        "rank": 7,
-        "name": "重庆典名",
-        "score": "8%"
-      }
+      {"rank":1,"name":"四川捷云","score":"25%"},
+      {"rank":2,"name":"成都端木","score":"17%"},
+      {"rank":3,"name":"长虹佳华","score":"14%"},
+      {"rank":4,"name":"四川柏盛云途","score":"14%"},
+      {"rank":5,"name":"重庆羋游","score":"10%"},
+      {"rank":6,"name":"重庆云之渝","score":"9%"},
+      {"rank":7,"name":"重庆典名","score":"8%"}
     ],
     "caseRank": [
-      {
-        "rank": 1,
-        "name": "重庆典名",
-        "score": ""
-      },
-      {
-        "rank": 2,
-        "name": "数联创新",
-        "score": 18
-      },
-      {
-        "rank": 3,
-        "name": "云翔信息",
-        "score": 15
-      },
-      {
-        "rank": 4,
-        "name": "天行数据",
-        "score": 12
-      },
-      {
-        "rank": 5,
-        "name": "智源网络",
-        "score": 9
-      }
+      {"rank":1,"name":"重庆典名","score":""},
+      {"rank":2,"name":"数联创新","score":18},
+      {"rank":3,"name":"云翔信息","score":15},
+      {"rank":4,"name":"天行数据","score":12},
+      {"rank":5,"name":"智源网络","score":9}
     ],
     "studyRank": [
-      {
-        "rank": 1,
-        "name": "云翔信息",
-        "score": "42h"
-      },
-      {
-        "rank": 2,
-        "name": "锐智科技",
-        "score": "38h"
-      },
-      {
-        "rank": 3,
-        "name": "智源网络",
-        "score": "35h"
-      },
-      {
-        "rank": 4,
-        "name": "数联创新",
-        "score": "31h"
-      },
-      {
-        "rank": 5,
-        "name": "天行数据",
-        "score": "28h"
-      }
+      {"rank":1,"name":"云翔信息","score":"42h"},
+      {"rank":2,"name":"锐智科技","score":"38h"},
+      {"rank":3,"name":"智源网络","score":"35h"},
+      {"rank":4,"name":"数联创新","score":"31h"},
+      {"rank":5,"name":"天行数据","score":"28h"}
     ],
     "certRank": [
-      {
-        "rank": 1,
-        "name": "锐智科技",
-        "score": "92%"
-      },
-      {
-        "rank": 2,
-        "name": "云翔信息",
-        "score": "85%"
-      },
-      {
-        "rank": 3,
-        "name": "天行数据",
-        "score": "78%"
-      },
-      {
-        "rank": 4,
-        "name": "数联创新",
-        "score": "73%"
-      },
-      {
-        "rank": 5,
-        "name": "智源网络",
-        "score": "68%"
-      }
+      {"rank":1,"name":"锐智科技","score":"92%"},
+      {"rank":2,"name":"云翔信息","score":"85%"},
+      {"rank":3,"name":"天行数据","score":"78%"},
+      {"rank":4,"name":"数联创新","score":"73%"},
+      {"rank":5,"name":"智源网络","score":"68%"}
     ],
     "battleReports": [
-      {
-        "title": "重庆典名签约XX客户千万级数据集建设项目",
-        "amount": "千万级",
-        "date": "2026-03-2"
-      },
-      {
-        "title": "四川捷云信通抓住 OpenClaw 爆发机遇，7 天狂揽 200+ 新客户！",
-        "amount": "--",
-        "date": "2026-03-10"
-      },
-      {
-        "title": "成都慕创中标XX一体机项目",
-        "amount": "百万级",
-        "date": "2026-03-12"
-      }
+      {"title":"重庆典名签约XX客户千万级数据集建设项目","amount":"千万级","date":"2026-03-2"},
+      {"title":"四川捷云信通抓住 OpenClaw 爆发机遇，7 天狂揽 200+ 新客户！","amount":"--","date":"2026-03-10"},
+      {"title":"成都慕创中标XX一体机项目","amount":"百万级","date":"2026-03-12"}
     ]
   },
   "feedback": {
     "messages": [
-      {
-        "id": 1,
-        "author": "张伟 · 锐智科技",
-        "content": "希望能增加更多金融行业的案例资料",
-        "date": "2025-02-28",
-        "likes": 12
-      },
-      {
-        "id": 2,
-        "author": "李娜 · 云翔信息",
-        "content": "周五培训非常实用，希望能有回放",
-        "date": "2025-02-27",
-        "likes": 8
-      },
-      {
-        "id": 3,
-        "author": "王磊 · 数联创新",
-        "content": "报价工具建议增加批量导出功能",
-        "date": "2025-02-26",
-        "likes": 5
-      }
+      {"id":1,"author":"张伟 · 锐智科技","content":"希望能增加更多金融行业的案例资料","date":"2025-02-28","likes":12},
+      {"id":2,"author":"李娜 · 云翔信息","content":"周五培训非常实用，希望能有回放","date":"2025-02-27","likes":8},
+      {"id":3,"author":"王磊 · 数联创新","content":"报价工具建议增加批量导出功能","date":"2025-02-26","likes":5}
     ]
   }
 };
@@ -417,6 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabs();
   initRankTabs();
   initSceneSelector();
+  initBatchUpload();
   renderHome();
   renderWeapons();
   renderMaas();
@@ -427,10 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadSiteData() {
   try {
     const resp = await fetch('data/site-data.json');
-    if (resp.ok) {
-      siteData = await resp.json();
-      return;
-    }
+    if (resp.ok) { siteData = await resp.json(); return; }
   } catch (e) {}
   siteData = SITE_DATA;
 }
@@ -441,18 +265,15 @@ function initTabs() {
   nav.addEventListener('click', (e) => {
     const btn = e.target.closest('.pill-btn');
     if (!btn) return;
-    const tab = btn.dataset.tab;
-    switchTab(tab);
+    switchTab(btn.dataset.tab);
   });
 }
 
-// 切换标签页（首页卡片和导航栏共用）
 function switchTab(tab) {
   const nav = document.getElementById('pillNav');
   nav.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
   const targetBtn = nav.querySelector(`.pill-btn[data-tab="${tab}"]`);
   if (targetBtn) targetBtn.classList.add('active');
-  // 手机端导航也同步
   document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
   const mobileBtn = document.querySelector(`.mobile-nav-btn[data-tab="${tab}"]`);
   if (mobileBtn) mobileBtn.classList.add('active');
@@ -468,26 +289,24 @@ function initRankTabs() {
   tabs.addEventListener('click', (e) => {
     const btn = e.target.closest('.rank-tab');
     if (!btn) return;
-    const rank = btn.dataset.rank;
     tabs.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.querySelectorAll('.rank-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('rank-' + rank).classList.add('active');
+    document.getElementById('rank-' + btn.dataset.rank).classList.add('active');
   });
 }
 
-// ===== Scene Selector (Visit Plan) =====
+// ===== Scene Selector =====
 function initSceneSelector() {
   const sel = document.getElementById('sceneSelector');
   if (!sel) return;
   sel.addEventListener('click', (e) => {
     const btn = e.target.closest('.scene-btn');
     if (!btn) return;
-    const scene = btn.dataset.scene;
     sel.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.querySelectorAll('.scene-form').forEach(f => f.classList.remove('active'));
-    document.getElementById('form-' + scene).classList.add('active');
+    document.getElementById('form-' + btn.dataset.scene).classList.add('active');
   });
 }
 
@@ -521,8 +340,7 @@ function renderWeapons() {
           <div class="doc-meta">${[item.type, item.size, item.date].filter(Boolean).join(' · ')}</div>
         </div>
         <a href="${item.link}" class="btn-dl" target="_blank">查看</a>
-      </div>
-    `;
+      </div>`;
   });
   const toolGrid = document.getElementById('toolGrid');
   (weapons.tools || []).forEach(item => {
@@ -531,8 +349,7 @@ function renderWeapons() {
         <div class="tool-icon">${item.icon}</div>
         <div class="tool-name">${item.title}</div>
         <div class="tool-desc">${item.desc}</div>
-      </div>
-    `;
+      </div>`;
   });
   const knowledgeList = document.getElementById('knowledgeList');
   (weapons.knowledge || []).forEach(item => {
@@ -545,13 +362,10 @@ function renderWeapons() {
           <div class="doc-meta">${item.type} · ${isVideo ? item.duration : item.size} · ${item.date}</div>
         </div>
         <a href="${item.link}" class="btn-dl" target="_blank">${isVideo ? '观看' : '下载'}</a>
-      </div>
-    `;
+      </div>`;
   });
   const kbLink = document.getElementById('kbLink');
   if (weapons.knowledgeBaseLink) kbLink.href = weapons.knowledgeBaseLink;
-
-  // Render Live Trainings (moved from Guide to Weapons)
   const liveGrid = document.getElementById('liveGrid');
   if (liveGrid) {
     (weapons.liveTrainings || []).forEach(item => {
@@ -562,8 +376,7 @@ function renderWeapons() {
             <div class="live-title">${item.title}</div>
             <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
           </div>
-        </a>
-      `;
+        </a>`;
     });
   }
   const moreLiveLink = document.getElementById('moreLiveLink');
@@ -575,11 +388,9 @@ function renderMaas() {
   const maas = siteData.maas || {};
   const trackGrid = document.getElementById('trackGrid');
   if (!trackGrid) return;
-
   (maas.tracks || []).forEach(track => {
     const scenariosHtml = (track.scenarios || []).map(s => `<li>${s}</li>`).join('');
     const productsHtml = (track.products || []).map(p => `<span class="product-tag">${p}</span>`).join('');
-
     trackGrid.innerHTML += `
       <div class="track-card">
         <div class="track-header">
@@ -597,8 +408,7 @@ function renderMaas() {
         </div>
         <div class="track-cases">${track.cases}</div>
         <a href="${track.link}" class="track-btn" target="_blank">了解详情 →</a>
-      </div>
-    `;
+      </div>`;
   });
 }
 
@@ -614,8 +424,7 @@ function renderGuide() {
           <div class="live-title">${item.title}</div>
           <div class="live-meta">🕐 ${item.date} · 讲师：${item.speaker}</div>
         </div>
-      </a>
-    `;
+      </a>`;
   });
   const moreLiveLink = document.getElementById('moreLiveLink');
   if (guide.moreLiveLink && moreLiveLink) moreLiveLink.href = guide.moreLiveLink;
@@ -632,8 +441,7 @@ function renderRank() {
           <div class="rank-num">${item.rank}</div>
           <div class="rank-name">${item.name}</div>
           <div class="rank-score">${typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score}</div>
-        </div>
-      `;
+        </div>`;
     });
   }
   renderRankList('tokenRankList', rank.tokenRank, '');
@@ -650,52 +458,37 @@ function renderRank() {
           <div class="battle-meta">${item.date}</div>
         </div>
         <div class="battle-amount">${item.amount}</div>
-      </div>
-    `;
+      </div>`;
   });
 }
 
-
-
 // ===== Mobile Navigation =====
 function toggleMobileNav() {
-  const nav = document.getElementById('mobileNav');
-  const overlay = document.getElementById('mobileNavOverlay');
-  const btn = document.getElementById('hamburgerBtn');
-  nav.classList.toggle('show');
-  overlay.classList.toggle('show');
-  btn.classList.toggle('open');
+  document.getElementById('mobileNav').classList.toggle('show');
+  document.getElementById('mobileNavOverlay').classList.toggle('show');
+  document.getElementById('hamburgerBtn').classList.toggle('open');
 }
 
 function mobileNavTo(tab) {
   const btn = document.querySelector('.pill-btn[data-tab="' + tab + '"]');
   if (btn) btn.click();
-  // Update mobile nav active state
   document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.mobile-nav-btn[data-tab="' + tab + '"]').classList.add('active');
   toggleMobileNav();
 }
 
 // ===== 客户分析报告（多模型Tab切换）=====
-// Markdown 格式指令，附加到前端请求确保 AI 返回格式化内容
-// 格式提示已移至后端 systemPrompt，前端不再重复追加（减少 token 消耗，加快响应）
-
 function handleCustomerAnalysis() {
   const val = document.getElementById('analysisInput').value.trim();
   if (!val) { showToast('请输入客户公司全称'); return; }
   const productName = (document.getElementById('analysisProduct') || {}).value || '';
   const website = (document.getElementById('analysisWebsite') || {}).value || '';
-
-  // 读取选中的模型
   const checked = document.querySelectorAll('input[name="analysisModel"]:checked');
   const selectedModels = Array.from(checked).map(cb => cb.value);
   if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
-
   const outputDiv = document.getElementById('customerOutput');
   const contentDiv = document.getElementById('customerOutputContent');
   outputDiv.classList.add('show');
-
-  // 构建Tab切换布局（单宫格）
   contentDiv.innerHTML =
     '<div class="output-tabs" id="customerOutputTabs">' +
       selectedModels.map((m, i) =>
@@ -712,10 +505,7 @@ function handleCustomerAnalysis() {
         '</div>'
       ).join('') +
     '</div>';
-
   var inputPayload = { customerName: val, productName: productName.trim(), website: website.trim() };
-
-  // 错开调用各模型（间隔6秒，避免触发百炼API并发限流）
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
       const panelId = 'panel-customer-' + m;
@@ -724,7 +514,6 @@ function handleCustomerAnalysis() {
       const retryKey = 'customer_' + m + '_' + Date.now();
       const reportTitle = '【' + val + '】客户分析报告';
       _retryRegistry[retryKey] = { type: 'customer_analysis', input: inputPayload, model: m, panelId: panelId, statusId: statusId, fileName: fileName, reportTitle: reportTitle };
-
       callWithRetry('customer_analysis', inputPayload, m, panelId, statusId)
         .then(() => {
           const statusEl = document.getElementById(statusId);
@@ -733,10 +522,8 @@ function handleCustomerAnalysis() {
           injectReportTitle(panelId, reportTitle);
           delete _retryRegistry[retryKey];
         })
-        .catch(err => {
-          renderFailPanel(panelId, statusId, err.message, retryKey);
-        });
-    }, index * 6000);
+        .catch(err => { renderFailPanel(panelId, statusId, err.message, retryKey); });
+    }, index * 3000);
   });
 }
 
@@ -755,22 +542,16 @@ function handleVisitPlan() {
     else { inp.style.borderColor = ''; }
   });
   if (!valid) { showToast('请填写所有必填项'); return; }
-
-  // 读取选中的模型
   const checked = document.querySelectorAll('input[name="visitModel"]:checked');
   const selectedModels = Array.from(checked).map(cb => cb.value);
   if (selectedModels.length === 0) { showToast('请至少选择一个AI模型'); return; }
-
   const outputDiv = document.getElementById('visitOutput');
   const contentDiv = document.getElementById('visitOutputContent');
   outputDiv.classList.add('show');
-
   const details = Array.from(inputs).map(inp => {
     const label = inp.closest('.form-group')?.querySelector('label')?.textContent || '';
     return label.replace(' *', '') + '：' + inp.value;
   }).join('\n');
-
-  // 构建Tab切换布局（单宫格）
   contentDiv.innerHTML =
     '<div class="output-tabs" id="visitOutputTabs">' +
       selectedModels.map((m, i) =>
@@ -787,12 +568,9 @@ function handleVisitPlan() {
         '</div>'
       ).join('') +
     '</div>';
-
-  // 错开调用各模型（间隔6秒，避免触发百炼API并发限流）
   const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
   const sceneName = sceneLabels[scene] || '客户拜访';
   const firstInputVal = inputs.length > 0 ? inputs[0].value.trim() : '';
-
   selectedModels.forEach((m, index) => {
     setTimeout(() => {
       const panelId = 'panel-visit-' + m;
@@ -801,7 +579,6 @@ function handleVisitPlan() {
       const retryKey = 'visit_' + m + '_' + Date.now();
       const reportTitle = firstInputVal + ' ' + sceneName + ' 拜访计划';
       _retryRegistry[retryKey] = { type: 'visit_plan', input: { scene, role: roleSelect.value, details: details }, model: m, panelId: panelId, statusId: statusId, fileName: fileName, reportTitle: reportTitle };
-
       callWithRetry('visit_plan', { scene, role: roleSelect.value, details: details }, m, panelId, statusId)
         .then(() => {
           const statusEl = document.getElementById(statusId);
@@ -810,20 +587,16 @@ function handleVisitPlan() {
           injectReportTitle(panelId, reportTitle);
           delete _retryRegistry[retryKey];
         })
-        .catch(err => {
-          renderFailPanel(panelId, statusId, err.message, retryKey);
-        });
-    }, index * 6000);
+        .catch(err => { renderFailPanel(panelId, statusId, err.message, retryKey); });
+    }, index * 3000);
   });
 }
 
 // ===== Tab切换输出面板 =====
 function switchOutputTab(prefix, model) {
-  // 更新Tab按钮状态
   const tabsContainer = document.getElementById(prefix + 'OutputTabs');
   tabsContainer.querySelectorAll('.output-tab').forEach(t => t.classList.remove('active'));
   tabsContainer.querySelector('.output-tab[data-model="' + model + '"]').classList.add('active');
-  // 更新面板显示
   const panelsContainer = document.getElementById(prefix + 'OutputPanels');
   panelsContainer.querySelectorAll('.output-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + prefix + '-' + model).classList.add('active');
@@ -835,40 +608,38 @@ function handleFeedback() {
   const company = document.getElementById('feedbackCompany').value.trim();
   if (!company) { showToast('请输入所属伙伴公司'); return; }
   const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
-  const author = name + ' · ' + company;
   document.getElementById('feedbackContent').value = '';
   document.getElementById('feedbackName').value = '';
   document.getElementById('feedbackCompany').value = '';
   showToast('感谢反馈！已通知管理员');
-  sendFeedbackToAdmin(author, content);
+  sendFeedbackToAdmin(name + ' · ' + company, content);
 }
 
 // ===== AI API Call =====
-const MODEL_LABELS = {
-  qwen3max:  'Qwen3-Max',
-  qwenplus:  'Qwen3-Plus',
-  kimi:      'Kimi-K2.6',
-  deepseek:  'DeepSeek-V3.2',
-};
+const MODEL_LABELS = { qwen3max: 'Qwen3-Max', qwenplus: 'Qwen3-Plus', minimax: 'MiniMax-M2.1', deepseek: 'DeepSeek-V3.2' };
 
-// 格式化AI输出内容
-// 优先使用 marked.js，否则使用内置简易 Markdown 渲染器
 // ===== 清理模型输出内容 =====
-// 1. 去除思考过程（正文第一个 # 标题之前的内容）
-// 2. 去除工具调用标签（<tool_code>、<tool_call>、<minimax:tool_call> 等）
+// 去除工具调用标签和思考过程
 function cleanAIContent(text) {
   if (!text) return text;
   // 去除工具调用标签
-  text = text.replace(/<\/?minimax:tool_call>/g, '');
-  text = text.replace(/<invoke\s+name="[^"]*">/g, '');
-  text = text.replace(/<\/invoke>/g, '');
-  text = text.replace(/<parameter\s+name="[^"]*">[^<]*<\/parameter>/g, '');
-  text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
-  text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
-  text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
-  text = text.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '');
-  text = text.replace(/<tool_code>[\s\S]*$/g, '');
-  text = text.replace(/<query>[^<]*<\/query>/g, '');
+  var LT = String.fromCodePoint(60);
+  var GT = String.fromCodePoint(62);
+  text = text.replace(new RegExp(LT + '\\/?minimax:tool_call' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + 'invoke\\s+name="[^"]*"' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + '\\/invoke' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + 'parameter\\s+name="[^"]*"' + GT + '[^' + LT + ']*' + LT + '\\/parameter' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + '\\|plugin\\|' + GT + '[\\s\\S]*?' + LT + '\\|\\/plugin\\|' + GT, 'g'), '');
+  var _tc = LT + 'tool_call' + GT;
+  var _fc = LT + 'function_call' + GT;
+  text = text.replace(new RegExp(_tc + '[\\s\\S]*?' + LT + '\\/tool_call' + GT, 'g'), '');
+  text = text.replace(new RegExp(_tc + '[\\s\\S]*', 'g'), '');
+  text = text.replace(new RegExp(LT + '\\/?tool_call' + GT, 'g'), '');
+  text = text.replace(new RegExp(_fc + '[\\s\\S]*?' + LT + '\\/function_call' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + '\\/?function_call' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + 'query' + GT + '[^' + LT + ']*' + LT + '\\/query' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + 'search_result' + GT + '[\\s\\S]*?' + LT + '\\/search_result' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + 'execution_result' + GT + '[\\s\\S]*?' + LT + '\\/execution_result' + GT, 'g'), '');
   // 去除思考过程：找到第一个 Markdown 标题，去掉前面的文字
   var headingMatch = text.match(/(^|\n)(#{1,2}\s+.+)/);
   if (headingMatch && headingMatch.index !== undefined) {
@@ -883,11 +654,7 @@ function cleanAIContent(text) {
 
 function formatAIOutput(content) {
   if (!content) return '';
-
-  // 先清理思考过程和工具标签
   content = cleanAIContent(content);
-
-  // 优先使用 marked 库（如果加载成功）
   if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
     try {
       var rendered = marked.parse(content);
@@ -896,8 +663,6 @@ function formatAIOutput(content) {
       console.error('[formatAIOutput] marked.parse 出错, 降级到内置渲染:', e);
     }
   }
-
-  // 内置简易 Markdown 渲染器（不依赖外部库）
   return '<div class="ai-markdown-output">' + simpleMarkdownRender(content) + '</div>';
 }
 
@@ -907,122 +672,79 @@ function simpleMarkdownRender(text) {
   var lines = text.split('\n');
   var html = [];
   var inUl = false, inOl = false, inTable = false, isFirstTableRow = true;
-
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     var trimmed = line.trim();
-
-    // 空行：关闭打开的块元素
     if (!trimmed) {
       if (inUl) { html.push('</ul>'); inUl = false; }
       if (inOl) { html.push('</ol>'); inOl = false; }
       if (inTable) { html.push('</tbody></table>'); inTable = false; isFirstTableRow = true; }
       continue;
     }
-
-    // 表格：以 | 开头和结尾
     if (trimmed.charAt(0) === '|' && trimmed.charAt(trimmed.length - 1) === '|') {
-      // 跳过分隔行 |---|---|
       if (/^\|[\s\-:|\s]+\|$/.test(trimmed)) continue;
       var cells = trimmed.slice(1, -1).split('|');
       if (!inTable) {
-        // 第一行作为表头
         html.push('<table><thead><tr>');
-        for (var c = 0; c < cells.length; c++) {
-          html.push('<th>' + mdInline(cells[c].trim()) + '</th>');
-        }
+        for (var c = 0; c < cells.length; c++) html.push('<th>' + mdInline(cells[c].trim()) + '</th>');
         html.push('</tr></thead><tbody>');
-        inTable = true;
-        isFirstTableRow = false;
-        continue;
+        inTable = true; isFirstTableRow = false; continue;
       }
       html.push('<tr>');
-      for (var c = 0; c < cells.length; c++) {
-        html.push('<td>' + mdInline(cells[c].trim()) + '</td>');
-      }
-      html.push('</tr>');
-      continue;
+      for (var c = 0; c < cells.length; c++) html.push('<td>' + mdInline(cells[c].trim()) + '</td>');
+      html.push('</tr>'); continue;
     }
-    // 非表格行时关闭表格
     if (inTable) { html.push('</tbody></table>'); inTable = false; isFirstTableRow = true; }
-
-    // 标题：# ## ### #### ##### ######
     var hMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (hMatch) {
       if (inUl) { html.push('</ul>'); inUl = false; }
       if (inOl) { html.push('</ol>'); inOl = false; }
-      var lvl = hMatch[1].length;
-      html.push('<h' + lvl + '>' + mdInline(hMatch[2]) + '</h' + lvl + '>');
+      html.push('<h' + hMatch[1].length + '>' + mdInline(hMatch[2]) + '</h' + hMatch[1].length + '>');
       continue;
     }
-
-    // 水平线
     if (/^[-*_]{3,}\s*$/.test(trimmed)) {
       if (inUl) { html.push('</ul>'); inUl = false; }
       if (inOl) { html.push('</ol>'); inOl = false; }
-      html.push('<hr>');
-      continue;
+      html.push('<hr>'); continue;
     }
-
-    // 无序列表：- 或 * 或 + 开头
     if (/^[-*+]\s+/.test(trimmed)) {
       if (inOl) { html.push('</ol>'); inOl = false; }
       if (!inUl) { html.push('<ul>'); inUl = true; }
-      html.push('<li>' + mdInline(trimmed.replace(/^[-*+]\s+/, '')) + '</li>');
-      continue;
+      html.push('<li>' + mdInline(trimmed.replace(/^[-*+]\s+/, '')) + '</li>'); continue;
     }
-
-    // 有序列表：数字. 开头
     if (/^\d+\.\s+/.test(trimmed)) {
       if (inUl) { html.push('</ul>'); inUl = false; }
       if (!inOl) { html.push('<ol>'); inOl = true; }
-      html.push('<li>' + mdInline(trimmed.replace(/^\d+\.\s+/, '')) + '</li>');
-      continue;
+      html.push('<li>' + mdInline(trimmed.replace(/^\d+\.\s+/, '')) + '</li>'); continue;
     }
-
-    // 引用：> 开头
     if (trimmed.charAt(0) === '>') {
       if (inUl) { html.push('</ul>'); inUl = false; }
       if (inOl) { html.push('</ol>'); inOl = false; }
-      html.push('<blockquote>' + mdInline(trimmed.replace(/^>\s*/, '')) + '</blockquote>');
-      continue;
+      html.push('<blockquote>' + mdInline(trimmed.replace(/^>\s*/, '')) + '</blockquote>'); continue;
     }
-
-    // 关闭列表
     if (inUl) { html.push('</ul>'); inUl = false; }
     if (inOl) { html.push('</ol>'); inOl = false; }
-
-    // 普通段落
     html.push('<p>' + mdInline(trimmed) + '</p>');
   }
-
-  // 关闭尾部未关闭的块
   if (inUl) html.push('</ul>');
   if (inOl) html.push('</ol>');
   if (inTable) html.push('</tbody></table>');
-
   return html.join('\n');
 }
 
-// 行内 Markdown 格式化：加粗、斜体、行内代码
 function mdInline(text) {
   if (!text) return '';
-  // 转义 HTML 特殊字符
   text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  // 行内代码 `code`
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // 加粗 **text** 或 __text__
   text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
-  // 斜体 *text* 或 _text_
   text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
   text = text.replace(/_(.+?)_/g, '<em>$1</em>');
   return text;
 }
 
 // ===== 自动重试包装器 =====
-// 对 callAIStream 做顶层重试：失败后等待 delay 再试，最多 maxRetries 次
-var _retryRegistry = {}; // 存储重试参数，避免 onclick 中复杂的 JSON 转义
+var _retryRegistry = {};
 
 async function callWithRetry(type, input, model, panelId, statusId, maxRetries, delay) {
   maxRetries = maxRetries || 2;
@@ -1035,7 +757,6 @@ async function callWithRetry(type, input, model, panelId, statusId, maxRetries, 
         if (statusEl) { statusEl.textContent = '⏳ 重试中(' + attempt + '/' + maxRetries + ')'; statusEl.className = 'output-tab-status'; }
         const panelEl = document.getElementById(panelId);
         if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> 第' + (attempt + 1) + '次尝试，请稍候...';
-        console.log('[callWithRetry] model=' + model + ' retry ' + attempt + '/' + maxRetries + ', waiting ' + delay + 'ms');
         await new Promise(r => setTimeout(r, delay));
       }
       return await callAIStream(type, input, model, panelId);
@@ -1047,7 +768,6 @@ async function callWithRetry(type, input, model, panelId, statusId, maxRetries, 
   throw lastError || new Error('所有重试均失败');
 }
 
-// 渲染失败面板（含重试按钮）
 function renderFailPanel(panelId, statusId, errMsg, retryKey) {
   const panel = document.getElementById(panelId);
   const friendlyMsg = friendlyError(errMsg);
@@ -1059,54 +779,45 @@ function renderFailPanel(panelId, statusId, errMsg, retryKey) {
   if (statusEl) { statusEl.textContent = '❌ 失败'; statusEl.className = 'output-tab-status error'; }
 }
 
-// 手动重试按钮回调
 function retryModel(retryKey) {
   var params = _retryRegistry[retryKey];
   if (!params) { showToast('重试参数丢失，请重新提交'); return; }
   var type = params.type, input = params.input, model = params.model;
   var panelId = params.panelId, statusId = params.statusId, fileName = params.fileName;
-
   const statusEl = document.getElementById(statusId);
   if (statusEl) { statusEl.textContent = '⏳ 重试中'; statusEl.className = 'output-tab-status'; }
   const panelEl = document.getElementById(panelId);
   if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> 正在重试...';
-
   callWithRetry(type, input, model, panelId, statusId, 2, 5000)
     .then(function() {
       if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
       insertExportToolbar(panelId, fileName);
       if (params.reportTitle) injectReportTitle(panelId, params.reportTitle);
     })
-    .catch(function(err) {
-      renderFailPanel(panelId, statusId, err.message, retryKey);
-    });
+    .catch(function(err) { renderFailPanel(panelId, statusId, err.message, retryKey); });
 }
 
 // ===== 流式 AI 调用（SSE）=====
-// 流式调用：内容逐步显示，大幅降低等待时间
-// onChunk(content) 在每次收到新内容时调用
 async function callAIStream(type, input, model, panelId) {
   const isLocal = window.location.protocol === 'file:' ||
                   window.location.hostname === 'localhost' ||
                   window.location.hostname === '127.0.0.1';
-
-  // 流式只支持 Netlify Edge Function，本地走非流式
   const streamEndpoint = isLocal ? null : '/api/ai-proxy';
   const fallbackEndpoints = isLocal ? [
     'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'
   ] : [
     'https://ai-proxy-ejcdenashk.cn-beijing.fcapp.run'
   ];
-
   const panelEl = document.getElementById(panelId);
 
-  // 尝试流式调用
-  if (streamEndpoint) {
+  if (streamEndpoint && type !== 'batch_analysis') {
     try {
-      console.log(`[stream] model=${model} endpoint=${streamEndpoint}`);
-      // 流式超时 120s（千问模型首 token 延迟可达 30-40s）
+      console.log('[stream] model=' + model + ' endpoint=' + streamEndpoint);
+      var streamTimeout = 120000;
+      // 批量模式放宽超时至 180s
+      if (typeof _batchRunning !== 'undefined' && _batchRunning) streamTimeout = 180000;
       const streamCtrl = new AbortController();
-      const streamTimeout = setTimeout(() => streamCtrl.abort(), 120000);
+      const streamTimer = setTimeout(() => streamCtrl.abort(), streamTimeout);
       const resp = await fetch(streamEndpoint, {
         method: 'POST',
         mode: 'cors',
@@ -1115,26 +826,17 @@ async function callAIStream(type, input, model, panelId) {
         body: JSON.stringify({ type, input, model: model || 'qwen3max', stream: true }),
         signal: streamCtrl.signal
       });
-
       if (!resp.ok) {
         const errText = await resp.text();
         let errMsg = '请求失败 HTTP ' + resp.status;
-        try {
-          const j = JSON.parse(errText);
-          errMsg = j.error || errMsg;
-          if (j.detail) errMsg += '\n' + j.detail;
-        } catch(e) {}
+        try { const j = JSON.parse(errText); errMsg = j.error || errMsg; if (j.detail) errMsg += '\n' + j.detail; } catch(e) {}
         throw new Error(errMsg);
       }
-
-      // 读取 SSE 流
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let fullContent = '';
       let buffer = '';
       let renderTimer = null;
-
-      // 节流渲染：最多每200ms渲染一次
       function scheduleRender() {
         if (renderTimer) return;
         renderTimer = setTimeout(() => {
@@ -1142,15 +844,12 @@ async function callAIStream(type, input, model, panelId) {
           if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
         }, 200);
       }
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
-
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed || trimmed === 'data: [DONE]') continue;
@@ -1169,60 +868,48 @@ async function callAIStream(type, input, model, panelId) {
           }
         }
       }
-
-      // 最终完整渲染
-      clearTimeout(streamTimeout);
+      clearTimeout(streamTimer);
       if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
       if (!fullContent) throw new Error('未收到有效内容');
       if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
       return { content: fullContent, model: model };
     } catch (err) {
-      console.error(`[stream] 流式调用失败:`, err.message, '降级到非流式');
-      // 流式失败，降级到非流式 fallback
+      console.error('[stream] 流式调用失败:', err.message, '降级到非流式');
     }
   }
 
-  // 非流式 fallback（本地 file:// 或流式失败时）
+  // 非流式 fallback
   const MAX_RETRIES = 2;
   let attempt = 0;
-
   while (attempt <= MAX_RETRIES) {
     let lastError = null;
     for (const endpoint of fallbackEndpoints) {
       try {
-        console.log(`[callAI] attempt=${attempt} model=${model} endpoint=${endpoint}`);
+        console.log('[callAI] attempt=' + attempt + ' model=' + model + ' endpoint=' + endpoint);
         if (panelEl) panelEl.innerHTML = '<span class="spinner"></span> AI正在生成中（非流式模式）...';
-
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 150000);
-
         const resp = await fetch(endpoint, {
-          method: 'POST',
-          mode: 'cors',
-          credentials: 'omit',
+          method: 'POST', mode: 'cors', credentials: 'omit',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({ type, input, model: model || 'qwen3max' }),
           signal: controller.signal
         });
-
         clearTimeout(timeoutId);
         const text = await resp.text();
         let data;
-        try { data = JSON.parse(text); } catch (e) {
-          throw new Error('返回的不是有效JSON: ' + text.substring(0, 100));
-        }
+        try { data = JSON.parse(text); } catch (e) { throw new Error('返回的不是有效JSON: ' + text.substring(0, 100)); }
         if (!resp.ok || data.error) throw new Error(data.error || '请求失败 HTTP ' + resp.status);
         if (panelEl) panelEl.innerHTML = formatAIOutput(data.content);
         return { content: data.content, model: data.model };
       } catch (err) {
         lastError = err;
-        console.error(`[callAI] Endpoint ${endpoint} failed:`, err.message);
+        console.error('[callAI] Endpoint ' + endpoint + ' failed:', err.message);
         continue;
       }
     }
     attempt++;
     if (attempt <= MAX_RETRIES) {
-      console.log(`[callAI] 所有端点失败，3秒后重试 (${attempt}/${MAX_RETRIES})...`);
       await new Promise(r => setTimeout(r, 3000));
     } else {
       throw lastError || new Error('所有AI端点均不可用');
@@ -1230,8 +917,7 @@ async function callAIStream(type, input, model, panelId) {
   }
 }
 
-// ===== 导出功能（Word / PDF）=====
-// Word 导出用的自包含样式（硬编码颜色，不依赖 CSS 变量）
+// ===== 导出功能 =====
 var EXPORT_STYLES =
   'body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;padding:32px 40px;color:#222;line-height:1.8;max-width:800px;margin:0 auto;}' +
   'h1{font-size:20px;font-weight:700;color:#4f46e5;border-bottom:2px solid #4f46e5;padding-bottom:6px;margin:28px 0 14px;}' +
@@ -1252,11 +938,9 @@ var EXPORT_STYLES =
   'hr{border:none;border-top:1px solid #e5e5e5;margin:20px 0;}' +
   'a{color:#4f46e5;text-decoration:underline;}';
 
-// 获取面板中 AI 输出的 HTML 正文内容
 function getExportContent(panelId) {
   var panel = document.getElementById(panelId);
   if (!panel) return '';
-  // 优先取 .ai-markdown-output 中的内容
   var contentEl = panel.querySelector('.ai-markdown-output');
   if (contentEl && contentEl.innerHTML.trim()) {
     var clone = contentEl.cloneNode(true);
@@ -1264,7 +948,6 @@ function getExportContent(panelId) {
     if (toggleBtn) toggleBtn.remove();
     return clone.innerHTML;
   }
-  // 降级：克隆整个面板，移除工具栏后取 innerHTML
   var clone = panel.cloneNode(true);
   var tb = clone.querySelector('.export-toolbar');
   if (tb) tb.remove();
@@ -1273,11 +956,9 @@ function getExportContent(panelId) {
   return clone.innerHTML.trim();
 }
 
-// 在指定面板底部插入导出工具栏
 function insertExportToolbar(panelId, fileName) {
   var panel = document.getElementById(panelId);
   if (!panel) return;
-  // 防止重复插入
   if (panel.querySelector('.export-toolbar')) return;
   var toolbar = document.createElement('div');
   toolbar.className = 'export-toolbar';
@@ -1285,20 +966,14 @@ function insertExportToolbar(panelId, fileName) {
     '<button class="btn-export" onclick="exportToWord(\'' + panelId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')">📄 导出 Word</button>' +
     '<button class="btn-export" onclick="exportToPDF(\'' + panelId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')">📑 导出 PDF</button>';
   panel.appendChild(toolbar);
-  // 插入导出工具栏后，添加折叠功能
   addCollapsibleSections(panelId);
 }
 
-// ===== 报告章节折叠/展开功能 =====
-// 将 h1 标题变为可点击的折叠控件，点击后折叠/展开该章节的内容
-
-// 在报告顶部注入居中总标题
 function injectReportTitle(panelId, title) {
   var panel = document.getElementById(panelId);
   if (!panel) return;
   var mdOutput = panel.querySelector('.ai-markdown-output');
   if (!mdOutput) return;
-  // 防止重复注入
   if (mdOutput.querySelector('.report-main-title')) return;
   var titleEl = document.createElement('div');
   titleEl.className = 'report-main-title';
@@ -1311,49 +986,30 @@ function addCollapsibleSections(panelId) {
   if (!panel) return;
   var mdOutput = panel.querySelector('.ai-markdown-output');
   if (!mdOutput) return;
-  // 防止重复处理
   if (mdOutput.dataset.collapsible === 'true') return;
   mdOutput.dataset.collapsible = 'true';
-
-  // 自动检测顶层标题级别：客户分析用 h1，拜访计划用 h2
   var headings = mdOutput.querySelectorAll('h1');
   var headingTag = 'H1';
-  if (headings.length === 0) {
-    headings = mdOutput.querySelectorAll('h2');
-    headingTag = 'H2';
-  }
+  if (headings.length === 0) { headings = mdOutput.querySelectorAll('h2'); headingTag = 'H2'; }
   if (headings.length === 0) return;
-
-  // 对每个顶层标题，收集它后面到下一个同级标题之间的所有元素，包裹在一个 section 中
   for (var i = 0; i < headings.length; i++) {
     var heading = headings[i];
-    // 添加折叠指示器和样式
     heading.classList.add('collapsible-header');
     heading.setAttribute('title', '点击折叠/展开');
-    // 创建展开/折叠指示器
     var indicator = document.createElement('span');
     indicator.className = 'collapse-indicator';
     indicator.textContent = '▼';
     heading.insertBefore(indicator, heading.firstChild);
-
-    // 创建内容包裹容器
     var section = document.createElement('div');
     section.className = 'collapsible-section';
-
-    // 收集标题后面到下一个同级标题之间的所有兄弟节点
     var next = heading.nextSibling;
     while (next) {
       var current = next;
       next = current.nextSibling;
-      // 遇到下一个同级标题就停止
       if (current.nodeType === 1 && current.tagName === headingTag) break;
       section.appendChild(current);
     }
-
-    // 将 section 插入到标题后面
     heading.parentNode.insertBefore(section, heading.nextSibling);
-
-    // 绑定点击事件
     (function(header, content, ind) {
       header.addEventListener('click', function() {
         var isCollapsed = content.classList.toggle('collapsed');
@@ -1362,134 +1018,76 @@ function addCollapsibleSections(panelId) {
       });
     })(heading, section, indicator);
   }
-
-  // 插入"全部折叠/全部展开"按钮
   var toggleBtn = document.createElement('button');
   toggleBtn.className = 'collapse-toggle-all';
   toggleBtn.innerHTML = '📖 全部折叠';
   toggleBtn.dataset.collapsed = 'false';
-
   var titleEl = mdOutput.querySelector('.report-main-title');
-  if (titleEl && titleEl.nextSibling) {
-    mdOutput.insertBefore(toggleBtn, titleEl.nextSibling);
-  } else {
-    mdOutput.insertBefore(toggleBtn, mdOutput.firstChild);
-  }
-
+  if (titleEl && titleEl.nextSibling) mdOutput.insertBefore(toggleBtn, titleEl.nextSibling);
+  else mdOutput.insertBefore(toggleBtn, mdOutput.firstChild);
   toggleBtn.addEventListener('click', function() {
     var sections = mdOutput.querySelectorAll('.collapsible-section');
     var headers = mdOutput.querySelectorAll('.collapsible-header');
     var shouldCollapse = toggleBtn.dataset.collapsed === 'false';
-
     for (var j = 0; j < sections.length; j++) {
-      if (shouldCollapse) sections[j].classList.add('collapsed');
-      else sections[j].classList.remove('collapsed');
+      if (shouldCollapse) sections[j].classList.add('collapsed'); else sections[j].classList.remove('collapsed');
     }
     for (var j = 0; j < headers.length; j++) {
       var ind = headers[j].querySelector('.collapse-indicator');
       if (ind) ind.textContent = shouldCollapse ? '▶' : '▼';
-      if (shouldCollapse) headers[j].classList.add('is-collapsed');
-      else headers[j].classList.remove('is-collapsed');
+      if (shouldCollapse) headers[j].classList.add('is-collapsed'); else headers[j].classList.remove('is-collapsed');
     }
-
     toggleBtn.dataset.collapsed = shouldCollapse ? 'true' : 'false';
     toggleBtn.innerHTML = shouldCollapse ? '📕 全部展开' : '📖 全部折叠';
   });
 }
 
-// 导出 Word（.doc 格式，Word 可直接打开的 HTML）
 function exportToWord(panelId, fileName) {
   var content = getExportContent(panelId);
   if (!content) { showToast('没有可导出的内容'); return; }
-  var html = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
-    '<style>' + EXPORT_STYLES + '</style></head><body>' +
-    content + '</body></html>';
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + EXPORT_STYLES + '</style></head><body>' + content + '</body></html>';
   var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  a.href = url;
-  a.download = (fileName || '报告') + '.doc';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = (fileName || '报告') + '.doc';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
   showToast('Word 文件已开始下载');
 }
 
-// 导出 PDF：使用 html2canvas 1.4.1 + jsPDF 2.5.1（独立组合，非 html2pdf.js）
 function exportToPDF(panelId, fileName) {
   if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-    showToast('PDF 库尚未加载完成，请稍后重试');
-    return;
+    showToast('PDF 库尚未加载完成，请稍后重试'); return;
   }
-
   var content = getExportContent(panelId);
   if (!content) { showToast('没有可导出的内容'); return; }
-
-  // ——— 关键：用 iframe 创建完全隔离的渲染环境 ———
-  // 这样 html2canvas 不会受到主页面 CSS 变量、overflow、z-index 等影响
   var iframe = document.createElement('iframe');
   iframe.style.cssText = 'position:fixed;left:0;top:0;width:800px;border:none;z-index:99999;opacity:1;background:#fff;';
   document.body.appendChild(iframe);
-
   var iDoc = iframe.contentDocument || iframe.contentWindow.document;
   iDoc.open();
-  iDoc.write(
-    '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
-    'body{margin:0;padding:32px 40px;background:#fff;color:#222;' +
-    'font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;' +
-    'line-height:1.8;font-size:14px;}' +
-    EXPORT_STYLES +
-    '</style></head><body>' + content + '</body></html>'
-  );
+  iDoc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:32px 40px;background:#fff;color:#222;font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;line-height:1.8;font-size:14px;}' + EXPORT_STYLES + '</style></head><body>' + content + '</body></html>');
   iDoc.close();
-
   showToast('正在生成 PDF，请稍候...');
-
-  // 等待 iframe 完成渲染
   setTimeout(function() {
-    // 设置 iframe 高度匹配内容
     var bodyH = iDoc.body.scrollHeight;
     iframe.style.height = bodyH + 'px';
-
-    // 用最新版 html2canvas 截图 iframe 内的 body
-    html2canvas(iDoc.body, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      width: 700,
-      height: bodyH,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: 800,
-      windowHeight: bodyH,
-      logging: false
-    }).then(function(canvas) {
-      // canvas → 多页 PDF
+    html2canvas(iDoc.body, { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 700, height: bodyH, scrollX: 0, scrollY: 0, windowWidth: 800, windowHeight: bodyH, logging: false }).then(function(canvas) {
       var jsPDF = window.jspdf.jsPDF;
       var pdf = new jsPDF('p', 'mm', 'a4');
       var pageW = 210, pageH = 297, margin = 15;
-      var usableW = pageW - 2 * margin;
-      var usableH = pageH - 2 * margin;
-      var imgW = usableW;
-      var imgH = (canvas.height / canvas.width) * imgW;
+      var usableW = pageW - 2 * margin, usableH = pageH - 2 * margin;
+      var imgW = usableW, imgH = (canvas.height / canvas.width) * imgW;
       var imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-      var heightLeft = imgH;
-      var yOffset = margin;
-
-      // 首页
+      var heightLeft = imgH, yOffset = margin;
       pdf.addImage(imgData, 'JPEG', margin, yOffset, imgW, imgH);
       heightLeft -= usableH;
-
-      // 后续页
       while (heightLeft > 0) {
         pdf.addPage();
         yOffset = margin - (imgH - heightLeft);
         pdf.addImage(imgData, 'JPEG', margin, yOffset, imgW, imgH);
         heightLeft -= usableH;
       }
-
       pdf.save((fileName || '报告') + '.pdf');
       document.body.removeChild(iframe);
       showToast('PDF 文件已开始下载');
@@ -1502,7 +1100,6 @@ function exportToPDF(panelId, fileName) {
 }
 
 // ===== Helpers =====
-// 将技术错误信息转为用户友好的提示
 function friendlyError(msg) {
   if (!msg) return '未知错误，请重试';
   if (msg.includes('aborted') || msg.includes('abort'))
@@ -1521,48 +1118,29 @@ function showToast(msg) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2500);
 }
-
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
-
 function sendFeedbackToAdmin(author, content) {
-  const name = document.getElementById('feedbackName').value.trim() || '匿名伙伴';
-  const company = document.getElementById('feedbackCompany').value.trim() || '';
-
-  // 1) 尝试 Netlify Forms（部署到 Netlify 后自动生效）
+  // 从 author 参数解析 name 和 company（格式："name · company"）
+  var parts = author.split(' · ');
+  var name = parts[0] || '匿名伙伴';
+  var company = parts[1] || '';
   const formData = new URLSearchParams();
   formData.append('form-name', 'feedback');
   formData.append('name', name);
   formData.append('company', company);
   formData.append('content', content);
-
-  fetch('/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData.toString()
-  }).then(resp => {
-    if (resp.ok) console.log('[Feedback] Netlify Forms 提交成功');
-    else console.warn('[Feedback] Netlify Forms 提交失败:', resp.status);
-  }).catch(err => {
-    console.warn('[Feedback] Netlify Forms 不可用:', err.message);
-  });
-
-  // 2) 尝试 Edge Function 发送邮件
+  fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData.toString() })
+    .then(resp => { if (resp.ok) console.log('[Feedback] Netlify Forms 提交成功'); else console.warn('[Feedback] Netlify Forms 提交失败:', resp.status); })
+    .catch(err => { console.warn('[Feedback] Netlify Forms 不可用:', err.message); });
   const isLocal = window.location.protocol === 'file:';
   if (!isLocal) {
-    fetch('/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, content, author })
-    }).then(resp => resp.json()).then(data => {
-      if (data.success) console.log('[Feedback] 邮件发送成功');
-      else console.warn('[Feedback] 邮件发送失败:', data.error);
-    }).catch(err => {
-      console.warn('[Feedback] Edge Function 不可用:', err.message);
-    });
+    fetch('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, company, content, author }) })
+      .then(resp => resp.json()).then(data => { if (data.success) console.log('[Feedback] 邮件发送成功'); else console.warn('[Feedback] 邮件发送失败:', data.error); })
+      .catch(err => { console.warn('[Feedback] Edge Function 不可用:', err.message); });
   }
 }
 
@@ -1574,7 +1152,6 @@ function generateCustomerReport(name) {
     '三、机会与挑战\n  机会：AI赋能业务流程\n  挑战：数字化人才储备\n\n' +
     '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成报告。';
 }
-
 function generateVisitPlan(scene, form, role) {
   const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
   return '🎯 ' + (sceneLabels[scene] || '客户拜访') + '计划（离线模板）\n\n' +
@@ -1582,4 +1159,388 @@ function generateVisitPlan(scene, form, role) {
     '二、客户行动承诺\n  最高：客户同意安排POC测试\n  最低：客户同意参加下次技术交流会\n\n' +
     '三、信息获取\n  1. 决策链路\n  2. 预算状况\n\n' +
     '⚠ 部署到 Netlify 并配置 API Key 后即可使用 AI 实时生成拜访计划。';
+}
+
+// ===== 批量客户分析 =====
+var _batchCustomers = [];
+var _batchResults   = [];
+var _batchAbortFlag = false;
+var _batchRunning   = false;
+
+function initBatchUpload() {
+  var zone = document.getElementById('batchUploadZone');
+  if (!zone) return;
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    var file = e.dataTransfer.files[0];
+    if (file) processExcelFile(file);
+  });
+}
+
+function parseExcelFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  processExcelFile(file);
+  input.value = '';
+}
+
+function processExcelFile(file) {
+  if (typeof XLSX === 'undefined') { showToast('Excel 解析库尚未加载，请稍后重试'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, { type: 'array' });
+      var sheet = workbook.Sheets[workbook.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      var added = 0;
+      // 表头检测
+      var headerRow = null;
+      var startRow = 0;
+      var headerKeywords = ['客户', '公司', '名称', '全称', 'company', 'name'];
+      for (var h = 0; h < Math.min(rows.length, 5); h++) {
+        var firstCell = String(rows[h][0] || '').trim().toLowerCase();
+        if (headerKeywords.some(function(kw) { return firstCell.indexOf(kw) >= 0; })) {
+          headerRow = rows[h];
+          startRow = h + 1;
+          break;
+        }
+      }
+      // 列校验
+      var colName = 0, colProduct = 1, colWebsite = 2;
+      if (headerRow) {
+        for (var c = 0; c < headerRow.length; c++) {
+          var cell = String(headerRow[c] || '').trim().toLowerCase();
+          if (cell.indexOf('公司') >= 0 || cell.indexOf('名称') >= 0 || cell.indexOf('全称') >= 0 || cell === 'name' || cell === 'company') colName = c;
+          if (cell.indexOf('产品') >= 0 || cell.indexOf('app') >= 0 || cell === 'product') colProduct = c;
+          if (cell.indexOf('官网') >= 0 || cell.indexOf('网址') >= 0 || cell.indexOf('url') >= 0 || cell === 'website') colWebsite = c;
+        }
+      }
+      rows.forEach(function(row, idx) {
+        if (idx < startRow) return;
+        var name = String(row[colName] || '').trim();
+        if (!name) return;
+        var exists = _batchCustomers.some(function(c) { return c.name === name; });
+        if (!exists) {
+          _batchCustomers.push({ name: name, product: String(row[colProduct] || '').trim(), website: String(row[colWebsite] || '').trim() });
+          added++;
+        }
+      });
+      renderBatchPreview();
+      showToast('已导入 ' + added + ' 位客户，共 ' + _batchCustomers.length + ' 位');
+    } catch (err) { showToast('Excel 解析失败：' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderBatchPreview() {
+  var preview = document.getElementById('batchPreview');
+  var tagList = document.getElementById('batchTagList');
+  var countEl = document.getElementById('batchPreviewCount');
+  var modelSel = document.getElementById('batchModelSelector');
+  if (_batchCustomers.length === 0) {
+    if (preview) preview.style.display = 'none';
+    if (modelSel) modelSel.style.display = 'none';
+    return;
+  }
+  if (preview) preview.style.display = '';
+  if (modelSel) modelSel.style.display = '';
+  if (countEl) countEl.textContent = '已导入 ' + _batchCustomers.length + ' 位客户';
+  if (!tagList) return;
+  tagList.innerHTML = '';
+  _batchCustomers.forEach(function(c, idx) {
+    var tag = document.createElement('span');
+    tag.className = 'batch-customer-tag';
+    tag.innerHTML = escapeHtml(c.name) + '<span class="tag-remove" onclick="removeBatchCustomer(' + idx + ')">✕</span>';
+    tagList.appendChild(tag);
+  });
+}
+
+function removeBatchCustomer(idx) {
+  if (_batchRunning) { showToast('分析进行中，无法删除'); return; }
+  _batchCustomers.splice(idx, 1);
+  renderBatchPreview();
+}
+
+function clearBatchCustomers() {
+  if (_batchRunning) { showToast('分析进行中，请先停止后再清空'); return; }
+  _batchCustomers = []; _batchResults = [];
+  renderBatchPreview();
+  var results = document.getElementById('batchResults');
+  if (results) results.innerHTML = '';
+  var progress = document.getElementById('batchProgress');
+  if (progress) progress.style.display = 'none';
+  var summary = document.getElementById('batchSummary');
+  if (summary) { summary.style.display = 'none'; document.getElementById('batchSummaryTableWrap').innerHTML = ''; }
+  var exportBtn = document.getElementById('batchExportBtn');
+  if (exportBtn) exportBtn.style.display = 'none';
+}
+
+// ===== 批量评估：评分计算 =====
+function calculateBatchScore(d) {
+  var aiScore = 0, cloudScore = 0;
+  var emp = d.employeeNumber || 0;
+  if (emp >= 10000) aiScore += 25;
+  else if (emp >= 1000) aiScore += 20;
+  else if (emp >= 200) aiScore += 15;
+  else if (emp >= 50) aiScore += 10;
+  else if (emp >= 10) aiScore += 5;
+  else aiScore += 2;
+  var rev = d.revenueNumber || 0;
+  if (rev >= 100) aiScore += 25;
+  else if (rev >= 10) aiScore += 20;
+  else if (rev >= 1) aiScore += 15;
+  else if (rev >= 0.1) aiScore += 10;
+  else if (rev > 0) aiScore += 5;
+  else aiScore += 3;
+  var listed = (d.isListed || '').toLowerCase();
+  if (listed.indexOf('未上市') < 0 && listed.length > 0 && listed !== '否') aiScore += 15;
+  else aiScore += 5;
+  var trend = d.growthTrend || '';
+  if (trend.indexOf('高增长') >= 0) aiScore += 15;
+  else if (trend.indexOf('稳健') >= 0) aiScore += 12;
+  else if (trend.indexOf('平稳') >= 0) aiScore += 8;
+  else if (trend.indexOf('下滑') >= 0) aiScore += 3;
+  else aiScore += 7;
+  var ind = (d.industry || '').toLowerCase();
+  if (/金融科技|人工智能|大模型|云计算|ai/.test(ind)) aiScore += 20;
+  else if (/电商|游戏|教育|医疗|制造|物流|汽车/.test(ind)) aiScore += 16;
+  else if (/零售|文娱|社交|农业|建筑|能源/.test(ind)) aiScore += 12;
+  else aiScore += 10;
+  cloudScore = Math.round((aiScore * 0.4) * 2 + 15);
+  var composite = Math.round(aiScore * 0.5 + cloudScore * 0.5);
+  return { aiScore: Math.min(aiScore, 100), cloudScore: Math.min(cloudScore, 100), composite: Math.min(composite, 100) };
+}
+
+var _batchSummaryHeaders = [
+  '序号', '公司全称', '成立时间', '法定代表人', '注册资本', '员工规模', '所属行业',
+  '营收', '是否上市', '官网', '核心商业模式', '招投标信息', '主要股东',
+  '云与AI合作机会', 'AI潜力分', '云计算潜力分', '综合评分', '状态'
+];
+
+function renderBatchSummaryTable() {
+  var wrap = document.getElementById('batchSummaryTableWrap');
+  var summaryDiv = document.getElementById('batchSummary');
+  if (!wrap || !summaryDiv) return;
+  summaryDiv.style.display = '';
+  var html = '<table class="batch-summary-table"><thead><tr>';
+  _batchSummaryHeaders.forEach(function(h) { html += '<th>' + h + '</th>'; });
+  html += '</tr></thead><tbody id="batchSummaryBody">';
+  _batchCustomers.forEach(function(c, idx) {
+    html += '<tr id="batch-row-' + idx + '">';
+    html += '<td>' + (idx + 1) + '</td>';
+    html += '<td>' + escapeHtml(c.name) + '</td>';
+    for (var col = 2; col < _batchSummaryHeaders.length - 1; col++) html += '<td>-</td>';
+    html += '<td><span class="status-tag s-pending">等待中</span></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function updateBatchSummaryRow(idx, data, status) {
+  var row = document.getElementById('batch-row-' + idx);
+  if (!row) return;
+  var scores = data ? calculateBatchScore(data) : { aiScore: 0, cloudScore: 0, composite: 0 };
+  var scoreClass = scores.composite >= 60 ? 'score-high' : (scores.composite >= 40 ? 'score-mid' : 'score-low');
+  var statusHtml = '';
+  if (status === 'done') statusHtml = '<span class="status-tag s-done">完成</span>';
+  else if (status === 'running') statusHtml = '<span class="status-tag s-running">分析中</span>';
+  else if (status === 'error') statusHtml = '<span class="status-tag s-error">失败</span>';
+  else statusHtml = '<span class="status-tag s-pending">等待中</span>';
+  var cells = [
+    idx + 1,
+    escapeHtml((data && data.companyName) || _batchCustomers[idx].name),
+    escapeHtml((data && data.establishedDate) || '-'),
+    escapeHtml((data && data.legalRepresentative) || '-'),
+    escapeHtml((data && data.registeredCapital) || '-'),
+    escapeHtml((data && data.employeeCount) || '-'),
+    escapeHtml((data && data.industry) || '-'),
+    escapeHtml((data && data.revenue) || '-'),
+    escapeHtml((data && data.isListed) || '-'),
+    escapeHtml((data && data.website) || '-'),
+    escapeHtml((data && data.businessModel) || '-'),
+    escapeHtml((data && data.biddingInfo) || '-'),
+    escapeHtml((data && data.shareholders) || '-'),
+    escapeHtml((data && data.cloudAiOpportunities) || '-'),
+    '<span class="score-cell ' + scoreClass + '">' + scores.aiScore + '</span>',
+    '<span class="score-cell ' + scoreClass + '">' + scores.cloudScore + '</span>',
+    '<span class="score-cell ' + scoreClass + '">' + scores.composite + '</span>',
+    statusHtml
+  ];
+  row.innerHTML = cells.map(function(c) { return '<td>' + c + '</td>'; }).join('');
+}
+
+function batchExportExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Excel 库尚未加载'); return; }
+  var doneResults = _batchResults.filter(function(r) { return r.status === 'done'; });
+  if (doneResults.length === 0) { showToast('没有可导出的数据'); return; }
+  var headers = _batchSummaryHeaders.slice(0, -1);
+  var rows = [];
+  _batchResults.forEach(function(r, idx) {
+    if (r.status !== 'done') return;
+    var d = r.data || {};
+    var scores = calculateBatchScore(d);
+    rows.push([
+      idx + 1, d.companyName || _batchCustomers[idx].name,
+      d.establishedDate || '', d.legalRepresentative || '',
+      d.registeredCapital || '', d.employeeCount || '',
+      d.industry || '', d.revenue || '', d.isListed || '',
+      d.website || '', d.businessModel || '', d.biddingInfo || '',
+      d.shareholders || '', d.cloudAiOpportunities || '',
+      scores.aiScore, scores.cloudScore, scores.composite
+    ]);
+  });
+  rows.sort(function(a, b) { return b[16] - a[16]; });
+  var wsData = [headers].concat(rows);
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [
+    { wch: 4 }, { wch: 24 }, { wch: 10 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+    { wch: 16 }, { wch: 10 }, { wch: 24 }, { wch: 30 }, { wch: 20 }, { wch: 24 },
+    { wch: 36 }, { wch: 8 }, { wch: 8 }, { wch: 8 }
+  ];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '客户潜力评估');
+  var dateStr = new Date().toLocaleDateString('zh-CN').replace(/\//g, '');
+  XLSX.writeFile(wb, '批量客户潜力评估_' + dateStr + '.xlsx');
+  showToast('Excel 下载已开始，共 ' + rows.length + ' 位客户');
+}
+
+function handleBatchAnalysis() {
+  if (_batchRunning) { showToast('批量分析正在进行中'); return; }
+  if (_batchCustomers.length === 0) { showToast('请先上传 Excel 文件'); return; }
+  var modelInput = document.querySelector('input[name="batchModel"]:checked');
+  var model = modelInput ? modelInput.value : 'qwen3max';
+  _batchAbortFlag = false; _batchRunning = true;
+  var startBtn = document.getElementById('batchStartBtn');
+  var stopBtn = document.getElementById('batchStopBtn');
+  if (startBtn) startBtn.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = '';
+  // 断点恢复检测
+  var resumeIdx = -1;
+  var hasResults = _batchResults.length === _batchCustomers.length &&
+    _batchResults.some(function(r) { return r.status === 'done'; });
+  if (hasResults) {
+    for (var v = 0; v < _batchResults.length; v++) {
+      if (_batchResults[v].status === 'done' &&
+          (!_batchResults[v].customer || _batchResults[v].customer.name !== _batchCustomers[v].name)) {
+        hasResults = false; break;
+      }
+    }
+  }
+  if (hasResults) {
+    for (var j = 0; j < _batchResults.length; j++) {
+      if (_batchResults[j].status !== 'done') { resumeIdx = j; break; }
+    }
+  }
+  var progressEl = document.getElementById('batchProgress');
+  if (progressEl) progressEl.style.display = '';
+  // 隐藏旧报告区
+  var oldResults = document.getElementById('batchResults');
+  if (oldResults) oldResults.style.display = 'none';
+  if (resumeIdx >= 0) {
+    var doneCount = _batchResults.filter(function(r) { return r.status === 'done'; }).length;
+    showToast('从第 ' + (resumeIdx + 1) + ' 位客户继续（已完成 ' + doneCount + '/' + _batchCustomers.length + '）');
+    for (var k = resumeIdx; k < _batchResults.length; k++) {
+      _batchResults[k] = { customer: _batchCustomers[k], data: null, status: 'pending' };
+      updateBatchSummaryRow(k, null, 'pending');
+    }
+    updateBatchProgress(resumeIdx, _batchCustomers.length, '继续评估...');
+    runBatchLoop(model, resumeIdx);
+  } else {
+    _batchResults = [];
+    updateBatchProgress(0, _batchCustomers.length, '启动中...');
+    renderBatchSummaryTable();
+    _batchCustomers.forEach(function(c) {
+      _batchResults.push({ customer: c, data: null, status: 'pending' });
+    });
+    runBatchLoop(model, 0);
+  }
+}
+
+async function runBatchLoop(model, startIdx) {
+  for (var i = startIdx; i < _batchCustomers.length; i++) {
+    if (_batchAbortFlag) break;
+    var c = _batchCustomers[i];
+    updateBatchSummaryRow(i, null, 'running');
+    updateBatchProgress(i, _batchCustomers.length, '正在评估：' + c.name);
+    var retries = 2;
+    for (var r = 0; r <= retries; r++) {
+      try {
+        if (r > 0) {
+          updateBatchProgress(i, _batchCustomers.length, '重试：' + c.name + ' (' + r + '/' + retries + ')');
+          await new Promise(function(rr) { setTimeout(rr, 8000); });
+        }
+        var panelId = 'batch-panel-' + i;
+        var result = await callAIStream('batch_analysis', { customerName: c.name, productName: c.product, website: c.website }, model, panelId);
+        var rawContent = result ? (result.content || '') : '';
+        // 清理残留的 tool_call 标签和思考过程
+        var cleanedContent = cleanAIContent(rawContent);
+        var parsed = null;
+        try {
+          parsed = JSON.parse(cleanedContent);
+        } catch (e1) {
+          var jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            try { parsed = JSON.parse(jsonMatch[0]); } catch (e2) { /* ignore */ }
+          }
+        }
+        _batchResults[i].data = parsed;
+        _batchResults[i].status = parsed ? 'done' : 'error';
+        _batchResults[i].content = rawContent;
+        updateBatchSummaryRow(i, parsed, parsed ? 'done' : 'error');
+        if (parsed) break;
+        if (!parsed && r === retries) {
+          updateBatchSummaryRow(i, null, 'error');
+        }
+      } catch (err) {
+        console.error('[batch] customer=' + c.name + ' retry=' + r + ' error:', err.message);
+        if (r === retries) {
+          _batchResults[i].status = 'error';
+          _batchResults[i].data = null;
+          updateBatchSummaryRow(i, null, 'error');
+        }
+      }
+    }
+    if (i < _batchCustomers.length - 1 && !_batchAbortFlag) {
+      await new Promise(function(r) { setTimeout(r, 5000); });
+    }
+  }
+  var wasAborted = _batchAbortFlag;
+  _batchRunning = false; _batchAbortFlag = false;
+  var startBtn = document.getElementById('batchStartBtn');
+  var stopBtn = document.getElementById('batchStopBtn');
+  if (startBtn) startBtn.style.display = '';
+  if (stopBtn) stopBtn.style.display = 'none';
+  var done = _batchResults.filter(function(r) { return r.status === 'done'; }).length;
+  var pending = _batchResults.filter(function(r) { return r.status !== 'done'; }).length;
+  updateBatchProgress(_batchCustomers.length, _batchCustomers.length, '完成 ' + done + '/' + _batchCustomers.length + ' 位客户');
+  var exportBtn = document.getElementById('batchExportBtn');
+  if (exportBtn && done > 0) {
+    exportBtn.style.display = '';
+    document.getElementById('batchSummaryTitle').textContent = '评估结果（' + done + '/' + _batchCustomers.length + ' 完成）';
+  }
+  if (wasAborted && pending > 0) {
+    showToast('已停止，完成 ' + done + '/' + _batchCustomers.length + '。再次点击可继续剩余');
+  } else if (done === _batchCustomers.length) {
+    showToast('批量评估全部完成！' + done + '/' + _batchCustomers.length);
+  } else {
+    showToast('批量评估结束，完成 ' + done + '/' + _batchCustomers.length);
+  }
+}
+
+function stopBatchAnalysis() {
+  _batchAbortFlag = true;
+  showToast('正在停止，当前客户完成后可继续');
+}
+
+function updateBatchProgress(done, total, statusText) {
+  var textEl = document.getElementById('batchProgressText');
+  var barEl = document.getElementById('batchProgressBar');
+  var statusEl = document.getElementById('batchProgressStatus');
+  if (textEl) textEl.textContent = done + ' / ' + total;
+  if (statusEl) statusEl.textContent = statusText || '';
+  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
 }
