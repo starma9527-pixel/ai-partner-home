@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 先锋·伙伴之家</title>
-  <link rel="stylesheet" href="css/style.css?v=20260412" />
+  <link rel="stylesheet" href="css/style.css?v=20260529" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 </head>
 <body>
@@ -53,8 +53,6 @@
 
   <!-- ===== HOME TAB ===== -->
   <div class="tab-panel active" id="tab-home">
-
-    <!-- 首页导航入口 -->
     <div class="section-title">
       <span class="icon">⚡</span> 快速入口
     </div>
@@ -72,7 +70,7 @@
       <div class="home-nav-card" onclick="switchTab('guide')">
         <div class="home-nav-icon">🎯</div>
         <div class="home-nav-title">拜访教练</div>
-        <div class="home-nav-desc">AI客户分析报告 · AI拜访计划生成</div>
+        <div class="home-nav-desc">AI客户分析报告 · 批量分析 · AI拜访计划生成</div>
       </div>
       <div class="home-nav-card" onclick="switchTab('rank')">
         <div class="home-nav-icon">🏆</div>
@@ -88,19 +86,16 @@
       <span class="icon">🧰</span> 打单兵器库
     </div>
 
-    <!-- Business Rules -->
     <div class="sub-section">
       <div class="sub-title">📋 业务规则</div>
       <div class="doc-list" id="rulesList"></div>
     </div>
 
-    <!-- Tools -->
     <div class="sub-section">
       <div class="sub-title">🔧 常用工具</div>
       <div class="tool-grid" id="toolGrid"></div>
     </div>
 
-    <!-- Knowledge Base -->
     <div class="sub-section">
       <div class="sub-title">📖 生态知识库</div>
       <div class="doc-list" id="knowledgeList"></div>
@@ -114,7 +109,6 @@
       </a>
     </div>
 
-    <!-- Live Training (moved from Guide) -->
     <div class="sub-section">
       <div class="sub-title">🎬 周五上干货：钉钉直播培训</div>
       <div class="live-grid" id="liveGrid"></div>
@@ -130,19 +124,16 @@
       <span class="icon">🚀</span> 赢战 MaaS
       <span class="badge">赛道拓展</span>
     </div>
-
-    <div class="track-grid" id="trackGrid">
-      <!-- Track cards rendered by JS -->
-    </div>
+    <div class="track-grid" id="trackGrid"></div>
   </div>
 
-  <!-- ===== GUIDE TAB (拜访教练) - 恢复旧版布局 ===== -->
+  <!-- ===== GUIDE TAB ===== -->
   <div class="tab-panel" id="tab-guide">
     <div class="section-title">
       <span class="icon">🎯</span> 拜访教练
     </div>
 
-    <!-- 客户分析报告 -->
+    <!-- 客户分析报告（单个） -->
     <div class="guide-section" id="guide-analysis">
       <h2 class="section-title">🔍 甄选客户：客户 AI 潜力分析报告</h2>
       <div class="form-card">
@@ -170,8 +161,8 @@
             <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="kimi" />
-            <span class="model-chip">Kimi-K2.6<em>Agent</em></span>
+            <input type="checkbox" name="analysisModel" value="minimax" />
+            <span class="model-chip">MiniMax-M2.1<em>搜索</em></span>
           </label>
           <label class="model-option">
             <input type="checkbox" name="analysisModel" value="deepseek" />
@@ -182,6 +173,81 @@
         <div id="customerOutput" class="ai-output">
           <div id="customerOutputContent" class="output-content"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 批量客户分析 -->
+    <div class="guide-section" id="guide-batch">
+      <h2 class="section-title">📊 批量客户评估：上传 Excel → 生成潜力评分表</h2>
+      <div class="form-card">
+
+        <!-- 上传区 -->
+        <div class="batch-upload-zone" id="batchUploadZone" onclick="document.getElementById('batchFileInput').click()">
+          <div class="batch-upload-icon">📂</div>
+          <div class="batch-upload-text">点击或拖拽上传 Excel 文件（.xlsx / .xls）</div>
+          <div class="batch-upload-hint">第一列：客户公司全称（必填）&nbsp;·&nbsp;第二列：产品/APP名称（可选）&nbsp;·&nbsp;第三列：官网（可选）</div>
+          <input type="file" id="batchFileInput" accept=".xlsx,.xls" style="display:none" onchange="parseExcelFile(this)" />
+        </div>
+
+        <!-- 客户列表预览 -->
+        <div class="batch-preview" id="batchPreview" style="display:none">
+          <div class="batch-preview-header">
+            <span id="batchPreviewCount">已导入 0 位客户</span>
+            <button class="batch-clear-btn" onclick="clearBatchCustomers()">清空列表</button>
+          </div>
+          <div class="batch-tag-list" id="batchTagList"></div>
+        </div>
+
+        <!-- 模型选择（单选）-->
+        <div class="batch-model-selector" id="batchModelSelector" style="display:none">
+          <div class="batch-model-label">选择分析模型：</div>
+          <div class="model-selector">
+            <label class="model-option">
+              <input type="radio" name="batchModel" value="qwen3max" checked />
+              <span class="model-chip">Qwen3-Max<em>旗舰</em></span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="batchModel" value="qwenplus" />
+              <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="batchModel" value="minimax" />
+              <span class="model-chip">MiniMax-M2.1<em>搜索</em></span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="batchModel" value="deepseek" />
+              <span class="model-chip">DeepSeek-V3.2<em>推理</em></span>
+            </label>
+          </div>
+          <div class="batch-actions">
+            <button class="btn-generate" id="batchStartBtn" onclick="handleBatchAnalysis()">🚀 开始批量评估</button>
+            <button class="btn-stop" id="batchStopBtn" onclick="stopBatchAnalysis()" style="display:none">⏹ 停止</button>
+          </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="batch-progress" id="batchProgress" style="display:none">
+          <div class="batch-progress-info">
+            <span id="batchProgressText">0 / 0</span>
+            <span id="batchProgressStatus">准备中...</span>
+          </div>
+          <div class="batch-progress-bar-wrap">
+            <div class="batch-progress-bar" id="batchProgressBar" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- 结果汇总表 -->
+        <div class="batch-summary" id="batchSummary" style="display:none">
+          <div class="batch-summary-header">
+            <span id="batchSummaryTitle">评估结果</span>
+            <button class="btn-export" id="batchExportBtn" onclick="batchExportExcel()" style="display:none">📥 导出 Excel 汇总表</button>
+          </div>
+          <div class="batch-summary-table-wrap" id="batchSummaryTableWrap"></div>
+        </div>
+
+        <!-- 旧的结果列表（保留兼容） -->
+        <div class="batch-results" id="batchResults" style="display:none"></div>
+
       </div>
     </div>
 
@@ -196,66 +262,66 @@
         </div>
 
         <div class="visit-form-row">
-        <div class="form-group">
-          <label>拜访对象角色 *</label>
-          <select id="visitRole">
-            <option value="">请选择</option>
-            <option>CEO</option>
-            <option>CTO</option>
-            <option>业务负责人</option>
-            <option>IT 负责人</option>
-            <option>采购负责人</option>
-            <option>财务负责人</option>
-          </select>
-        </div>
-
-        <!-- First Visit Form -->
-        <div class="scene-form active" id="form-first">
           <div class="form-group">
-            <label>客户名称 *</label>
-            <input type="text" placeholder="请输入客户名称" />
-          </div>
-          <div class="form-group">
-            <label>解决方案/产品 *</label>
-            <input type="text" placeholder="例如：通义千问 API / 云服务器 ECS" />
-          </div>
-        </div>
-
-        <!-- Progress Form -->
-        <div class="scene-form" id="form-progress">
-          <div class="form-group">
-            <label>项目名称 *</label>
-            <input type="text" placeholder="请输入项目名称" />
-          </div>
-          <div class="form-group">
-            <label>解决方案/产品 *</label>
-            <input type="text" placeholder="例如：智慧医疗解决方案" />
-          </div>
-          <div class="form-group">
-            <label>项目阶段 *</label>
-            <select>
+            <label>拜访对象角色 *</label>
+            <select id="visitRole">
               <option value="">请选择</option>
-              <option>销售线索</option>
-              <option>潜在商机</option>
-              <option>商机确认</option>
-              <option>技术和商务方案评估</option>
-              <option>合同签署</option>
-              <option>上量</option>
+              <option>CEO</option>
+              <option>CTO</option>
+              <option>业务负责人</option>
+              <option>IT 负责人</option>
+              <option>采购负责人</option>
+              <option>财务负责人</option>
             </select>
           </div>
-        </div>
 
-        <!-- Executive Form -->
-        <div class="scene-form" id="form-executive">
-          <div class="form-group">
-            <label>客户名称 *</label>
-            <input type="text" placeholder="请输入客户名称" />
+          <!-- First Visit Form -->
+          <div class="scene-form active" id="form-first">
+            <div class="form-group">
+              <label>客户名称 *</label>
+              <input type="text" placeholder="请输入客户名称" />
+            </div>
+            <div class="form-group">
+              <label>解决方案/产品 *</label>
+              <input type="text" placeholder="例如：通义千问 API / 云服务器 ECS" />
+            </div>
           </div>
-          <div class="form-group">
-            <label>客户行业与业务 *</label>
-            <input type="text" placeholder="例如：医疗行业，主营医院信息化系统" />
+
+          <!-- Progress Form -->
+          <div class="scene-form" id="form-progress">
+            <div class="form-group">
+              <label>项目名称 *</label>
+              <input type="text" placeholder="请输入项目名称" />
+            </div>
+            <div class="form-group">
+              <label>解决方案/产品 *</label>
+              <input type="text" placeholder="例如：智慧医疗解决方案" />
+            </div>
+            <div class="form-group">
+              <label>项目阶段 *</label>
+              <select>
+                <option value="">请选择</option>
+                <option>销售线索</option>
+                <option>潜在商机</option>
+                <option>商机确认</option>
+                <option>技术和商务方案评估</option>
+                <option>合同签署</option>
+                <option>上量</option>
+              </select>
+            </div>
           </div>
-        </div>
+
+          <!-- Executive Form -->
+          <div class="scene-form" id="form-executive">
+            <div class="form-group">
+              <label>客户名称 *</label>
+              <input type="text" placeholder="请输入客户名称" />
+            </div>
+            <div class="form-group">
+              <label>客户行业与业务 *</label>
+              <input type="text" placeholder="例如：医疗行业，主营医院信息化系统" />
+            </div>
+          </div>
         </div>
 
         <div class="model-selector">
@@ -268,8 +334,8 @@
             <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="kimi" />
-            <span class="model-chip">Kimi-K2.6<em>Agent</em></span>
+            <input type="checkbox" name="visitModel" value="minimax" />
+            <span class="model-chip">MiniMax-M2.1<em>搜索</em></span>
           </label>
           <label class="model-option">
             <input type="checkbox" name="visitModel" value="deepseek" />
@@ -283,14 +349,14 @@
         </div>
       </div>
     </div>
-  </div>
+
+  </div><!-- end tab-guide -->
 
   <!-- ===== RANK TAB ===== -->
   <div class="tab-panel" id="tab-rank">
     <div class="section-title">
       <span class="icon">🏆</span> 龙虎榜
     </div>
-
     <div class="rank-tabs" id="rankTabs">
       <button class="rank-tab active" data-rank="token">📊 MaaS渗透率</button>
       <button class="rank-tab" data-rank="case">📝 案例贡献</button>
@@ -298,7 +364,6 @@
       <button class="rank-tab" data-rank="cert">🎓 持证率</button>
       <button class="rank-tab" data-rank="battle">⚔️ 项目战报</button>
     </div>
-
     <div class="rank-panel active" id="rank-token">
       <div class="rank-list" id="tokenRankList"></div>
     </div>
@@ -326,7 +391,6 @@
 
   <!-- ===== FEEDBACK TAB ===== -->
   <div class="tab-panel" id="tab-feedback">
-
     <div class="sub-title">📨 伙伴心声</div>
     <div class="feedback-form">
       <textarea id="feedbackContent" placeholder="说说你的想法、建议或需求...一句话也行！"></textarea>
@@ -354,7 +418,7 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Hidden Netlify Form (for Netlify Forms detection) -->
+<!-- Hidden Netlify Form -->
 <form name="feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
   <input name="bot-field" />
   <input name="name" />
@@ -365,6 +429,9 @@
 <script src="js/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="js/app.js?v=20260412"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js" defer></script>
+<script src="js/app.js?v=20260529"></script>
 </body>
 </html>
