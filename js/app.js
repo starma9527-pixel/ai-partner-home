@@ -1281,43 +1281,70 @@ function clearBatchCustomers() {
 // ===== 批量评估：评分计算 =====
 function calculateBatchScore(d) {
   var aiScore = 0, cloudScore = 0;
-  var emp = d.employeeNumber || 0;
+  // 维度1：员工规模（优先集团数）最高25分
+  var emp = d.effectiveEmployeeNumber || d.parentEmployeeNumber || d.employeeNumber || 0;
   if (emp >= 10000) aiScore += 25;
   else if (emp >= 1000) aiScore += 20;
   else if (emp >= 200) aiScore += 15;
   else if (emp >= 50) aiScore += 10;
   else if (emp >= 10) aiScore += 5;
   else aiScore += 2;
-  var rev = d.revenueNumber || 0;
-  if (rev >= 100) aiScore += 25;
-  else if (rev >= 10) aiScore += 20;
-  else if (rev >= 1) aiScore += 15;
-  else if (rev >= 0.1) aiScore += 10;
-  else if (rev > 0) aiScore += 5;
-  else aiScore += 3;
+  // 维度2：营收规模（优先集团数）最高20分
+  var rev = d.effectiveRevenueNumber || d.parentCompanyRevenueNumber || d.revenueNumber || 0;
+  if (rev >= 100) aiScore += 20;
+  else if (rev >= 10) aiScore += 16;
+  else if (rev >= 1) aiScore += 12;
+  else if (rev >= 0.1) aiScore += 8;
+  else if (rev > 0) aiScore += 4;
+  else aiScore += 2;
+  // 维度3：上市/融资状态 最高10分
   var listed = (d.isListed || '').toLowerCase();
-  if (listed.indexOf('未上市') < 0 && listed.length > 0 && listed !== '否') aiScore += 15;
-  else aiScore += 5;
+  if (listed.indexOf('未上市') < 0 && listed.length > 0 && listed !== '否') aiScore += 10;
+  else aiScore += 3;
+  // 维度4：增长趋势 最高12分
   var trend = d.growthTrend || '';
-  if (trend.indexOf('高增长') >= 0) aiScore += 15;
-  else if (trend.indexOf('稳健') >= 0) aiScore += 12;
-  else if (trend.indexOf('平稳') >= 0) aiScore += 8;
-  else if (trend.indexOf('下滑') >= 0) aiScore += 3;
-  else aiScore += 7;
+  if (trend.indexOf('高增长') >= 0) aiScore += 12;
+  else if (trend.indexOf('稳健') >= 0) aiScore += 9;
+  else if (trend.indexOf('平稳') >= 0) aiScore += 6;
+  else if (trend.indexOf('下滑') >= 0) aiScore += 2;
+  else aiScore += 5;
+  // 维度5：行业AI密集度 最高15分
   var ind = (d.industry || '').toLowerCase();
-  if (/金融科技|人工智能|大模型|云计算|ai/.test(ind)) aiScore += 20;
-  else if (/电商|游戏|教育|医疗|制造|物流|汽车/.test(ind)) aiScore += 16;
-  else if (/零售|文娱|社交|农业|建筑|能源/.test(ind)) aiScore += 12;
-  else aiScore += 10;
-  cloudScore = Math.round((aiScore * 0.4) * 2 + 15);
-  var composite = Math.round(aiScore * 0.5 + cloudScore * 0.5);
+  if (/aigc|短视频|直播|动漫|内容创作/.test(ind)) aiScore += 15;
+  else if (/金融科技|人工智能|大模型|云计算|ai/.test(ind)) aiScore += 15;
+  else if (/电商|游戏|教育|医疗|制造|物流|汽车/.test(ind)) aiScore += 11;
+  else if (/零售|文娱|社交|农业|建筑|能源/.test(ind)) aiScore += 8;
+  else aiScore += 6;
+  // 维度6：AI战略活跃度（新）最高10分
+  var aiLevel = (d.aiActivityLevel || '').toLowerCase();
+  if (aiLevel.indexOf('高') >= 0) aiScore += 10;
+  else if (aiLevel.indexOf('中') >= 0) aiScore += 6;
+  else if (aiLevel.indexOf('低') >= 0) aiScore += 2;
+  else aiScore += 3;
+  // 维度7：竞对渗透（新）—— 有竞对使用反而是机会，加5分；无记录加2分
+  var competitor = (d.competitorCloudUsage || '').toLowerCase();
+  if (competitor && competitor !== '无竞对使用记录' && competitor.length > 5) aiScore += 5;
+  else aiScore += 2;
+  // 维度8：集团云AI使用（加分项）最高5分
+  var groupUsage = (d.groupCloudAiUsage || '').toLowerCase();
+  if (groupUsage && groupUsage !== '无' && groupUsage.length > 3) aiScore += 5;
+  // 维度9：公司实力评分（新）最高8分
+  var strength = d.companyStrengthScore || 0;
+  aiScore += Math.round(strength * 0.8);
+  cloudScore = Math.round(aiScore * 0.85 + 5);
+  var composite = Math.round(aiScore * 0.55 + cloudScore * 0.45);
   return { aiScore: Math.min(aiScore, 100), cloudScore: Math.min(cloudScore, 100), composite: Math.min(composite, 100) };
 }
 
 var _batchSummaryHeaders = [
-  '序号', '公司全称', '成立时间', '法定代表人', '注册资本', '员工规模', '所属行业',
-  '营收', '是否上市', '官网', '核心商业模式', '招投标信息', '主要股东',
-  '云与AI合作机会', 'AI潜力分', '云计算潜力分', '综合评分', '状态'
+  '序号', '公司全称', '省市', '成立时间', '法定代表人', '注册资本',
+  '员工规模', '员工数范围', '所属行业', '业务模式',
+  '营收', '营收年份', '是否上市', '实力评分', '规模标签', '官网',
+  'AI活跃度', 'AI信号', '竞对云/AI',
+  '技术栈', '近期动态',
+  '母公司/集团', '集团业务', '集团云AI使用',
+  '核心商业模式', '招投标信息', '主要股东',
+  '云与AI合作机会', '年消费预估', 'AI潜力分', '云计算潜力分', '综合评分', '状态'
 ];
 
 function renderBatchSummaryTable() {
@@ -1353,18 +1380,33 @@ function updateBatchSummaryRow(idx, data, status) {
   var cells = [
     idx + 1,
     escapeHtml((data && data.companyName) || _batchCustomers[idx].name),
+    escapeHtml(data ? ((data.province || '') + (data.city ? ' ' + data.city : '')) : '-') || '-',
     escapeHtml((data && data.establishedDate) || '-'),
     escapeHtml((data && data.legalRepresentative) || '-'),
     escapeHtml((data && data.registeredCapital) || '-'),
     escapeHtml((data && data.employeeCount) || '-'),
+    escapeHtml((data && data.employeeRange) || '-'),
     escapeHtml((data && data.industry) || '-'),
+    escapeHtml((data && data.bizType) || '-'),
     escapeHtml((data && data.revenue) || '-'),
+    escapeHtml((data && data.revenueYear) || '-'),
     escapeHtml((data && data.isListed) || '-'),
+    data ? '<span class="score-cell ' + (data.companyStrengthScore >= 8 ? 'score-high' : data.companyStrengthScore >= 5 ? 'score-mid' : 'score-low') + '">' + (data.companyStrengthScore || '-') + '</span>' : '-',
+    escapeHtml((data && data.companyScaleTag) || '-'),
     escapeHtml((data && data.website) || '-'),
+    data ? '<span class="status-tag ' + ((data.aiActivityLevel || '').indexOf('高') >= 0 ? 's-done' : (data.aiActivityLevel || '').indexOf('中') >= 0 ? 's-running' : 's-pending') + '">' + escapeHtml(data.aiActivityLevel || '-') + '</span>' : '-',
+    escapeHtml((data && data.aiSignals) || '-'),
+    escapeHtml((data && data.competitorCloudUsage) || '-'),
+    escapeHtml((data && data.techStack) || '-'),
+    escapeHtml((data && data.recentNews) || '-'),
+    escapeHtml((data && data.parentCompany) || '-'),
+    escapeHtml((data && data.parentCompanyBusiness) || '-'),
+    escapeHtml((data && data.groupCloudAiUsage) || '-'),
     escapeHtml((data && data.businessModel) || '-'),
     escapeHtml((data && data.biddingInfo) || '-'),
     escapeHtml((data && data.shareholders) || '-'),
     escapeHtml((data && data.cloudAiOpportunities) || '-'),
+    escapeHtml((data && data.cloudAiAnnualBudget) || '-'),
     '<span class="score-cell ' + scoreClass + '">' + scores.aiScore + '</span>',
     '<span class="score-cell ' + scoreClass + '">' + scores.cloudScore + '</span>',
     '<span class="score-cell ' + scoreClass + '">' + scores.composite + '</span>',
@@ -1385,21 +1427,32 @@ function batchExportExcel() {
     var scores = calculateBatchScore(d);
     rows.push([
       idx + 1, d.companyName || _batchCustomers[idx].name,
-      d.establishedDate || '', d.legalRepresentative || '',
-      d.registeredCapital || '', d.employeeCount || '',
-      d.industry || '', d.revenue || '', d.isListed || '',
-      d.website || '', d.businessModel || '', d.biddingInfo || '',
-      d.shareholders || '', d.cloudAiOpportunities || '',
+      (d.province || '') + (d.city ? ' ' + d.city : ''),
+      d.establishedDate || '', d.legalRepresentative || '', d.registeredCapital || '',
+      d.employeeCount || '', d.employeeRange || '', d.industry || '', d.bizType || '',
+      d.revenue || '', d.revenueYear || '', d.isListed || '',
+      d.companyStrengthScore || '', d.companyScaleTag || '', d.website || '',
+      d.aiActivityLevel || '', d.aiSignals || '', d.competitorCloudUsage || '',
+      d.techStack || '', d.recentNews || '',
+      d.parentCompany || '', d.parentCompanyBusiness || '', d.groupCloudAiUsage || '',
+      d.businessModel || '', d.biddingInfo || '', d.shareholders || '',
+      d.cloudAiOpportunities || '', d.cloudAiAnnualBudget || '',
       scores.aiScore, scores.cloudScore, scores.composite
     ]);
   });
-  rows.sort(function(a, b) { return b[16] - a[16]; });
+  rows.sort(function(a, b) { return b[31] - a[31]; });
   var wsData = [headers].concat(rows);
   var ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = [
-    { wch: 4 }, { wch: 24 }, { wch: 10 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
-    { wch: 16 }, { wch: 10 }, { wch: 24 }, { wch: 30 }, { wch: 20 }, { wch: 24 },
-    { wch: 36 }, { wch: 8 }, { wch: 8 }, { wch: 8 }
+    { wch: 4 },  { wch: 26 }, { wch: 12 }, { wch: 10 }, { wch: 8 },  { wch: 10 },
+    { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
+    { wch: 14 }, { wch: 8 },  { wch: 10 }, { wch: 8 },  { wch: 12 }, { wch: 22 },
+    { wch: 8 },  { wch: 30 }, { wch: 28 },
+    { wch: 28 }, { wch: 36 },
+    { wch: 22 }, { wch: 28 }, { wch: 28 },
+    { wch: 28 }, { wch: 20 }, { wch: 22 },
+    { wch: 36 }, { wch: 22 },
+    { wch: 8 },  { wch: 8 },  { wch: 8 }
   ];
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '客户潜力评估');
@@ -1531,6 +1584,30 @@ async function runBatchLoop(model, startIdx) {
   }
 }
 
+function stopBatchAnalysis() {
+  _batchAbortFlag = true;
+  showToast('正在停止，当前客户完成后可继续');
+}
+
+function updateBatchProgress(done, total, statusText) {
+  var textEl = document.getElementById('batchProgressText');
+  var barEl = document.getElementById('batchProgressBar');
+  var statusEl = document.getElementById('batchProgressStatus');
+  if (textEl) textEl.textContent = done + ' / ' + total;
+  if (statusEl) statusEl.textContent = statusText || '';
+  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
+}
+  var textEl = document.getElementById('batchProgressText');
+  var barEl = document.getElementById('batchProgressBar');
+  var statusEl = document.getElementById('batchProgressStatus');
+  if (textEl) textEl.textContent = done + ' / ' + total;
+  if (statusEl) statusEl.textContent = statusText || '';
+  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
+}
+  if (textEl) textEl.textContent = done + ' / ' + total;
+  if (statusEl) statusEl.textContent = statusText || '';
+  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
+}
 function stopBatchAnalysis() {
   _batchAbortFlag = true;
   showToast('正在停止，当前客户完成后可继续');
