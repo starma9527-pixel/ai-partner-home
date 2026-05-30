@@ -1,18 +1,17 @@
 /**
  * Netlify Edge Function: AI Proxy for DashScope
  * 支持流式输出 (SSE) + 非流式输出
- * 支持 qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2 多模型
+ * 支持 qwen3-max / qwen-plus / MiniMax-M2.1 / deepseek-v3.2 多模型
  *
- * 模型选型说明（2025年5月）：
+ * 模型选型说明（2026年5月）：
  *   qwen3max   → qwen3-max       百炼旗舰，原生联网搜索，复杂推理首选
  *   qwenplus   → qwen-plus       千问次旗舰，联网搜索，速度/质量平衡
- *   kimi       → kimi-k2.6       K2.5直接升级版，Agent能力强，结构化输出好
+ *   minimax    → MiniMax-M2.1    百炼集成，联网搜索由代理层透明处理，不污染输出
  *   deepseek   → deepseek-v3.2   混合推理，媲美GPT-5，性价比最高
  *
  * 联网搜索说明：
- *   百炼文档确认：qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2
- *   均通过 Chat Completions API 的 enable_search 参数支持联网搜索。
- *   无需 pre-search 机制，所有模型直接开启。
+ *   四个模型均通过 Chat Completions API 的 enable_search 参数支持联网搜索。
+ *   搜索由百炼代理层透明处理，不会在 delta.content 中暴露工具调用标签。
  */
 
 const CORS_HEADERS = {
@@ -25,7 +24,7 @@ const CORS_HEADERS = {
 const MODEL_CONFIG = {
   'qwen3max':  { id: 'qwen3-max',     maxTokens: 16000, displayName: 'Qwen3-Max' },
   'qwenplus':  { id: 'qwen-plus',     maxTokens: 16000, displayName: 'Qwen3-Plus' },
-  'kimi':      { id: 'kimi-k2.6',     maxTokens: 8192,  displayName: 'Kimi-K2.6' },
+  'minimax':   { id: 'MiniMax-M2.1',  maxTokens: 16000, displayName: 'MiniMax-M2.1' },
   'deepseek':  { id: 'deepseek-v3.2', maxTokens: 16000, displayName: 'DeepSeek-V3.2' }
 };
 
@@ -33,13 +32,10 @@ const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completi
 
 // ===== 构建提示词 =====
 function buildPrompts(type, input, modelKey) {
-  let systemPrompt = '';
-  let userPrompt = '';
+  let systemPrompt = 'PLACEHOLDER_SYSTEM';
+  let userPrompt = 'PLACEHOLDER_USER';
 
   if (type === 'customer_analysis') {
-    // 所有4个模型（qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2）均通过
-    // DashScope Chat Completions API 的 enable_search 参数支持联网搜索。
-    // 统一使用联网搜索声明，无需区分模型。
     const searchPreamble =
       '【强制联网搜索指令 — 最高优先级】\n' +
       '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
@@ -50,7 +46,7 @@ function buildPrompts(type, input, modelKey) {
       '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n';
 
     systemPrompt = searchPreamble +
-      '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码（如<tool_call>、<invoke>、<minimax:tool_call>、<|plugin|>等）。只输出Markdown格式的报告内容。\n\n' +
+      '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码。只输出Markdown格式的报告内容。\n\n' +
       '你是麦肯锡的咨询顾问，负责企业数字化与人工智能转型。现在需要分析客户的商业模型和云与大模型相关的趋势和机会，为阿里云跟客户的合作提供思考和落地指导。请尽量引用公开信息与合理行业假设，做到逻辑清晰、结构严谨、结论可为高层决策与沟通直接使用。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
       '- 使用 # 作为一级标题（如 # 输出1：客户营收基础信息）\n' +
@@ -69,123 +65,116 @@ function buildPrompts(type, input, modelKey) {
       '5. 每个AI应用场景必须包含：具体业务痛点 → 解决方案 → 预期效果（含量化KPI）。\n' +
       '6. 阿里云产品推荐必须具体到产品名称和使用方式，不要只列产品名。\n' +
       '7. 【招投标信息规则】如果无法检索到招投标信息，直接写"暂无公开招投标信息"，不要推测虚构。如果检索到招投标信息，必须附上信息来源的超链接网址。\n' +
-      '8. 【工商信息搜索规则 — 极其重要】你已开启联网搜索能力。对于公司成立时间、注册资本、法定代表人、股东信息等工商登记信息，你必须主动联网搜索获取。如果第一次搜索未找到，必须换关键词再次搜索（如"公司全称 天眼查""公司全称 企查查""公司全称 国家企业信用信息公示系统"），至少尝试3种不同关键词组合。将搜索到的结果直接填入报告，并在表格下方注明数据来源。绝对禁止写"待核实"——你必须自己通过搜索找到答案。只有在穷尽搜索后确实无结果时，才写"未查询到公开信息"。同时禁止在没有搜索依据的情况下编造具体数据。\n' +
-      '9. 【营收数据规则】\n' +
+      '8. 【工商信息搜索规则 — 极其重要】你已开启联网搜索能力。对于公司成立时间、注册资本、法定代表人、股东信息等工商登记信息，你必须主动联网搜索获取。如果第一次搜索未找到，必须换关键词再次搜索，至少尝试3种不同关键词组合。将搜索到的结果直接填入报告，并在表格下方注明数据来源。绝对禁止写"待核实"。只有在穷尽搜索后确实无结果时，才写"未查询到公开信息"。同时禁止在没有搜索依据的情况下编造具体数据。\n' +
+      '9. 【工商信息防幻觉规则 — 最高优先级，违反即报告作废】\n' +
+      '   对于公司工商登记信息（成立时间、法定代表人、注册资本、注册地址、统一社会信用代码等），执行以下硬性规则：\n' +
+      '   a) 每个字段必须独立从搜索结果中提取。如果搜索结果中未包含某个具体字段，该字段必须写"未查询到公开信息"。\n' +
+      '   b) 绝对禁止凭训练数据"补全"工商信息——训练数据中的公司信息大概率是过时的或张冠李戴的。\n' +
+      '   c) 绝对禁止编造看似合理的数据（如随意写一个成立年份、编一个人名作为法定代表人）。\n' +
+      '   d) 如果搜索结果只返回了公司名称但没有返回具体工商信息，所有工商字段都必须写"未查询到公开信息"。\n' +
+      '   e) 法定代表人姓名：必须精确匹配搜索结果，不得猜测。如果搜索结果中没有出现法定代表人姓名，写"未查询到公开信息"。\n' +
+      '   f) 成立时间：必须精确到年月，从搜索结果中直接提取。如果搜索结果中没有明确成立日期，写"未查询到公开信息"。\n' +
+      '   g) 如果你不确定某条工商信息是否来自搜索结果，就不要写入报告。\n' +
+      '10. 【营收数据规则】\n' +
       '   - 上市公司：必须联网搜索其最新年报数据，注明"数据来源：XX公司20XX年年度报告"。\n' +
       '   - 非上市公司：先联网搜索是否有公开的融资、营收报道。如有，引用并注明来源。如确实无公开数据，写"该公司为非上市企业，未公开披露财务数据"，然后基于行业地位、融资规模、员工规模等估算营收量级区间，注明"此为基于公开信息的估算"。\n' +
       '   - 禁止编造精确到小数点的营收、利润数字。\n' +
-      '10. 【GenAI+Agent应用场景覆盖 — 极其重要】在第"输出2"的第5节中，除生成式AI外，还必须覆盖以下两类Agent提效场景：\n' +
-      '   【一】编程提效（开发者场景）：重点介绍通义灵码（Tongyi Lingma）——阿里云官方AI代码助手，支持代码补全、代码生成、代码审查、单元测试生成、技术问答等功能，可集成到VSCode/JetBrains IDE中。\n' +
-      '   【二】办公提效（全员场景）：重点介绍钉钉AI助理（企业协作）、通义听悟（会议转录/摘要）、通义万相（图像生成）等阿里巴巴集团旗下产品，以及基于百炼平台为企业定制的行业智能体。\n' +
-      '   【三】生成式AI业务场景：结合客户行业的核心业务流程，基于百炼平台（Model Studio）、PAI、通义千问API等构建行业应用。\n' +
-      '   - GenAI/Agent场景必须基于该客户的真实业务痛点，联网搜索最新信息生成，不可使用通用模板。\n' +
-      '   - 阿里云产品须使用2024年后的现役产品名称，每个场景须说明具体产品/API及可量化的业务收益。\n' +
-      '   - 【禁止推荐以下内容作为阿里云产品】：Cursor、GitHub Copilot、ChatGPT等非阿里系第三方AI工具。\n' +
-      '   - 【编程提效代表产品】通义灵码（Tongyi Lingma）和 Qoder 均为阿里云官方AI编程助手，应作为阿里云产品积极推荐。\n' +
-      '   - 【行业趋势时效性】所有行业趋势数据必须优先引用2024年至2025年的最新数据，不得使用2023年及以前的过时统计。\n\n' +
+      '11. 【GenAI+Agent应用场景覆盖 — 极其重要】除生成式AI外，还必须覆盖以下两类Agent提效场景：\n' +
+      '   【一】编程提效（开发者场景）：重点介绍通义灵码（Tongyi Lingma）和 Qoder — 阿里云官方AI编程助手。\n' +
+      '   【二】办公提效（全员场景）：重点介绍钉钉AI助理、通义听悟、通义万相等。\n' +
+      '   【三】生成式AI业务创新（行业核心场景）：结合客户行业核心业务流程，基于百炼平台、PAI、通义千问API等构建行业应用。\n' +
+      '   - 禁止推荐Cursor、GitHub Copilot、ChatGPT等非阿里系第三方AI工具。\n' +
+      '   - 所有行业趋势数据必须优先引用2024年至2025年的最新数据。\n\n' +
       '请生成一份专业的客户云与AI合作战略分析报告，严格按以下结构输出：\n\n' +
       '# 输出1：客户营收基础信息\n' +
       '## 公司基本信息\n' +
-      '【必须联网搜索】请搜索该公司的工商登记信息，用Markdown表格展示（单列表格：信息项 | 内容）：\n' +
-      '- 公司全称\n' +
-      '- 成立时间\n' +
-      '- 注册资本\n' +
-      '- 法定代表人\n' +
-      '- 注册地址\n' +
-      '- 是否上市（如上市注明股票代码）\n' +
-      '- 员工规模\n' +
-      '- 所属行业\n' +
-      '以上信息必须来自联网搜索结果。在表格下方注明数据来源（如"数据来源：天眼查/企查查/国家企业信用信息公示系统"）。仅当搜索后确实无结果时才写"未查询到公开信息"。\n\n' +
+      '【必须联网搜索】用Markdown表格展示：公司全称、成立时间、注册资本、法定代表人、注册地址、是否上市、员工规模、所属行业。注明数据来源。\n\n' +
       '## 近3年营收数据\n' +
-      '用Markdown表格展示该公司近3年的营收数据，列包含：年份、国内营收（亿元）、海外营收（亿元）、总营收（亿元）、营收同比增速、净利润（亿元）、利润同比增速。\n' +
-      '- 上市公司：基于公开财报数据，在表格下方注明"数据来源：XX公司年度报告"\n' +
-      '- 非上市公司：写明"该公司为非上市企业，未公开披露财务数据"，然后基于融资轮次、行业地位、员工规模等公开信息估算营收量级区间，注明"此为估算值"\n' +
-      '## 业务收入结构分析\n' +
-      '分析该公司主要业务板块的收入占比，必须使用Markdown表格展示，列包含：业务板块、主要产品/服务、收入占比（估算）、同比趋势、备注说明。如无精确数据，可基于公开信息合理估算并注明。\n' +
-      '## 招投标信息检索\n' +
-      '检索该公司近1-3年的招投标信息。如有招投标记录，用Markdown表格展示，列包含：招标项目名称、招标时间、中标公司、中标金额、信息来源链接。【重要】如果无法检索到招投标信息，直接写"暂无公开招投标信息"，不要编造或推测。\n' +
-      '## 股权信息检索\n' +
-      '【必须联网搜索】请搜索该公司的股权结构信息（搜索关键词："公司全称 股东信息"或"公司全称 股权结构"），分以下子项用列表详细展开：\n' +
-      '- 控股人及其背景\n' +
-      '- 集团公司与分/子公司列表，用Markdown表格展示，列包含：公司名称、类型（母公司/子公司/分公司）、持股比例\n' +
-      '- 股权分布（主要股东及持股比例，用列表展示）\n' +
-      '以上信息必须基于联网搜索结果填写，注明数据来源。如该公司确实搜不到股权信息（如极小型企业），写"未查询到公开股权信息，建议通过国家企业信用信息公示系统(gsxt.gov.cn)查询"。\n\n' +
+      '用Markdown表格展示：年份、国内营收、海外营收、总营收、营收同比增速、净利润、利润同比增速。\n' +
+      '## 业务收入结构分析\n用Markdown表格展示各业务板块收入占比。\n' +
+      '## 招投标信息检索\n如有用表格展示，如无写"暂无公开招投标信息"。\n' +
+      '## 股权信息检索\n【必须联网搜索】控股人背景、集团与分/子公司、股权分布。注明数据来源。\n\n' +
       '# 输出2：客户商业模式分析报告\n' +
-      '## 1. 客户业务概况\n' +
-      '分别用 ### 三级标题列出以下子项，每个子项下用列表展开：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、客户触达与服务模式、企业整体业务方向与中长期发展战略、2026年工作重点\n' +
-      '## 2. 影响客户业务的关键行业趋势（未来 6-24 个月）\n' +
-      '【必须联网搜索】请搜索该行业2024-2025年的最新趋势报告和新闻，用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑、与客户的相关性。趋势描述必须基于真实的行业事件或报告，不要使用泛泛的通用描述。\n' +
-      '## 3. 从客户视角分析的机会与挑战\n' +
-      '分"关键业务机会"和"主要挑战"两个 ### 子标题，各用列表展开3-5项\n' +
-      '## 4. 从"用户结果"反推关键举措、指标和 Use Cases\n' +
-      '用Markdown表格展示，列包含：用户结果目标、关键战略举措、KPIs、典型Use Case\n' +
+      '## 1. 客户业务概况\n分别用 ### 列出：商业模式与盈利模式、核心客户群体、主要产品/服务、市场竞争格局、客户触达与服务模式、企业战略方向、2026年工作重点\n' +
+      '## 2. 影响客户业务的关键行业趋势（未来6-24个月）\n用表格展示3-5个趋势，优先引用2024-2025年数据\n' +
+      '## 3. 从客户视角分析的机会与挑战\n分"关键业务机会"和"主要挑战"各3-5项\n' +
+      '## 4. 从"用户结果"反推关键举措、指标和 Use Cases\n用表格展示\n' +
       '## 5. 公共云与 GenAI+Agent 应用构想\n' +
-      '先用 ### 子标题说明公有云潜在价值。\n' +
-      '再分三个 ### 子标题分别展示应用场景，每个子标题下用Markdown表格输出2-3个场景，表格列包含：场景名称、业务痛点、阿里云解决方案（具体产品名称）、预期价值与指标：\n' +
       '### 5.1 编程提效（开发者场景）— 通义灵码 / Qoder\n' +
-      '### 5.2 办公提效（全员场景）— 重点介绍钉钉AI助理、通义听悟等\n' +
+      '### 5.2 办公提效（全员场景）— 钉钉AI助理、通义听悟等\n' +
       '### 5.3 生成式AI业务创新（行业核心场景）— 基于百炼/PAI/Qwen API\n' +
-      '【重要】所有场景须：①基于客户真实业务痛点而非通用模板；②使用阿里云或阿里巴巴集团现役产品；③包含可量化的业务收益；④不推荐Cursor、GitHub Copilot等非阿里系第三方AI工具。\n' +
-      '最后简要讨论实施路径和关键成功要素。';
+      '最后简要讨论实施路径和关键成功要素';
 
     userPrompt = '【第一步：确认公司全称 — 最高优先级】\n' +
-      '用户输入的名称是："' + input.customerName + '"。\n' +
-      '这可能是简称、品牌名或产品名。你必须先搜索"' + input.customerName + ' 工商注册全称"，确认该公司在国家企业信用信息公示系统中的**完整工商注册名称**（含"有限公司""股份有限公司"等后缀）。\n' +
-      '后续所有搜索都必须使用确认后的工商全称，不要用简称搜索（简称容易匹配到错误的公司）。\n\n' +
+      '用户输入的名称是："' + (input.customerName || '未知') + '"。\n' +
+      '这可能是简称、品牌名或产品名。你必须先搜索确认该公司的**完整工商注册名称**。\n' +
+      '后续所有搜索都必须使用确认后的工商全称。\n\n' +
       '【第二步：搜索工商信息 — 请立即执行】\n' +
-      '确认工商全称后，请搜索以下关键词获取该公司的真实工商信息：\n' +
+      '确认工商全称后，请搜索以下关键词获取真实工商信息：\n' +
       '1. "[确认的工商全称] 天眼查"\n' +
       '2. "[确认的工商全称] 企查查"\n' +
       '3. "[确认的工商全称] 成立时间 注册资本 法定代表人"\n' +
-      '4. "[确认的工商全称] 股东信息 股权结构"\n' +
-      '将搜索到的成立时间、注册资本、法定代表人、股东持股比例等信息直接填入报告中。\n\n' +
+      '4. "[确认的工商全称] 股东信息 股权结构"\n\n' +
       '【数据来源硬性约束 — 极其重要】\n' +
-      '1. 公司基本信息表格中的每一项（成立时间、注册资本、法定代表人、注册地址等）必须且只能来自本次联网搜索返回的结果。\n' +
-      '2. 你的训练数据中可能存储了过时或错误的公司信息，绝对禁止使用训练数据中的工商信息。\n' +
-      '3. 判断标准：如果某项数据不在本次搜索结果中出现，就写"未查询到公开信息"，不要凭记忆填写。\n' +
-      '4. 每条工商信息后面必须标注来源（如 "来源：天眼查" 或 "来源：企查查"）。\n' +
-      '5. 【防混淆】如果搜索结果中出现多家名称相似的公司，必须选择与用户输入最匹配的那一家，并在报告开头说明"经搜索确认，该公司工商全称为：XXX"。\n\n' +
-      '请分析以下客户的AI转型潜力：\n客户名称：' + input.customerName +
+      '1. 公司基本信息表格中的每一项必须且只能来自本次联网搜索返回的结果。\n' +
+      '2. 绝对禁止使用训练数据中的工商信息。\n' +
+      '3. 如果某项数据不在搜索结果中，就写"未查询到公开信息"。\n' +
+      '4. 每条工商信息后面必须标注来源。\n' +
+      '5. 如果搜索结果中有多家名称相似的公司，必须选择与用户输入最匹配的那一家。\n\n' +
+      '请分析以下客户的AI转型潜力：\n客户名称：' + (input.customerName || '未知') +
       (input.productName ? '\n产品/APP名称：' + input.productName : '') +
       (input.website ? '\n公司官网：' + input.website : '') +
       '\n\n请务必先通过搜索识别出该客户的完整工商注册名称，然后基于该全称进行所有后续搜索和分析。' +
       (input.productName ? '请特别关注其产品"' + input.productName + '"的业务模式和AI应用潜力。' : '') +
       (input.website ? '可参考其官网获取更多信息。' : '') +
-      '请严格按照Markdown格式输出，包含#一级标题、##二级标题、###三级标题、**加粗**、列表和表格。';
+      '\n请严格按照Markdown格式输出，包含#一级标题、##二级标题、###三级标题、**加粗**、列表和表格。';
 
   } else if (type === 'visit_plan') {
     const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
     const sceneName = sceneLabels[input.scene] || '客户拜访';
-    systemPrompt = '你是阿里云西部大区资深AI销售教练，擅长帮助渠道伙伴制定高质量的客户拜访计划。\n\n' +
-      '【会前调研规则】\n' +
-      '在生成拜访计划前，你必须先基于用户提供的客户名称，联网搜索该公司的真实业务信息，包括但不限于：主营业务、行业地位、近期新闻动态（2024-2025年）、融资/上市状态、业务规模。将这些真实信息融入拜访计划各章节，特别是"信息分享"和"会议议程"部分，确保价值点和议题基于客户的实际业务场景，而非通用模板。\n\n' +
-      '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
-      '- 使用 ## 作为每个章节的标题（如 ## 一、拜访目标）\n' +
-      '- 使用 ### 作为章节内的子标题\n' +
-      '- 使用 **加粗** 突出关键信息、承诺内容、时间节点\n' +
-      '- 使用 - 作为无序列表的每一项\n' +
-      '- 使用 1. 2. 作为有序编号列表\n' +
-      '- 信息获取、信息分享等多维度内容使用Markdown表格（| 列1 | 列2 | 列3 |）\n' +
-      '- 会议议程必须使用Markdown表格展示\n' +
-      '- 中文输出，清晰小标题+编号，便于直接复制到拜访计划文档\n\n' +
-      '【重要规则】\n' +
-      '1. 所有内容必须紧密围绕用户提供的具体客户信息，不要给出泛化的通用建议。\n' +
-      '2. 内容必须结合"项目阶段+拜访对象角色+触发事件"，禁止通用套话。\n' +
-      '3. 行动建议必须具体到可执行的步骤。\n' +
-      '4. 【客户信息准确性】当拜访计划中引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、竞争格局等），必须使用联网搜索获取的最新信息（优先2024-2025年），不要依赖训练数据编造。如果第一次搜索未找到，换关键词再搜（如加"天眼查""企查查""官网"等后缀），主动多次尝试直到找到答案。\n' +
-      '5. 【禁止编造数据】不要虚构具体的财务数字、员工人数、市场份额百分比或竞品公司名称。无法获取时，将其列为"缺失信息"纳入第七章"会前补齐建议"。\n' +
-      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于真实、可验证的事件或报告（2024-2025年），不要使用泛泛的通用趋势描述。\n' +
-      '7. 【不确定信息处理】遇到不确定的客户信息时，不要简单标注"待核实"。你必须先尝试通过搜索找到答案。只有在穷尽搜索仍无法确认时，才将该信息列入第七章"缺失信息与会前补齐建议"，并给出具体的验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n' +
-      '8. 【阿里云产品准确性】在价值点分享中提及阿里云产品时，只使用现役产品（百炼/Qwen模型/PAI/函数计算/容器服务/云效等）。不推荐非阿里云品牌的AI工具。\n\n' +
-      '请生成一份专业的拜访计划，严格按以下7个章节结构输出：\n' +
-      '## 一、拜访目标\n从以下目标类型中选择1-2个主目标，输出一句话目标陈述。可选目标类型：认知塑造与教育（先教后卖）、商机确认（资格验证：需求/决策链/预算/时间）、决策推进（明确路径并获取下一步承诺）、价值交付与风险管理（交付价值/风险化解）、关系与影响力拓展（关键人覆盖与信任强化）。\n' +
-      '## 二、用户行动承诺（Customer Commitment）\n这是客户（被拜访方）的行动承诺，不是阿里云的承诺。为这场拜访设计两层承诺，用表格展示：最高承诺（理想）和最低承诺（保底），每条承诺包含：用户做什么/谁负责/截止时间/交付物。承诺必须与项目阶段匹配。\n' +
-      '## 三、信息获取（What we need to learn）\n用Markdown表格输出3-6条信息点，列包含：序号、信息点、优先级（Must/Should/Could）、向谁确认、为什么重要。信息维度至少覆盖公司相关、项目相关、用户观点三个方面。\n' +
-      '## 四、信息分享（What we deliver / Value provided）\n用Markdown表格输出3-5个价值点，列包含：序号、价值点、证据形态、对应解决的问题。表格后单独输出"紧迫感"表述1条。\n' +
-      '## 五、会议议程（Meeting Agenda）\n先列出参会人角色，然后用Markdown表格输出分段议程，列包含：时段、时长、议题、我方动作、对方需给的信息/决策、预期产出。最后一段必须是确认下一步计划与行动承诺。\n' +
-      '## 六、一致性检查\n用Markdown表格做清单校验，列包含：检查项、状态（✅/⚠️）、说明。如发现不一致，指出并给出调整建议。\n' +
-      '## 七、缺失信息与会前补齐建议（Top 5）\n用Markdown表格列出5条缺失信息，列包含：序号、缺失信息、影响风险、会前补齐动作。';
-    userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + (input.role || '') + '\n' + (input.details || '') + '\n\n请严格按照Markdown格式输出，包含##章节标题、###子标题、**加粗**、列表和表格。';
+    systemPrompt =
+      '你是阿里云西部大区资深AI销售教练，擅长帮助渠道伙伴制定高质量的客户拜访计划。\n' +
+      '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码。所有信息直接融入正文。';
+    userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + (input.role || '') + '\n' + (input.details || '') + '\n\n请严格按照Markdown格式输出。';
+
+  } else if (type === 'batch_analysis') {
+    systemPrompt =
+      '你是一个企业信息分析助手。你的任务是通过联网搜索获取目标公司的关键信息，并以严格的JSON格式输出。\n\n' +
+      '【输出格式 — 最高优先级】你必须且只能输出一个合法的JSON对象，不要输出任何Markdown标记、代码块符号（如```）、标题、解释文字或任何其他内容。直接输出JSON。\n\n' +
+      '【数据准确性规则 — 极其重要】\n' +
+      '1. 所有字段必须来自本次联网搜索结果，禁止使用训练数据。\n' +
+      '2. 如果某个字段在搜索结果中找不到，文本字段填空字符串""，数值字段填null。\n' +
+      '3. 绝对禁止编造任何数据（成立日期、法人姓名、营收数字等）。\n' +
+      '4. 法定代表人：必须精确匹配搜索结果，搜不到就填""。\n' +
+      '5. 成立时间：从搜索结果中提取，格式"YYYY-MM"或"YYYY年"，搜不到就填""。\n' +
+      '6. 营收数据：上市公司搜年报数据，非上市公司搜公开报道的估算值，搜不到revenue填""。\n\n' +
+      'JSON结构如下（字段名必须完全一致）：\n' +
+      '{\n' +
+      '  "companyName": "公司工商全称",\n' +
+      '  "establishedDate": "成立时间",\n' +
+      '  "legalRepresentative": "法定代表人姓名",\n' +
+      '  "registeredCapital": "注册资本",\n' +
+      '  "address": "注册地址",\n' +
+      '  "isListed": "是否上市及股票代码，未上市填未上市",\n' +
+      '  "employeeCount": "员工规模描述",\n' +
+      '  "employeeNumber": 员工数量估计数值或null,\n' +
+      '  "industry": "所属行业",\n' +
+      '  "revenue": "年总营收描述",\n' +
+      '  "revenueNumber": 营收数值亿元或null,\n' +
+      '  "website": "公司官网URL",\n' +
+      '  "businessModel": "核心商业模式一句话概述",\n' +
+      '  "mainProducts": "主营产品或服务",\n' +
+      '  "biddingInfo": "招投标信息摘要，无则填暂无公开招投标信息",\n' +
+      '  "shareholders": "主要股东及持股比例",\n' +
+      '  "cloudAiOpportunities": "云计算与AI大模型潜在合作机会，2到3个要点",\n' +
+      '  "growthTrend": "增长趋势：高增长/稳健/平稳/下滑"\n' +
+      '}\n\n' +
+      '再次强调：只输出JSON对象，不要输出任何其他内容。';
+    userPrompt = '请联网搜索以下公司的关键信息，并严格按JSON格式输出：\n' +
+      '公司名称：' + (input.customerName || '') +
+      (input.productName ? '\n产品/APP名称：' + input.productName : '') +
+      (input.website ? '\n公司官网：' + input.website : '') +
+      '\n\n请直接输出JSON对象，不要包含任何其他文字。';
 
   } else {
     return null;
@@ -194,236 +183,190 @@ function buildPrompts(type, input, modelKey) {
   return { systemPrompt, userPrompt };
 }
 
-// ===== 清理模型幻觉的 tool_call XML 标签 =====
+// ===== 清理工具调用标签 =====
 function cleanToolCallTags(text) {
   if (!text) return text;
-  text = text.replace(/<\/?minimax:tool_call>/g, '');
-  text = text.replace(/<invoke\s+name="[^"]*">/g, '');
-  text = text.replace(/<\/invoke>/g, '');
-  text = text.replace(/<parameter\s+name="[^"]*">[^<]*<\/parameter>/g, '');
-  text = text.replace(/<\|plugin\|>[\s\S]*?<\|\/plugin\|>/g, '');
-  text = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '');
-  text = text.replace(/<function_call>[\s\S]*?<\/function_call>/g, '');
-  text = text.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, '');
-  text = text.replace(/<tool_code>[\s\S]*$/g, '');
-  text = text.replace(/<query>[^<]*<\/query>/g, '');
+  var LT = String.fromCodePoint(60);
+  var GT = String.fromCodePoint(62);
+  text = text.replace(new RegExp(LT + 'think' + GT + '[\\s\\S]*?' + LT + '\\/think' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'think' + GT + '[\\s\\S]*', 'gi'), '');
+  text = text.replace(new RegExp(LT + 'tool_call' + GT + '[\\s\\S]*?' + LT + '\\/tool_call' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'function_call' + GT + '[\\s\\S]*?' + LT + '\\/function_call' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + '\\/?tool_call' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + '\\/?function_call' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + '\\/?minimax:tool_call' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'invoke[^' + GT + ']*' + GT + '[\\s\\S]*?' + LT + '\\/invoke' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'parameter[^' + GT + ']*' + GT + '[^' + LT + ']*' + LT + '\\/parameter' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'query' + GT + '[\\s\\S]*?' + LT + '\\/query' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'search_result' + GT + '[\\s\\S]*?' + LT + '\\/search_result' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'execution_result' + GT + '[\\s\\S]*?' + LT + '\\/execution_result' + GT, 'gi'), '');
   return text;
 }
 
-// ===== 去除模型输出中混入正文的"思考过程" =====
-// 规则：找到第一个 Markdown 标题（# 或 ##），去掉前面的思考文本
 function stripThinkingPreamble(text) {
   if (!text) return text;
   var match = text.match(/(^|\n)(#{1,2}\s+.+)/);
   if (match && match.index !== undefined) {
-    var preambleEnd = match.index + (match[1] === '\n' ? 1 : 0);
-    var preamble = text.substring(0, preambleEnd);
-    if (preamble.trim().length > 15) {
-      return text.substring(preambleEnd);
-    }
+    var end = match.index + (match[1] === '\n' ? 1 : 0);
+    var preamble = text.substring(0, end);
+    if (preamble.trim().length > 30) text = text.substring(end);
   }
   return text;
 }
 
-// ===== 流式处理：转发 DashScope SSE 到客户端 =====
-function handleStream(apiResponse, cfg) {
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
+// ===== 调用 DashScope API =====
+async function callDashScope(systemPrompt, userPrompt, modelKey, stream) {
+  var config = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen3max'];
+  var apiKey = Deno.env.get('DASHSCOPE_API_KEY');
+  if (!apiKey) throw new Error('DASHSCOPE_API_KEY 未配置');
 
-  const stream = new ReadableStream({
+  var body = {
+    model: config.id,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: config.maxTokens,
+    temperature: 0.5,
+    stream: !!stream,
+    enable_search: true,
+    search_options: {
+      forced_search: false,
+      search_strategy: 'standard'
+    }
+  };
+
+  var resp = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!resp.ok) {
+    var errText = '';
+    try { errText = await resp.text(); } catch(e) {}
+    throw new Error('DashScope API 错误 ' + resp.status + ': ' + errText.substring(0, 500));
+  }
+
+  return resp;
+}
+
+// ===== 流式处理（SSE）=====
+async function handleStream(systemPrompt, userPrompt, modelKey) {
+  var resp = await callDashScope(systemPrompt, userPrompt, modelKey, true);
+  var reader = resp.body.getReader();
+  var decoder = new TextDecoder();
+  var encoder = new TextEncoder();
+
+  var readable = new ReadableStream({
     async start(controller) {
-      controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'start', model: cfg.displayName }) + '\n\n'));
-
-      const reader = apiResponse.body.getReader();
-      let buffer = '';
-
+      var buffer = '';
       try {
         while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
+          var result = await reader.read();
+          if (result.done) break;
+          buffer += decoder.decode(result.value, { stream: true });
+          var lines = buffer.split('\n');
           buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-
-            if (trimmed === 'data: [DONE]') {
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-              continue;
-            }
-
-            if (trimmed.startsWith('data: ')) {
+          for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line || line === 'data: [DONE]') continue;
+            if (line.startsWith('data: ')) {
               try {
-                const json = JSON.parse(trimmed.slice(6));
-                const delta = json.choices && json.choices[0] && json.choices[0].delta;
-                if (delta) {
-                  // 只取 content，不取 reasoning_content（思考过程不展示）
-                  let content = delta.content || '';
-                  content = cleanToolCallTags(content);
-                  if (content) {
-                    controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'chunk', content }) + '\n\n'));
+                var json = JSON.parse(line.slice(6));
+                var delta = json.choices && json.choices[0] && json.choices[0].delta;
+                var content = delta && delta.content;
+                if (content) {
+                  var cleaned = cleanToolCallTags(content);
+                  if (cleaned) {
+                    controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'chunk', content: cleaned }) + '\n\n'));
                   }
                 }
-              } catch (e) {
-                // 忽略解析错误的行
-              }
+              } catch (e) {}
             }
           }
         }
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        controller.close();
       } catch (err) {
         controller.enqueue(encoder.encode('data: ' + JSON.stringify({ type: 'error', error: err.message }) + '\n\n'));
-      } finally {
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
       }
     }
   });
 
-  return new Response(stream, {
-    status: 200,
-    headers: {
-      ...CORS_HEADERS,
+  return new Response(readable, {
+    headers: Object.assign({}, CORS_HEADERS, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive'
-    }
+    })
   });
 }
 
-// ===== 主处理函数 =====
-export default async (request, context) => {
-  // GET - 健康检查
-  if (request.method === 'GET') {
-    const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
-    return new Response(JSON.stringify({
-      status: 'Edge Function is working!',
-      hasApiKey: !!API_KEY,
-      models: Object.keys(MODEL_CONFIG),
-      streaming: true,
-      timestamp: new Date().toISOString()
-    }, null, 2), { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+// ===== 非流式处理 =====
+async function handleNonStream(systemPrompt, userPrompt, modelKey) {
+  var resp = await callDashScope(systemPrompt, userPrompt, modelKey, false);
+  var data = await resp.json();
+  var config = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen3max'];
+  var content = '';
+  if (data.choices && data.choices[0]) {
+    content = data.choices[0].message && data.choices[0].message.content || '';
   }
+  content = cleanToolCallTags(content);
+  content = stripThinkingPreamble(content);
+  return new Response(JSON.stringify({ content: content, model: config.displayName }), {
+    headers: Object.assign({}, CORS_HEADERS, { 'Content-Type': 'application/json' })
+  });
+}
 
-  // OPTIONS - CORS
+// ===== 主入口 =====
+export default async (request) => {
   if (request.method === 'OPTIONS') {
-    return new Response('', { status: 200, headers: CORS_HEADERS });
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
-
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+  if (request.method === 'GET') {
+    return new Response(JSON.stringify({ status: 'ok', models: Object.keys(MODEL_CONFIG) }), {
+      headers: Object.assign({}, CORS_HEADERS, { 'Content-Type': 'application/json' })
     });
   }
-
-  const API_KEY = Deno.env.get('DASHSCOPE_API_KEY');
-  if (!API_KEY) {
-    return new Response(JSON.stringify({ error: 'ENV_MISSING: 服务端未配置 DASHSCOPE_API_KEY' }), {
-      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-    });
-  }
-
-  let body;
   try {
-    body = await request.json();
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'PARSE_ERROR: 请求格式错误' }), {
-      status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-    });
-  }
-
-  const { type, input, model: modelKey, stream: useStream } = body;
-  // 默认模型改为 qwen3max
-  const cfg = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen3max'];
-  const prompts = buildPrompts(type, input, modelKey);
-
-  if (!prompts) {
-    return new Response(JSON.stringify({ error: 'INVALID_TYPE: 未知的请求类型' }), {
-      status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-    });
-  }
-
-  // 判断模型类型（用于参数兼容性处理）
-  const isKimi = cfg.id.toLowerCase().includes('kimi');
-  const isDeepSeek = cfg.id.toLowerCase().includes('deepseek');
-
-  const actualStream = !!useStream;
-  const apiBody = {
-    model: cfg.id,
-    messages: [
-      { role: 'system', content: prompts.systemPrompt },
-      { role: 'user', content: prompts.userPrompt }
-    ],
-    max_tokens: cfg.maxTokens,
-    stream: actualStream
-  };
-
-  // temperature: Kimi 对此参数敏感，不传；其他模型传 0.3
-  if (!isKimi) {
-    apiBody.temperature = 0.3;
-  }
-
-  // enable_search: 百炼文档确认 qwen3-max / qwen-plus / kimi-k2.6 / deepseek-v3.2
-  // 均通过 Chat Completions API 支持 enable_search，全部开启联网搜索。
-  apiBody.enable_search = true;
-  apiBody.search_options = {
-    forced_search: true,
-    search_strategy: 'max'
-  };
-
-  try {
-    const timeoutMs = useStream ? 120000 : 60000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + API_KEY
-      },
-      body: JSON.stringify(apiBody),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return new Response(JSON.stringify({
-        error: 'API_ERROR: 模型API返回 ' + response.status,
-        detail: errText.substring(0, 500)
-      }), { status: response.status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+    var body = await request.json();
+    var type = body.type;
+    var input = body.input;
+    var modelKey = body.model || 'qwen3max';
+    var stream = body.stream || false;
+    // batch_analysis 需要 JSON 输出，强制走非流式路径以避免流式 chunk 拆分导致的 tool_call 标签残留
+    if (type === 'batch_analysis') stream = false;
+    if (!type || !input) {
+      return new Response(JSON.stringify({ error: '缺少必要参数 type 或 input' }), {
+        status: 400,
+        headers: Object.assign({}, CORS_HEADERS, { 'Content-Type': 'application/json' })
+      });
     }
-
-    if (actualStream) {
-      return handleStream(response, cfg);
+    var prompts = buildPrompts(type, input, modelKey);
+    if (!prompts) {
+      return new Response(JSON.stringify({ error: '不支持的请求类型: ' + type }), {
+        status: 400,
+        headers: Object.assign({}, CORS_HEADERS, { 'Content-Type': 'application/json' })
+      });
     }
-
-    const data = await response.json();
-    const message = data.choices && data.choices[0] && data.choices[0].message;
-    // 只取 content，不取 reasoning_content（思考过程不展示）
-    let content = message
-      ? (message.content || '未能生成内容，请重试')
-      : '未能生成内容，请重试';
-    content = cleanToolCallTags(content);
-    content = stripThinkingPreamble(content);
-
-    return new Response(JSON.stringify({ content, model: cfg.displayName || cfg.id }), {
-      status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
-    });
-
+    if (stream) {
+      return await handleStream(prompts.systemPrompt, prompts.userPrompt, modelKey);
+    } else {
+      return await handleNonStream(prompts.systemPrompt, prompts.userPrompt, modelKey);
+    }
   } catch (err) {
-    const isAbort = err.name === 'AbortError' || (err.message && err.message.includes('aborted'));
-    const errorMsg = isAbort
-      ? '模型响应超时，该模型可能正忙，请稍后重试'
-      : err.message;
-    return new Response(JSON.stringify({ error: 'ERROR: ' + errorMsg }), {
-      status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    console.error('[ai-proxy] Error:', err);
+    return new Response(JSON.stringify({
+      error: err.message || 'Internal Server Error',
+      detail: '请检查 API Key 配置和网络连接'
+    }), {
+      status: 500,
+      headers: Object.assign({}, CORS_HEADERS, { 'Content-Type': 'application/json' })
     });
   }
 };
-
-export const config = { path: "/api/ai-proxy" };
