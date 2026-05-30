@@ -1597,27 +1597,3 @@ function updateBatchProgress(done, total, statusText) {
   if (statusEl) statusEl.textContent = statusText || '';
   if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
 }
-  var textEl = document.getElementById('batchProgressText');
-  var barEl = document.getElementById('batchProgressBar');
-  var statusEl = document.getElementById('batchProgressStatus');
-  if (textEl) textEl.textContent = done + ' / ' + total;
-  if (statusEl) statusEl.textContent = statusText || '';
-  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
-}
-  if (textEl) textEl.textContent = done + ' / ' + total;
-  if (statusEl) statusEl.textContent = statusText || '';
-  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
-}
-function stopBatchAnalysis() {
-  _batchAbortFlag = true;
-  showToast('正在停止，当前客户完成后可继续');
-}
-
-function updateBatchProgress(done, total, statusText) {
-  var textEl = document.getElementById('batchProgressText');
-  var barEl = document.getElementById('batchProgressBar');
-  var statusEl = document.getElementById('batchProgressStatus');
-  if (textEl) textEl.textContent = done + ' / ' + total;
-  if (statusEl) statusEl.textContent = statusText || '';
-  if (barEl) barEl.style.width = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
-}
