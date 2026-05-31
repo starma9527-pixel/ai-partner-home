@@ -616,7 +616,7 @@ function handleFeedback() {
 }
 
 // ===== AI API Call =====
-const MODEL_LABELS = { qwen3max: 'Qwen3-Max', qwenplus: 'Qwen3-Plus', minimax: 'MiniMax-M2.1', deepseek: 'DeepSeek-V3.2' };
+const MODEL_LABELS = { qwen37max: 'Qwen3.7-Max', qwen3max: 'Qwen3-Max', qwenplus: 'Qwen3-Plus', minimax: 'MiniMax-M2.1', deepseek: 'DeepSeek-V3.2', deepseekflash: 'DeepSeek-V4-Flash' };
 
 // ===== 清理模型输出内容 =====
 // 去除工具调用标签和思考过程
@@ -640,6 +640,12 @@ function cleanAIContent(text) {
   text = text.replace(new RegExp(LT + 'query' + GT + '[^' + LT + ']*' + LT + '\\/query' + GT, 'g'), '');
   text = text.replace(new RegExp(LT + 'search_result' + GT + '[\\s\\S]*?' + LT + '\\/search_result' + GT, 'g'), '');
   text = text.replace(new RegExp(LT + 'execution_result' + GT + '[\\s\\S]*?' + LT + '\\/execution_result' + GT, 'g'), '');
+  // think 思考标签（qwen3-max 等思考模型）
+  text = text.replace(new RegExp(LT + 'think' + GT + '[\\s\\S]*?' + LT + '\\/think' + GT, 'gi'), '');
+  text = text.replace(new RegExp(LT + 'think' + GT + '[\\s\\S]*', 'gi'), '');
+  // MiniMax tool_code 格式
+  text = text.replace(new RegExp(LT + 'tool_code' + GT + '[\\s\\S]*?' + LT + '\\/tool_code' + GT, 'g'), '');
+  text = text.replace(new RegExp(LT + 'tool_code' + GT + '[\\s\\S]*', 'g'), '');
   // 去除思考过程：找到第一个 Markdown 标题，去掉前面的文字
   var headingMatch = text.match(/(^|\n)(#{1,2}\s+.+)/);
   if (headingMatch && headingMatch.index !== undefined) {
@@ -1344,7 +1350,7 @@ var _batchSummaryHeaders = [
   '技术栈', '近期动态',
   '母公司/集团', '集团业务', '集团云AI使用',
   '核心商业模式', '招投标信息', '主要股东',
-  '云与AI合作机会', '年消费预估', 'AI潜力分', '云计算潜力分', '综合评分', '状态'
+  '增长趋势', '云与AI合作机会', '年消费预估', 'AI潜力分', '云计算潜力分', '综合评分', '状态'
 ];
 
 function renderBatchSummaryTable() {
@@ -1405,6 +1411,7 @@ function updateBatchSummaryRow(idx, data, status) {
     escapeHtml((data && data.businessModel) || '-'),
     escapeHtml((data && data.biddingInfo) || '-'),
     escapeHtml((data && data.shareholders) || '-'),
+    data ? '<span class="status-tag ' + ((data.growthTrend || '').indexOf('高增长') >= 0 ? 's-done' : (data.growthTrend || '').indexOf('下滑') >= 0 ? 's-error' : 's-pending') + '">' + escapeHtml(data.growthTrend || '-') + '</span>' : '-',
     escapeHtml((data && data.cloudAiOpportunities) || '-'),
     escapeHtml((data && data.cloudAiAnnualBudget) || '-'),
     '<span class="score-cell ' + scoreClass + '">' + scores.aiScore + '</span>',
@@ -1436,11 +1443,11 @@ function batchExportExcel() {
       d.techStack || '', d.recentNews || '',
       d.parentCompany || '', d.parentCompanyBusiness || '', d.groupCloudAiUsage || '',
       d.businessModel || '', d.biddingInfo || '', d.shareholders || '',
-      d.cloudAiOpportunities || '', d.cloudAiAnnualBudget || '',
+      d.growthTrend || '', d.cloudAiOpportunities || '', d.cloudAiAnnualBudget || '',
       scores.aiScore, scores.cloudScore, scores.composite
     ]);
   });
-  rows.sort(function(a, b) { return b[31] - a[31]; });
+  rows.sort(function(a, b) { return b[32] - a[32]; });
   var wsData = [headers].concat(rows);
   var ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = [
@@ -1451,7 +1458,7 @@ function batchExportExcel() {
     { wch: 28 }, { wch: 36 },
     { wch: 22 }, { wch: 28 }, { wch: 28 },
     { wch: 28 }, { wch: 20 }, { wch: 22 },
-    { wch: 36 }, { wch: 22 },
+    { wch: 10 }, { wch: 36 }, { wch: 22 },
     { wch: 8 },  { wch: 8 },  { wch: 8 }
   ];
   var wb = XLSX.utils.book_new();
