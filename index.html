@@ -198,24 +198,24 @@
           <div class="batch-tag-list" id="batchTagList"></div>
         </div>
 
-        <!-- 模型选择（单选）-->
+        <!-- 模型选择（多选）-->
         <div class="batch-model-selector" id="batchModelSelector" style="display:none">
-          <div class="batch-model-label">选择分析模型：</div>
+          <div class="batch-model-label">选择分析模型（可多选）：</div>
           <div class="model-selector">
             <label class="model-option">
-              <input type="radio" name="batchModel" value="qwen3max" checked />
+              <input type="checkbox" name="batchModel" value="qwen3max" checked />
               <span class="model-chip">Qwen3-Max<em>首选</em></span>
             </label>
             <label class="model-option">
-              <input type="radio" name="batchModel" value="qwen37max" />
+              <input type="checkbox" name="batchModel" value="qwen37max" />
               <span class="model-chip">Qwen3.7-Max<em>旗舰</em></span>
             </label>
             <label class="model-option">
-              <input type="radio" name="batchModel" value="qwenplus" />
+              <input type="checkbox" name="batchModel" value="qwenplus" />
               <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
             </label>
             <label class="model-option">
-              <input type="radio" name="batchModel" value="deepseekflash" />
+              <input type="checkbox" name="batchModel" value="deepseekflash" />
               <span class="model-chip">DeepSeek-V4-Flash<em>极速</em></span>
             </label>
           </div>
@@ -432,6 +432,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js" defer></script>
-<script src="js/app.js?v=20260531"></script>
+<script src="js/app.js?v=20260531b"></script>
 </body>
 </html>
