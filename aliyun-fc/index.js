@@ -36,6 +36,18 @@ function cleanToolCallTags(text) {
   text = text.replace(new RegExp(cdO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?' + cdC.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
   text = text.replace(new RegExp(cdO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*$', 'g'), '');
   text = text.replace(new RegExp(qO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^' + LT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ']*' + qC.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+  // think 思考标签（qwen3-max 等思考模型可能输出）
+  var thO = LT + 'think' + GT;
+  var thC = LT + '/think' + GT;
+  text = text.replace(new RegExp(thO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?' + thC.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
+  text = text.replace(new RegExp(thO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*', 'gi'), '');
+  // search_result / execution_result 标签
+  var srO = LT + 'search_result' + GT;
+  var srC = LT + '/search_result' + GT;
+  var erO = LT + 'execution_result' + GT;
+  var erC = LT + '/execution_result' + GT;
+  text = text.replace(new RegExp(srO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?' + srC.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
+  text = text.replace(new RegExp(erO.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*?' + erC.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
   return text;
 }
 
@@ -153,10 +165,12 @@ exports.handler = async (event, context) => {
 
   // 模型映射（前端 key → 百炼模型 ID）
   const MODEL_CONFIG = {
-    'qwen3max':  { id: 'qwen3-max',     maxTokens: 16000, displayName: 'Qwen3-Max' },
-    'qwenplus':  { id: 'qwen-plus',     maxTokens: 16000, displayName: 'Qwen3-Plus' },
-    'minimax':   { id: 'MiniMax-M2.1',  maxTokens: 16000, displayName: 'MiniMax-M2.1' },
-    'deepseek':  { id: 'deepseek-v3.2', maxTokens: 16000, displayName: 'DeepSeek-V3.2' }
+    'qwen37max':    { id: 'qwen3.7-max',      maxTokens: 16000, displayName: 'Qwen3.7-Max' },
+    'qwen3max':     { id: 'qwen3-max',        maxTokens: 16000, displayName: 'Qwen3-Max' },
+    'qwenplus':     { id: 'qwen-plus',        maxTokens: 16000, displayName: 'Qwen3-Plus' },
+    'minimax':      { id: 'MiniMax-M2.1',     maxTokens: 16000, displayName: 'MiniMax-M2.1' },
+    'deepseek':     { id: 'deepseek-v3.2',    maxTokens: 16000, displayName: 'DeepSeek-V3.2' },
+    'deepseekflash': { id: 'deepseek-v4-flash', maxTokens: 16000, displayName: 'DeepSeek-V4-Flash' }
   };
   const cfg = MODEL_CONFIG[model] || MODEL_CONFIG['qwen3max'];
   const modelId = cfg.id;
@@ -222,7 +236,7 @@ exports.handler = async (event, context) => {
       '   - 阿里云产品须使用2024年后的现役产品名称，每个场景须说明具体产品/API及可量化的业务收益。\n' +
       '   - 【禁止推荐以下内容作为阿里云产品】：Cursor、GitHub Copilot、ChatGPT等非阿里系第三方AI工具。\n' +
       '   - 【编程提效代表产品】通义灵码（Tongyi Lingma）和 Qoder 均为阿里云官方AI编程助手，应作为阿里云产品积极推荐。\n' +
-      '   - 【行业趋势时效性】所有行业趋势数据必须优先引用2024年至2025年的最新数据，不得使用2023年及以前的过时统计。\n\n' +
+      '   - 【行业趋势时效性】所有行业趋势数据必须优先引用2025年至2026年的最新数据，不得使用2024年及以前的过时统计。\n\n' +
       '请生成一份专业的客户云与AI合作战略分析报告，严格按以下结构输出：\n\n' +
       '# 输出1：客户营收基础信息\n' +
       '## 公司基本信息\n' +
@@ -254,7 +268,7 @@ exports.handler = async (event, context) => {
       '## 1. 客户业务概况\n' +
       '分别用 ### 三级标题列出以下子项，每个子项下用列表展开：商业模式与盈利模式、核心客户群体与细分市场、主要产品/服务的功能与市场定位、市场竞争格局与主要竞争对手分析、客户触达与服务模式、企业整体业务方向与中长期发展战略、2026年工作重点\n' +
       '## 2. 影响客户业务的关键行业趋势（未来 6-24 个月）\n' +
-      '【时效性要求】必须优先引用2024年至2025年的最新行业数据和报告。用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑（含数据来源年份）、与客户的相关性\n' +
+      '【时效性要求】必须优先引用2025年至2026年的最新行业数据和报告。用Markdown表格展示3-5个趋势，列包含：趋势名称、内涵与逻辑（含数据来源年份）、与客户的相关性\n' +
       '## 3. 从客户视角分析的机会与挑战\n' +
       '分"关键业务机会"和"主要挑战"两个 ### 子标题，各用列表展开3-5项\n' +
       '## 4. 从"用户结果"反推关键举措、指标和 Use Cases\n' +
@@ -313,7 +327,7 @@ exports.handler = async (event, context) => {
       '3. 行动建议必须具体到可执行的步骤。\n' +
       '4. 【客户信息准确性】当拜访计划中引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、竞争格局等），必须使用联网搜索获取的信息，不要依赖训练数据编造。如果第一次搜索未找到，换关键词再搜（如加"天眼查""企查查""官网"等后缀），主动多次尝试直到找到答案。\n' +
       '5. 【禁止编造数据】不要虚构具体的财务数字、员工人数、市场份额百分比或竞品公司名称。无法获取时，将其列为"缺失信息"纳入第七章"会前补齐建议"。\n' +
-      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于2024年至2025年真实、可验证的事件或报告，不要使用泛泛的通用趋势描述。\n' +
+      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于2025年至2026年真实、可验证的事件或报告，不要使用泛泛的通用趋势描述。\n' +
       '7. 【不确定信息处理】遇到不确定的客户信息时，不要简单标注"待核实"。你必须先尝试通过搜索找到答案。只有在穷尽搜索仍无法确认时，才将该信息列入第七章"缺失信息与会前补齐建议"，并给出具体的验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n\n' +
       '请生成一份专业的拜访计划，严格按以下7个章节结构输出：\n' +
       '## 一、拜访目标\n从以下目标类型中选择1-2个主目标，输出一句话目标陈述。可选目标类型：认知塑造与教育（先教后卖）、商机确认（资格验证：需求/决策链/预算/时间）、决策推进（明确路径并获取下一步承诺）、价值交付与风险管理（交付价值/风险化解）、关系与影响力拓展（关键人覆盖与信任强化）。\n' +
@@ -326,82 +340,141 @@ exports.handler = async (event, context) => {
     userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + (input?.role || '') + '\n' + (input?.details || '') + '\n\n请严格按照Markdown格式输出，包含##章节标题、###子标题、**加粗**、列表和表格。';
 
   } else if (type === 'batch_analysis') {
-    systemPrompt =
-      '你是阿里云西部大区的企业情报分析师。你的任务是通过多轮联网搜索，对目标公司及其母公司/集团进行全面情报调研，评估其云计算与AI大模型的采购潜力，并以严格的JSON格式输出结果。\n\n' +
-      '【输出格式 — 最高优先级】你必须且只能输出一个合法的JSON对象，不要输出任何Markdown标记、代码块符号（如```）、标题、解释文字或任何其他内容。直接输出JSON。\n\n' +
-      '【多轮搜索流程 — 必须按顺序执行，每轮必须实际搜索】\n' +
-      '第1轮【工商基础】："{公司名} 天眼查"、"{公司名} 企查查" → 获取工商全称、成立时间、注册资本、法定代表人、注册地址\n' +
-      '第2轮【集团股权】："{公司名} 母公司"、"{公司名} 控股股东"、"{公司名} 所属集团" → 找出母公司/集团，判断是否是大集团子公司\n' +
-      '第3轮【公司实力】："{公司名} 融资 上市 营收 规模 所在省 所在市" → 省市地域、实力评分参考、规模标签\n' +
-      '第4轮【营收规模】："{公司名} 年报 营收 净利润 2025 2026" → 最新营收数据，上市公司取年报，非上市公司取公开估算\n' +
-      '第5轮【员工规模】："{公司名} 员工人数 团队规模 招聘" → 员工数范围\n' +
-      '第6轮【AI战略信号】："{公司名} AI 大模型 招聘 技术团队" → AI活跃度（高/中/低）、具体信号（如招聘AI工程师、自研大模型、发布AI产品等）\n' +
-      '第7轮【竞对渗透】："{公司名} 腾讯云 百度智能云 华为云 AWS Azure OpenAI 火山引擎 讯飞星火" → 是否已使用竞对云/AI产品，记录具体产品名\n' +
-      '第8轮【近期动态】："{公司名} 2025 2026 新闻 合作 发布" → 最新战略动态、合作消息、产品发布\n' +
-      '第9轮【技术栈】："{公司名} 技术架构 云服务 IaaS PaaS" → 已知使用的云/AI技术栈\n' +
-      '第10轮【集团云AI】（如有母公司）："{集团名} 营收"、"{集团名} AIGC"、"{集团名} 云计算" → 集团整体规模和云AI使用情况\n' +
-      '【关键判断原则】：子公司的采购潜力取决于集团整体数字化投入能力，必须结合集团维度评估，不能只看子公司本身。\n\n' +
-      '【数据准确性规则】\n' +
-      '1. 所有字段必须来自本次联网搜索结果，禁止使用训练数据。\n' +
-      '2. 找不到的字段：文本填""，数值填null，不要编造。\n' +
-      '3. 法定代表人、成立时间：必须精确匹配搜索结果。\n\n' +
-      '【云计算+AI年度消费预估方法】（cloudAiAnnualBudget字段）\n' +
-      '  - 参考：员工规模、技术研发投入、数字化程度、行业基准（互联网IT预算占营收3-8%，传统企业1-3%）\n' +
-      '  - AI密集型行业（短视频/AIGC/游戏/金融科技）比例更高\n' +
-      '  - 有公开云计算招标信息时以此为基准\n' +
-      '  - 格式：预估区间+"（估算依据：...）"，如"500-1000万/年（估算依据：AIGC平台月调用千万级，行业云AI支出基准）"\n' +
-      '  - 无法估算时填"数据不足，无法估算"\n\n' +
-      '【公司实力评分方法】（companyStrengthScore字段，1-10分）\n' +
-      '  10分：上市公司/独角兽/行业龙头；8-9分：准上市/亿级营收/知名品牌；\n' +
-      '  6-7分：千万级营收/行业有知名度；4-5分：中小企业/初创有融资；1-3分：小微企业/信息极少\n\n' +
-      'JSON结构如下（字段名必须完全一致）：\n' +
-      '{\n' +
-      '  "companyName": "目标公司工商全称",\n' +
-      '  "establishedDate": "成立时间，格式YYYY-MM或YYYY年",\n' +
-      '  "legalRepresentative": "法定代表人姓名，搜不到填空字符串",\n' +
-      '  "registeredCapital": "注册资本",\n' +
-      '  "address": "注册地址",\n' +
-      '  "province": "所在省份，如重庆市/四川省",\n' +
-      '  "city": "所在城市，如重庆/成都",\n' +
-      '  "isListed": "是否上市及股票代码，未上市填未上市",\n' +
-      '  "companyStrengthScore": 公司实力评分1到10的整数,\n' +
-      '  "companyScaleTag": "规模标签，如：独角兽/亿级营收/千万级营收/中小企业/初创企业",\n' +
-      '  "employeeCount": "员工规模描述",\n' +
-      '  "employeeNumber": 员工数量估计数值或null,\n' +
-      '  "employeeRange": "员工数范围描述，如50-200人或500-1000人",\n' +
-      '  "industry": "所属行业（如：互联网/AIGC/短视频/金融科技/制造业等）",\n' +
-      '  "bizType": "业务模式：ToB/ToC/ToG/ToB+ToC，多个用加号连接",\n' +
-      '  "revenue": "年营收描述",\n' +
-      '  "revenueNumber": 营收数值亿元或null,\n' +
-      '  "revenueYear": "营收数据对应年份，如2024或2025",\n' +
-      '  "website": "公司官网URL",\n' +
-      '  "businessModel": "核心商业模式一句话概述",\n' +
-      '  "mainProducts": "主营产品或服务",\n' +
-      '  "biddingInfo": "招投标信息摘要，无则填暂无公开招投标信息",\n' +
-      '  "shareholders": "主要股东及持股比例",\n' +
-      '  "aiActivityLevel": "AI战略活跃度：高/中/低",\n' +
-      '  "aiSignals": "AI战略信号描述，如：已招聘AI工程师50人、自研大模型发布、与某AI厂商合作等，搜不到填无明显AI信号",\n' +
-      '  "competitorCloudUsage": "已使用的竞对云/AI产品，如：腾讯云-企业微信、华为云-OBS、AWS-EC2等，未发现则填无竞对使用记录",\n' +
-      '  "techStack": "已知云/AI技术栈，如：自建机房+阿里云CDN、微软Azure+OpenAI API等，搜不到填未知",\n' +
-      '  "recentNews": "2025/2026最新动态摘要，包含重要合作、产品发布、融资等，搜不到填无近期重要动态",\n' +
-      '  "parentCompany": "母公司或控股集团全称，如无则填无",\n' +
-      '  "parentCompanyBusiness": "母公司/集团的主营业务和规模概述，如无则填无",\n' +
-      '  "parentCompanyRevenue": "母公司/集团年营收描述，搜不到填无",\n' +
-      '  "parentCompanyRevenueNumber": 母公司集团营收数值亿元或null,\n' +
-      '  "parentEmployeeNumber": 母公司集团员工总数估计数值或null,\n' +
-      '  "groupCloudAiUsage": "集团或母公司已知的云计算/AI使用情况，如AIGC使用量、云服务商合作等，搜不到填无",\n' +
-      '  "cloudAiOpportunities": "结合目标公司+集团，云与AI大模型合作机会2到3个要点，具体到场景",\n' +
-      '  "cloudAiAnnualBudget": "云计算+AI大模型年度消费预估，含估算依据",\n' +
-      '  "growthTrend": "综合公司和集团的增长趋势：高增长/稳健/平稳/下滑",\n' +
-      '  "effectiveEmployeeNumber": 用于评分的有效员工数（优先集团数，无则本公司数）数值或null,\n' +
-      '  "effectiveRevenueNumber": 用于评分的有效营收亿元（优先集团数，无则本公司数）数值或null\n' +
-      '}\n\n' +
-      '再次强调：只输出JSON对象，不要输出任何其他内容。';
-    userPrompt = '请执行全部10轮搜索流程，联网搜索以下公司及其集团的完整情报，严格按JSON格式输出：\n' +
-      '公司名称：' + (input?.customerName || '') +
-      (input?.productName ? '\n产品/APP名称：' + input.productName : '') +
-      (input?.website ? '\n公司官网：' + input.website : '') +
-      '\n\n【重要提示】必须先搜索该公司股权关系，判断是否有母公司/集团。有则继续搜集团规模和云AI使用情况。特别关注：竞对云/AI产品使用情况（有助于判断替换阿里云的机会）、AI战略信号（判断AI采购意愿）、近期动态（判断当前是否处于关键决策节点）。\n\n请直接输出JSON对象，不要包含任何其他文字。';
+    const isSimplifiedModel = (model === 'minimax' || model === 'deepseek' || model === 'deepseekflash');
+    if (isSimplifiedModel) {
+      // === MiniMax/DeepSeek 简化版：5轮搜索 + 25个JSON字段 ===
+      systemPrompt =
+        '你是阿里云的企业情报分析师。通过联网搜索调研目标公司，评估其云计算与AI采购潜力，以JSON格式输出。\n\n' +
+        '【输出格式】只输出一个JSON对象，不要输出任何其他内容。\n\n' +
+        '【搜索流程 — 5轮】\n' +
+        '第1轮【工商基础】："{公司名} 天眼查" → 工商全称、成立时间、注册资本、法定代表人、注册地址、省市\n' +
+        '第2轮【母公司】："{公司名} 母公司 集团" → 如有母公司，搜索母公司营收和规模\n' +
+        '第3轮【营收员工】："{公司名} 营收 员工人数 规模 上市" → 营收、员工数、是否上市\n' +
+        '第4轮【AI信号】："{公司名} AI 大模型 技术团队 招聘" → AI活跃度\n' +
+        '第5轮【竞对+动态】："{公司名} 腾讯云 华为云 AWS 云服务" + "{公司名} 2025 2026 新闻" → 竞对使用、近期动态\n\n' +
+        '【防混淆 — 最高优先级】\n' +
+        '1. 搜索必须用用户输入的完整公司名，禁止替换为同名大公司（如"成都字节流"绝不能替换为"字节跳动"）。\n' +
+        '2. 搜不到填""或null，禁止用其他公司数据替代。\n' +
+        '3. companyName必须填用户输入公司的工商全称，搜不到则填原始名称。\n\n' +
+        'JSON结构：\n' +
+        '{\n' +
+        '  "companyName": "工商全称",\n' +
+        '  "establishedDate": "成立时间",\n' +
+        '  "legalRepresentative": "法定代表人",\n' +
+        '  "registeredCapital": "注册资本",\n' +
+        '  "address": "注册地址",\n' +
+        '  "province": "省份",\n' +
+        '  "city": "城市",\n' +
+        '  "isListed": "是否上市，未上市填未上市",\n' +
+        '  "companyStrengthScore": 1到10整数,\n' +
+        '  "industry": "所属行业",\n' +
+        '  "employeeRange": "员工数范围",\n' +
+        '  "employeeNumber": 员工数或null,\n' +
+        '  "revenue": "年营收描述",\n' +
+        '  "revenueNumber": 营收亿元或null,\n' +
+        '  "aiActivityLevel": "高/中/低",\n' +
+        '  "aiSignals": "AI信号",\n' +
+        '  "competitorCloudUsage": "竞对云/AI产品，无则填无竞对使用记录",\n' +
+        '  "parentCompany": "母公司，无则填无",\n' +
+        '  "parentCompanyRevenue": "母公司营收，无则填无",\n' +
+        '  "parentEmployeeNumber": 母公司员工数或null,\n' +
+        '  "groupCloudAiUsage": "集团云AI使用，无则填无",\n' +
+        '  "cloudAiAnnualBudget": "云+AI年消费预估含依据",\n' +
+        '  "growthTrend": "高增长/稳健/平稳/下滑",\n' +
+        '  "effectiveEmployeeNumber": 有效员工数或null,\n' +
+        '  "effectiveRevenueNumber": 有效营收亿元或null\n' +
+        '}\n只输出JSON。';
+      userPrompt = '请搜索以下公司情报并输出JSON：\n公司名称：' + (input?.customerName || '') +
+        (input?.productName ? '\n产品：' + input.productName : '') +
+        (input?.website ? '\n官网：' + input.website : '') +
+        '\n\n【防混淆】公司名称必须原样搜索，禁止替换为相似大公司。直接输出JSON。';
+    } else {
+      // === Qwen 旗舰完整版：10轮搜索 + 35个JSON字段 ===
+      systemPrompt =
+        '你是阿里云西部大区的企业情报分析师。你的任务是通过多轮联网搜索，对目标公司及其母公司/集团进行全面情报调研，评估其云计算与AI大模型的采购潜力，并以严格的JSON格式输出结果。\n\n' +
+        '【输出格式 — 最高优先级】你必须且只能输出一个合法的JSON对象，不要输出任何Markdown标记、代码块符号（如```）、标题、解释文字或任何其他内容。直接输出JSON。\n\n' +
+        '【多轮搜索流程 — 必须按顺序执行，每轮必须实际搜索】\n' +
+        '第1轮【工商基础】："{公司名} 天眼查"、"{公司名} 企查查" → 获取工商全称、成立时间、注册资本、法定代表人、注册地址\n' +
+        '第2轮【集团股权】："{公司名} 母公司"、"{公司名} 控股股东"、"{公司名} 所属集团" → 找出母公司/集团，判断是否是大集团子公司\n' +
+        '第3轮【公司实力】："{公司名} 融资 上市 营收 规模 所在省 所在市" → 省市地域、实力评分参考、规模标签\n' +
+        '第4轮【营收规模】："{公司名} 年报 营收 净利润 2025 2026" → 最新营收数据，上市公司取年报，非上市公司取公开估算\n' +
+        '第5轮【员工规模】："{公司名} 员工人数 团队规模 招聘" → 员工数范围\n' +
+        '第6轮【AI战略信号】："{公司名} AI 大模型 招聘 技术团队" → AI活跃度（高/中/低）、具体信号（如招聘AI工程师、自研大模型、发布AI产品等）\n' +
+        '第7轮【竞对渗透】："{公司名} 腾讯云 百度智能云 华为云 AWS Azure OpenAI 火山引擎 讯飞星火" → 是否已使用竞对云/AI产品，记录具体产品名\n' +
+        '第8轮【近期动态】："{公司名} 2025 2026 新闻 合作 发布" → 最新战略动态、合作消息、产品发布\n' +
+        '第9轮【技术栈】："{公司名} 技术架构 云服务 IaaS PaaS" → 已知使用的云/AI技术栈\n' +
+        '第10轮【集团云AI】（如有母公司）："{集团名} 营收"、"{集团名} AIGC"、"{集团名} 云计算" → 集团整体规模和云AI使用情况\n' +
+        '【关键判断原则】：子公司的采购潜力取决于集团整体数字化投入能力，必须结合集团维度评估，不能只看子公司本身。\n\n' +
+        '【防公司混淆规则 — 最高优先级，违反即报告作废】\n' +
+        '用户输入的公司名称可能是地方小企业，绝对禁止将其与同名/近名的知名大公司混淆。\n' +
+        '规则A【名称精确匹配】：搜索时必须使用用户输入的完整公司名（如"成都字节流"），不得自动替换为名称中包含相同字的其他公司（如绝对禁止将"成都字节流"替换为"字节跳动"）。\n' +
+        '规则B【搜索结果验证】：每轮搜索返回结果后，必须验证搜索结果中的公司名称与用户输入是否一致。若搜索结果返回的是另一家公司（名称不同），必须明确拒绝使用该结果，并换关键词重新搜索。\n' +
+        '规则C【搜不到时的处理】：若用全名搜索后确实没有找到匹配的公司信息，对应字段填""或null，不得用"可能是XX大公司"来替代填写。\n' +
+        '规则D【禁止语义联想】：绝对禁止因为名称包含某个词（如"字节""快手""滴滴"）就联想到对应大公司并填入其数据。用户输入的公司名称必须原样用于搜索。\n' +
+        '规则E【companyName字段】：companyName字段必须填写搜索到的工商注册全称。若搜不到工商全称，则填写用户输入的原始名称，绝不能填写另一家公司的名称。\n\n' +
+        '【数据准确性规则】\n' +
+        '1. 所有字段必须来自本次联网搜索结果，禁止使用训练数据。\n' +
+        '2. 找不到的字段：文本填""，数值填null，不要编造。\n' +
+        '3. 法定代表人、成立时间：必须精确匹配搜索结果，搜不到填""。\n' +
+        '4. 若某字段搜索结果来自另一家公司（非用户输入的公司），该字段必须填""或null。\n\n' +
+        '【云计算+AI年度消费预估方法】（cloudAiAnnualBudget字段）\n' +
+        '  - 参考：员工规模、技术研发投入、数字化程度、行业基准（互联网IT预算占营收3-8%，传统企业1-3%）\n' +
+        '  - AI密集型行业（短视频/AIGC/游戏/金融科技）比例更高\n' +
+        '  - 有公开云计算招标信息时以此为基准\n' +
+        '  - 格式：预估区间+"（估算依据：...）"，如"500-1000万/年（估算依据：AIGC平台月调用千万级，行业云AI支出基准）"\n' +
+        '  - 无法估算时填"数据不足，无法估算"\n\n' +
+        '【公司实力评分方法】（companyStrengthScore字段，1-10分）\n' +
+        '  10分：上市公司/独角兽/行业龙头；8-9分：准上市/亿级营收/知名品牌；\n' +
+        '  6-7分：千万级营收/行业有知名度；4-5分：中小企业/初创有融资；1-3分：小微企业/信息极少\n\n' +
+        'JSON结构如下（字段名必须完全一致）：\n' +
+        '{\n' +
+        '  "companyName": "目标公司工商全称",\n' +
+        '  "establishedDate": "成立时间，格式YYYY-MM或YYYY年",\n' +
+        '  "legalRepresentative": "法定代表人姓名，搜不到填空字符串",\n' +
+        '  "registeredCapital": "注册资本",\n' +
+        '  "address": "注册地址",\n' +
+        '  "province": "所在省份，如重庆市/四川省",\n' +
+        '  "city": "所在城市，如重庆/成都",\n' +
+        '  "isListed": "是否上市及股票代码，未上市填未上市",\n' +
+        '  "companyStrengthScore": 公司实力评分1到10的整数,\n' +
+        '  "companyScaleTag": "规模标签，如：独角兽/亿级营收/千万级营收/中小企业/初创企业",\n' +
+        '  "employeeCount": "员工规模描述",\n' +
+        '  "employeeNumber": 员工数量估计数值或null,\n' +
+        '  "employeeRange": "员工数范围描述，如50-200人或500-1000人",\n' +
+        '  "industry": "所属行业（如：互联网/AIGC/短视频/金融科技/制造业等）",\n' +
+        '  "bizType": "业务模式：ToB/ToC/ToG/ToB+ToC，多个用加号连接",\n' +
+        '  "revenue": "年营收描述",\n' +
+        '  "revenueNumber": 营收数值亿元或null,\n' +
+        '  "revenueYear": "营收数据对应年份，如2025或2026",\n' +
+        '  "website": "公司官网URL",\n' +
+        '  "businessModel": "核心商业模式一句话概述",\n' +
+        '  "mainProducts": "主营产品或服务",\n' +
+        '  "biddingInfo": "招投标信息摘要，无则填暂无公开招投标信息",\n' +
+        '  "shareholders": "主要股东及持股比例",\n' +
+        '  "aiActivityLevel": "AI战略活跃度：高/中/低",\n' +
+        '  "aiSignals": "AI战略信号描述，如：已招聘AI工程师50人、自研大模型发布、与某AI厂商合作等，搜不到填无明显AI信号",\n' +
+        '  "competitorCloudUsage": "已使用的竞对云/AI产品，如：腾讯云-企业微信、华为云-OBS、AWS-EC2等，未发现则填无竞对使用记录",\n' +
+        '  "techStack": "已知云/AI技术栈，如：自建机房+阿里云CDN、微软Azure+OpenAI API等，搜不到填未知",\n' +
+        '  "recentNews": "2025/2026最新动态摘要，包含重要合作、产品发布、融资等，搜不到填无近期重要动态",\n' +
+        '  "parentCompany": "母公司或控股集团全称，如无则填无",\n' +
+        '  "parentCompanyBusiness": "母公司/集团的主营业务和规模概述，如无则填无",\n' +
+        '  "parentCompanyRevenue": "母公司/集团年营收描述，搜不到填无",\n' +
+        '  "parentCompanyRevenueNumber": 母公司集团营收数值亿元或null,\n' +
+        '  "parentEmployeeNumber": 母公司集团员工总数估计数值或null,\n' +
+        '  "groupCloudAiUsage": "集团或母公司已知的云计算/AI使用情况，如AIGC使用量、云服务商合作等，搜不到填无",\n' +
+        '  "cloudAiOpportunities": "结合目标公司+集团，云与AI大模型合作机会2到3个要点，具体到场景",\n' +
+        '  "cloudAiAnnualBudget": "云计算+AI大模型年度消费预估，含估算依据",\n' +
+        '  "growthTrend": "综合公司和集团的增长趋势：高增长/稳健/平稳/下滑",\n' +
+        '  "effectiveEmployeeNumber": 用于评分的有效员工数（优先集团数，无则本公司数）数值或null,\n' +
+        '  "effectiveRevenueNumber": 用于评分的有效营收亿元（优先集团数，无则本公司数）数值或null\n' +
+        '}\n\n' +
+        '再次强调：只输出JSON对象，不要输出任何其他内容。';
+      userPrompt = '请执行全部10轮搜索流程，联网搜索以下公司及其集团的完整情报，严格按JSON格式输出：\n' +
+        '公司名称：' + (input?.customerName || '') +
+        (input?.productName ? '\n产品/APP名称：' + input.productName : '') +
+        (input?.website ? '\n公司官网：' + input.website : '') +
+        '\n\n【严重警告 — 防混淆，最高优先级】上方"公司名称"必须原样用于所有搜索，绝对禁止替换为名称相似的知名大公司。例如：搜索"成都字节流"时，若结果显示的是"字节跳动"，必须拒绝使用该结果并重新换关键词搜索；搜索"重庆七豆豆"时不能混入其他豆类公司数据。companyName字段必须填写与用户输入匹配的工商全称，搜不到就填用户输入的原始名称，绝不能填另一家公司的名称。\n\n【提示】搜索时先查股权关系，判断是否有母公司/集团，有则继续搜集团规模和云AI情况。特别关注：竞对云/AI产品使用、AI战略信号、近期动态。\n\n请直接输出JSON对象，不要包含任何其他文字。';
+    }
 
   } else {
     return resp(400, { error: 'INVALID_TYPE: 未知的请求类型 ' + type });
@@ -421,14 +494,16 @@ exports.handler = async (event, context) => {
       temperature: 0.5
     };
 
-    // enable_search: 四个模型均通过百炼 Chat Completions API 支持联网搜索
-    // forced_search=false：由模型自行判断是否需要搜索；
-    // search_strategy='standard'：标准搜索策略，质量与速度平衡。
+    // enable_search: 所有模型均通过百炼 Chat Completions API 支持联网搜索
+    // forced_search=true：仅 Qwen 系列支持，强制模型在回答前执行联网搜索
+    // MiniMax/DeepSeek/DeepSeek-Flash 仅使用 enable_search，不设置 forced_search
     apiBodyPayload.enable_search = true;
-    apiBodyPayload.search_options = {
-      forced_search: false,
-      search_strategy: 'standard'
-    };
+    if (model === 'qwen37max' || model === 'qwen3max' || model === 'qwenplus') {
+      apiBodyPayload.search_options = {
+        forced_search: true,
+        search_strategy: 'standard'
+      };
+    }
 
     const apiResponse = await fetch(DASHSCOPE_API_URL, {
       method: 'POST',
