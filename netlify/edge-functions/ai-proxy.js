@@ -1,19 +1,24 @@
 /**
  * Netlify Edge Function: AI Proxy for DashScope
  * 支持流式输出 (SSE) + 非流式输出
- * 支持 qwen3.7-max / qwen3-max / qwen-plus / MiniMax-M2.1 / deepseek-v3.2 / deepseek-v4-flash 多模型
+ * 支持 qwen3.8-max / qwen3.8-flash / deepseek-v4-pro / ZHIPU-GLM-5.3 多模型
  *
- * 模型选型说明（2026年5月）：
- *   qwen37max  → qwen3.7-max     最新旗舰，指令遵循最强，单客户分析首选
- *   qwen3max   → qwen3-max       百炼旗舰，JSON输出稳定，批量分析首选
- *   qwenplus   → qwen-plus       千问次旗舰，联网搜索，速度/质量平衡
- *   minimax    → MiniMax-M2.1    百炼集成，联网搜索由代理层透明处理，不污染输出
- *   deepseek   → deepseek-v3.2   混合推理，媲美GPT-5，性价比最高
- *   deepseekflash → deepseek-v4-flash  极速低价，支持联网搜索，拜访计划首选
+ * 模型选型说明（2026年10月，依据阿里云百炼官方文档核实）：
+ *   qwen38max     → qwen3.8-max              2026-08-02上架旗舰，支持联网搜索/深度思考/视觉理解，
+ *                                            单客户分析与批量分析首选
+ *   qwen38flash   → qwen3.8-flash            2026-08-26上架，1M上下文/128K输出，支持联网搜索，
+ *                                            响应速度快，拜访计划与批量分析的高性价比选择
+ *   deepseekv4pro → deepseek-v4-pro-0813     2026-08-14上架，1.6T MoE旗舰深度思考模型，
+ *                                            官方确认支持 enable_search，用于甄选客户深度推理
+ *   glm53         → ZHIPU/GLM-5.3            智谱2026-08-14发布、2026-08-28上架百炼，
+ *                                            1M上下文/128K输出，长文推理强；
+ *                                            【Chat Completions 不支持 enable_search】，
+ *                                            故不用于批量评估场景；调用时关闭思考模式以控制时延
  *
  * 联网搜索说明：
- *   四个模型均通过 Chat Completions API 的 enable_search 参数支持联网搜索。
+ *   三款支持搜索的模型通过 Chat Completions API 的 enable_search 参数联网搜索，
  *   搜索由百炼代理层透明处理，不会在 delta.content 中暴露工具调用标签。
+ *   GLM-5.3 不支持 enable_search，调用时不得传入该参数，否则 API 报错。
  */
 
 const CORS_HEADERS = {
@@ -24,13 +29,15 @@ const CORS_HEADERS = {
 };
 
 const MODEL_CONFIG = {
-  'qwen37max':    { id: 'qwen3.7-max',      maxTokens: 16000, displayName: 'Qwen3.7-Max' },
-  'qwen3max':     { id: 'qwen3-max',        maxTokens: 16000, displayName: 'Qwen3-Max' },
-  'qwenplus':     { id: 'qwen-plus',        maxTokens: 16000, displayName: 'Qwen3-Plus' },
-  'minimax':      { id: 'MiniMax-M2.1',     maxTokens: 16000, displayName: 'MiniMax-M2.1' },
-  'deepseek':     { id: 'deepseek-v3.2',    maxTokens: 16000, displayName: 'DeepSeek-V3.2' },
-  'deepseekflash': { id: 'deepseek-v4-flash', maxTokens: 16000, displayName: 'DeepSeek-V4-Flash' }
+  'qwen38max':     { id: 'qwen3.8-max',          maxTokens: 16000, displayName: 'Qwen3.8-Max',     supportsSearch: true },
+  'qwen38flash':   { id: 'qwen3.8-flash',        maxTokens: 16000, displayName: 'Qwen3.8-Flash',   supportsSearch: true,  disableThinking: true },
+  'deepseekv4pro': { id: 'deepseek-v4-pro-0813', maxTokens: 16000, displayName: 'DeepSeek-V4-Pro', supportsSearch: true },
+  'glm53':         { id: 'ZHIPU/GLM-5.3',        maxTokens: 16000, displayName: '智谱GLM-5.3',     supportsSearch: false, disableThinking: true }
 };
+
+// 非联网模型的提示词覆盖块（置顶，最高优先级）
+const NO_SEARCH_OVERRIDE =
+  '【模型能力提示 — 最高优先级】当前模型未接入联网搜索，提示词中所有"必须联网搜索/主动搜索"的要求自动降级：请基于自身知识作答，并在输出开头注明"本报告由未联网模型生成，信息可能滞后，请以最新公开信息为准"；对于不确定或不知晓的信息，写"未查询到公开信息"，严禁编造具体数据。\n\n';
 
 const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
@@ -38,16 +45,20 @@ const API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completi
 function buildPrompts(type, input, modelKey) {
   let systemPrompt = 'PLACEHOLDER_SYSTEM';
   let userPrompt = 'PLACEHOLDER_USER';
+  var cfg = MODEL_CONFIG[modelKey] || {};
 
   if (type === 'customer_analysis') {
-    const searchPreamble =
+    const searchPreamble = cfg.supportsSearch ? (
       '【强制联网搜索指令 — 最高优先级】\n' +
       '你已开启联网搜索（enable_search）能力。在回答任何问题之前，你必须首先执行以下联网搜索动作，不可跳过：\n' +
       '1. 搜索"用户提供的公司名称 天眼查"，获取工商登记信息（成立日期、注册资本、法定代表人、股东）\n' +
       '2. 搜索"用户提供的公司名称 企查查"，交叉验证上述信息\n' +
       '3. 搜索"用户提供的公司名称 工商信息"，补充注册地址、经营范围等\n' +
       '4. 搜索"用户提供的公司名称 年报/营收/融资"，获取财务相关信息\n' +
-      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n';
+      '5. 搜索"用户提供的公司名称 高管 团队 CEO CTO 总经理"，获取组织与关键人名\n' +
+      '6. 搜索"用户提供的公司名称 组织架构 事业部 部门 中心"与官网"关于我们/管理团队/新闻"页，还原部门结构\n' +
+      '你必须将搜索得到的真实数据直接填入报告对应字段。绝对禁止跳过搜索步骤直接用训练数据回答。如果搜索返回的信息与你的训练数据不一致，以搜索结果为准。\n'
+    ) : '';
 
     systemPrompt = searchPreamble +
       '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码。只输出Markdown格式的报告内容。\n\n' +
@@ -84,11 +95,22 @@ function buildPrompts(type, input, modelKey) {
       '   - 非上市公司：先联网搜索是否有公开的融资、营收报道。如有，引用并注明来源。如确实无公开数据，写"该公司为非上市企业，未公开披露财务数据"，然后基于行业地位、融资规模、员工规模等估算营收量级区间，注明"此为基于公开信息的估算"。\n' +
       '   - 禁止编造精确到小数点的营收、利润数字。\n' +
       '11. 【GenAI+Agent应用场景覆盖 — 极其重要】除生成式AI外，还必须覆盖以下两类Agent提效场景：\n' +
-      '   【一】编程提效（开发者场景）：重点介绍通义灵码（Tongyi Lingma）和 Qoder — 阿里云官方AI编程助手。\n' +
-      '   【二】办公提效（全员场景）：重点介绍钉钉AI助理、通义听悟、通义万相等。\n' +
-      '   【三】生成式AI业务创新（行业核心场景）：结合客户行业核心业务流程，基于百炼平台、PAI、通义千问API等构建行业应用。\n' +
+      '   【一】编程提效（开发者场景）：Qoder / Qoder CN — 阿里云官方AI编程助手（原"智能编码助手通义灵码"已于2026-05-20更名为Qoder CN并纳入Qoder产品体系），覆盖代码补全、跨文件工程理解、单元测试生成、代码评审与Agent化开发。\n' +
+      '   【二】办公提效（全员场景）：千问办公（QwenWork）— 阿里巴巴一站式AI生产力平台，2026-08-03起公测，整合QoderWork、悟空、MuleRun，用一句话即可完成数据分析、PPT生成、网页搭建、视频剪辑、浏览器自动化与定时任务；辅以通义听悟（会议转写与纪要）、通义万相（图像与视频生成）。\n' +
+      '   【三】生成式AI业务创新（行业核心场景）：结合客户行业核心业务流程，基于百炼平台（Model Studio）、人工智能平台PAI、千问API（qwen3.8-max / qwen3.8-flash）、伶鹊VoicePica（对话智能体）等构建行业应用。\n' +
       '   - 禁止推荐Cursor、GitHub Copilot、ChatGPT等非阿里系第三方AI工具。\n' +
       '   - 所有行业趋势数据必须优先引用2025年至2026年的最新数据。\n\n' +
+      '12. 【阿里云产品名时效性硬约束 — 违反即报告作废】推荐的解决方案必须是阿里云/阿里巴巴集团2026年现役产品，输出前逐个自检产品名：\n' +
+      '   允许使用的现役产品（含定位）：\n' +
+      '   - 千问办公（QwenWork）：一站式AI生产力平台、AI Agent办公，全员提效首选\n' +
+      '   - Qoder、Qoder CN：AI编程助手（Qoder CN 为原通义灵码）\n' +
+      '   - 大模型服务平台百炼（Model Studio）、千问API（qwen3.8-max / qwen3.8-flash）\n' +
+      '   - 人工智能平台PAI（DSW/DLC/EAS，模型微调与推理部署）\n' +
+      '   - 伶鹊（VoicePica）：企业级对话智能体平台，覆盖智能客服、营销外呼、对话分析\n' +
+      '   - 通义听悟（会议转写纪要）、通义万相（图像视频生成）、智能语音交互、机器翻译、OCR、智能对话机器人\n' +
+      '   - 通用云底座：函数计算FC、OSS、ECS、PolarDB、AnalyticDB、向量检索服务DashVector\n' +
+      '   绝对禁止再出现的过时/已更名产品名：通义灵码、通义小蜜、通义晓蜜、云小蜜、DataWorks旧版机器人。凡出现上述旧名，必须替换为对应现役产品名。\n' +
+      '   每个场景须写清「产品名 + 具体能力 + 接入方式（API/控制台/私有化）+ 可量化收益」，不得只列产品名。\n\n' +
       '请生成一份专业的客户云与AI合作战略分析报告，严格按以下结构输出：\n\n' +
       '# 输出1：客户营收基础信息\n' +
       '## 公司基本信息\n' +
@@ -98,15 +120,38 @@ function buildPrompts(type, input, modelKey) {
       '## 业务收入结构分析\n用Markdown表格展示各业务板块收入占比。\n' +
       '## 招投标信息检索\n如有用表格展示，如无写"暂无公开招投标信息"。\n' +
       '## 股权信息检索\n【必须联网搜索】控股人背景、集团与分/子公司、股权分布。注明数据来源。\n\n' +
+      '## 组织架构与决策链分析\n' +
+      '【必须联网搜索】搜索"公司全称 高管 团队 组织架构 事业部 中心 部门 总经理 CTO CIO 数字化负责人"以及官网"关于我们/管理团队/新闻中心"页面，还原客户真实的部门设置与关键人名。\n' +
+      '### 组织架构图\n' +
+      '必须用三个反引号包裹的 mermaid 代码块（首行 ```mermaid，末行 ```）绘制组织架构框线图，前端会把它渲染成图。严格遵守以下语法，违反将导致渲染失败：\n' +
+      'a) 代码块第一行固定为 graph TD；禁止 subgraph、style、classDef、linkStyle、direction 等一切额外指令。\n' +
+      'b) 节点ID只用小写英文字母与数字（如 ceo、cto、rd1），禁止中文ID。\n' +
+      'c) 节点标签统一写成 节点ID["部门或职务｜姓名"]，标签内只允许中文、字母、数字和全角竖线｜；严禁出现英文双引号、单引号、圆括号、方括号、大括号、半角冒号、半角竖线、半角括号、# 和分号。\n' +
+      'd) 每条父子关系单独一行，格式 父节点ID --> 子节点ID；层级不超过4层，节点总数不超过25个，单个标签不超过16个字。\n' +
+      'e) 姓名确实查不到时标签写"未公开"，不得编造人名。\n' +
+      '严格按此示例格式输出（内容替换为搜索所得的真实信息）：\n' +
+      'graph TD\n' +
+      'ceo["董事长兼总经理｜张三"]\n' +
+      'cto["技术中心｜李四"]\n' +
+      'rd["研发部｜未公开"]\n' +
+      'ceo --> cto\n' +
+      'cto --> rd\n' +
+      '### 高管与部门清单\n' +
+      '紧接架构图后，用Markdown表格逐条列出，列包含：层级、部门/业务线、职务、姓名、公开信息来源、置信度（公开信息/行业推断）。查不到的姓名填"未查询到公开信息"，禁止编造。\n' +
+      '### 决策链与AI预算路径\n' +
+      '用列表分析：谁掌握数字化/AI预算、谁做技术评估、谁是最终使用方、谁可能一票否决，并给出本单"优先触达的3个角色"及触达理由。\n' +
+      '### 组织信息缺口\n' +
+      '若公开渠道查不到完整架构，必须先基于行业同规模公司惯例给出一版推断架构（表格置信度列标注"行业推断"），并列出建议通过何种渠道核实（如天眼查高管列表、官网新闻、招投标联系人）。\n\n' +
       '# 输出2：客户商业模式分析报告\n' +
       '## 1. 客户业务概况\n分别用 ### 列出：商业模式与盈利模式、核心客户群体、主要产品/服务、市场竞争格局、客户触达与服务模式、企业战略方向、2026年工作重点\n' +
       '## 2. 影响客户业务的关键行业趋势（未来6-24个月）\n用表格展示3-5个趋势，优先引用2025-2026年数据\n' +
       '## 3. 从客户视角分析的机会与挑战\n分"关键业务机会"和"主要挑战"各3-5项\n' +
       '## 4. 从"用户结果"反推关键举措、指标和 Use Cases\n用表格展示\n' +
       '## 5. 公共云与 GenAI+Agent 应用构想\n' +
-      '### 5.1 编程提效（开发者场景）— 通义灵码 / Qoder\n' +
-      '### 5.2 办公提效（全员场景）— 钉钉AI助理、通义听悟等\n' +
-      '### 5.3 生成式AI业务创新（行业核心场景）— 基于百炼/PAI/Qwen API\n' +
+      '### 5.1 编程提效（开发者场景）— Qoder / Qoder CN\n' +
+      '### 5.2 办公提效（全员场景）— 千问办公（QwenWork）为主，辅以通义听悟\n' +
+      '### 5.3 生成式AI业务创新（行业核心场景）— 百炼 / PAI / 千问API / 伶鹊\n' +
+      '每个子标题下用Markdown表格输出2-3个场景，列包含：场景名称、业务痛点、阿里云解决方案（2026现役产品名）、预期价值与指标。\n' +
       '最后简要讨论实施路径和关键成功要素';
 
     userPrompt = '【第一步：确认公司全称 — 最高优先级】\n' +
@@ -119,6 +164,11 @@ function buildPrompts(type, input, modelKey) {
       '2. "[确认的工商全称] 企查查"\n' +
       '3. "[确认的工商全称] 成立时间 注册资本 法定代表人"\n' +
       '4. "[确认的工商全称] 股东信息 股权结构"\n\n' +
+      '【第三步：搜索组织架构 — 同样必须执行】\n' +
+      '5. "[确认的工商全称] 高管 团队 总经理 CTO CIO"\n' +
+      '6. "[确认的工商全称] 组织架构 事业部 部门 中心"\n' +
+      '7. "[确认的工商全称] 数字化 AI 负责人 招标 联系人"\n' +
+      '把搜到的部门名称与人名用于"组织架构与决策链分析"章节，并绘制 mermaid 组织架构图。\n\n' +
       '【数据来源硬性约束 — 极其重要】\n' +
       '1. 公司基本信息表格中的每一项必须且只能来自本次联网搜索返回的结果。\n' +
       '2. 绝对禁止使用训练数据中的工商信息。\n' +
@@ -136,88 +186,49 @@ function buildPrompts(type, input, modelKey) {
   } else if (type === 'visit_plan') {
     const sceneLabels = { first: '首次拜访', progress: '商机推进', executive: '高层拜访' };
     const sceneName = sceneLabels[input.scene] || '客户拜访';
-    systemPrompt = '你是阿里云西部大区资深AI销售教练，擅长帮助渠道伙伴制定高质量的客户拜访计划。\n\n' +
+    systemPrompt = '你是阿里云西部大区资深AI销售教练，长期陪跑渠道伙伴打单，擅长把一次拜访从"关系维护"升级为"可验证的销售推进"。\n\n' +
       '【会前调研规则】\n' +
-      '在生成拜访计划前，你必须先基于用户提供的客户名称，联网搜索该公司的真实业务信息，包括但不限于：主营业务、行业地位、近期新闻动态、融资/上市状态、业务规模。将这些真实信息融入拜访计划各章节，特别是"信息分享"和"会议议程"部分，确保价值点和议题基于客户的实际业务场景，而非通用模板。\n\n' +
+      '生成计划前，必须先基于用户提供的客户名称联网搜索真实信息，覆盖：主营业务与行业地位、近期新闻与融资/上市状态、业务规模、高管与组织架构（总经理/CTO/CIO/数字化负责人及部门设置）、现有云厂商与技术栈、公开招投标记录。把搜索到的事实融入各章节，特别是"决策地图""信息分享"和"会议议程"，确保价值点和议题基于客户实际业务场景，而非通用模板。第一次搜不到就换关键词再搜（加"天眼查""企查查""官网""招聘"等后缀）。\n\n' +
+      '【场景差异化要求】\n' +
+      '首次拜访：以认知塑造与需求探索为主，禁止直接索要商务承诺，重点把行业趋势与客户业务痛点对上，并建立后续触达的正当理由。\n' +
+      '商机推进：聚焦决策标准与决策流程，必须设计可验证的下一步动作（POC、技术评估会、样板点参观、商务比价），并识别纸面竞争对手。\n' +
+      '高层拜访：站在战略与ROI视角，围绕业务增量、AI投入产出与竞对格局展开，避免技术细节，落点是高层互访或战略共创。\n\n' +
       '【格式要求】请严格使用Markdown格式输出，确保层级分明、重点突出：\n' +
-      '- 使用 ## 作为每个章节的标题（如 ## 一、拜访目标）\n' +
+      '- 使用 ## 作为每个章节的标题（如 ## 一、拜访目标与本阶段核心命题）\n' +
       '- 使用 ### 作为章节内的子标题\n' +
       '- 使用 **加粗** 突出关键信息、承诺内容、时间节点\n' +
       '- 使用 - 作为无序列表的每一项\n' +
       '- 使用 1. 2. 作为有序编号列表\n' +
-      '- 信息获取、信息分享等多维度内容使用Markdown表格（| 列1 | 列2 | 列3 |）\n' +
-      '- 会议议程必须使用Markdown表格展示\n' +
-      '- 中文输出，清晰小标题+编号，便于直接复制到拜访计划文档\n\n' +
+      '- 决策地图、信息获取、信息分享、议程、自检、缺失信息等多维度内容一律使用Markdown表格\n' +
+      '- 中文输出，清晰小标题+编号，便于直接复制到拜访计划文档；全文控制在2000字以内，每章只写对该场景真正有用的内容\n\n' +
       '【重要规则】\n' +
       '1. 所有内容必须紧密围绕用户提供的具体客户信息，不要给出泛化的通用建议。\n' +
       '2. 内容必须结合"项目阶段+拜访对象角色+触发事件"，禁止通用套话。\n' +
-      '3. 行动建议必须具体到可执行的步骤。\n' +
-      '4. 【客户信息准确性】当拜访计划中引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、竞争格局等），必须使用联网搜索获取的信息，不要依赖训练数据编造。如果第一次搜索未找到，换关键词再搜（如加"天眼查""企查查""官网"等后缀），主动多次尝试直到找到答案。\n' +
-      '5. 【禁止编造数据】不要虚构具体的财务数字、员工人数、市场份额百分比或竞品公司名称。无法获取时，将其列为"缺失信息"纳入第七章"会前补齐建议"。\n' +
-      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于2025年至2026年真实、可验证的事件或报告，不要使用泛泛的通用趋势描述。\n' +
-      '7. 【不确定信息处理】遇到不确定的客户信息时，不要简单标注"待核实"。你必须先尝试通过搜索找到答案。只有在穷尽搜索仍无法确认时，才将该信息列入第七章"缺失信息与会前补齐建议"，并给出具体的验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n' +
-      '【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码。所有信息直接融入正文。\n\n' +
-      '请生成一份专业的拜访计划，严格按以下7个章节结构输出：\n' +
-      '## 一、拜访目标\n从以下目标类型中选择1-2个主目标，输出一句话目标陈述。可选目标类型：认知塑造与教育（先教后卖）、商机确认（资格验证：需求/决策链/预算/时间）、决策推进（明确路径并获取下一步承诺）、价值交付与风险管理（交付价值/风险化解）、关系与影响力拓展（关键人覆盖与信任强化）。\n' +
-      '## 二、用户行动承诺（Customer Commitment）\n这是客户（被拜访方）的行动承诺，不是阿里云的承诺。为这场拜访设计两层承诺，用表格展示：最高承诺（理想）和最低承诺（保底），每条承诺包含：用户做什么/谁负责/截止时间/交付物。承诺必须与项目阶段匹配。\n' +
-      '## 三、信息获取（What we need to learn）\n用Markdown表格输出3-6条信息点，列包含：序号、信息点、优先级（Must/Should/Could）、向谁确认、为什么重要。信息维度至少覆盖公司相关、项目相关、用户观点三个方面。\n' +
-      '## 四、信息分享（What we deliver / Value provided）\n用Markdown表格输出3-5个价值点，列包含：序号、价值点、证据形态、对应解决的问题。表格后单独输出"紧迫感"表述1条。\n' +
-      '## 五、会议议程（Meeting Agenda）\n先列出参会人角色，然后用Markdown表格输出分段议程，列包含：时段、时长、议题、我方动作、对方需给的信息/决策、预期产出。最后一段必须是确认下一步计划与行动承诺。\n' +
-      '## 六、一致性检查\n用Markdown表格做清单校验，列包含：检查项、状态、说明。如发现不一致，指出并给出调整建议。\n' +
-      '## 七、缺失信息与会前补齐建议（Top 5）\n用Markdown表格列出5条缺失信息，列包含：序号、缺失信息、影响风险、会前补齐动作。';
-    userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + (input.role || '') + '\n' + (input.details || '') + '\n\n请严格按照Markdown格式输出，包含##章节标题、###子标题、**加粗**、列表和表格。';
+      '3. 行动建议必须具体到可执行的步骤，含负责人与时间点。\n' +
+      '4. 【客户信息准确性】引用客户公司的具体事实（成立时间、业务范围、营收规模、市场地位、组织架构、人名、竞争格局等）必须来自本次联网搜索，不得依赖训练数据。\n' +
+      '5. 【禁止编造数据与人名】不要虚构财务数字、员工人数、市场份额百分比、竞品名称或任何姓名与职务。查不到就在表格中写"未查询到公开信息"，并纳入第八章补齐建议。\n' +
+      '6. 【行业趋势须有依据】提及的行业趋势或市场动态应基于2025年至2026年真实、可验证的事件或报告，并注明来源，不要使用泛泛的通用趋势描述。\n' +
+      '7. 【不确定信息处理】不要简单标注"待核实"。必须先穷尽搜索；确实无法确认时列入第八章，并给出具体验证方法（如"建议通过天眼查搜索XX关键词核实"）。\n' +
+      '8. 【阿里云产品时效性】方案与价值点必须使用阿里云/阿里巴巴集团2026年现役产品名：千问办公（QwenWork，一站式AI生产力平台）、Qoder 与 Qoder CN（AI编程助手，Qoder CN 即原通义灵码）、大模型服务平台百炼（Model Studio）、千问API（qwen3.8-max / qwen3.8-flash）、人工智能平台PAI、伶鹊VoicePica（企业级对话智能体，原通义晓蜜）、通义听悟、通义万相、智能语音交互、函数计算FC。严禁再使用"通义灵码""通义小蜜""通义晓蜜""云小蜜"等已更名或过时名称；不得推荐Cursor、GitHub Copilot、ChatGPT等非阿里系工具。\n' +
+      '9. 【输出格式禁令】绝对禁止在输出中包含任何XML标签或工具调用代码。所有信息直接融入正文。\n\n' +
+      '请生成一份专业的拜访计划，严格按以下9个章节结构输出：\n' +
+      '## 一、拜访目标与本阶段核心命题\n先用一句话写出本阶段核心命题（这个阶段必须证明什么才能往前推进），再从五类目标中选择1个主目标+1个辅目标（认知塑造与教育、商机确认、决策推进、价值交付与风险管理、关系与影响力拓展），输出一句SMART化的目标陈述，含可验证的结果。\n' +
+      '## 二、决策地图与角色定位\n说明拜访对象在客户组织中的位置、汇报关系与影响圈；用Markdown表格列出本场需覆盖的角色，列包含：角色、部门与职务、姓名、决策定位（经济买家/技术评估者/最终使用方/内部推动者/可能否决者）、他的KPI与关注点、忌讳与风险。人名一律以搜索结果为准。\n' +
+      '## 三、客户行动承诺（Customer Commitment）\n这是客户（被拜访方）的行动承诺，不是阿里云的承诺。用表格设计最高承诺（理想）与最低承诺（保底），列包含：承诺内容、客户侧负责人、截止时间、交付物、如何验证已兑现。承诺必须与项目阶段匹配。\n' +
+      '## 四、信息获取清单（What we need to learn）\n用Markdown表格输出4-6条，列包含：序号、信息点、MEDDPICC维度（可量化指标/经济买家/决策标准/决策流程/纸面竞争/痛点/内部推动者/竞对）、优先级（Must/Should/Could）、向谁确认、为什么重要。至少覆盖公司相关、项目相关、用户观点三个方面。\n' +
+      '## 五、信息分享与价值主张（What we deliver）\n先输出一句话核心价值主张（站在客户收益视角，不堆产品术语）。再用表格输出3-5个价值点，列包含：序号、价值点、证据形态（案例/数据/演示/白皮书）、对应解决的问题、所用阿里云现役产品。表格后单独输出：1条紧迫感表述（必须基于2025-2026年可验证事实并注明来源）、1条相对腾讯云/华为云/火山引擎的差异化表述。\n' +
+      '## 六、会议议程与提问话术（Meeting Agenda）\n先列出参会人角色，然后用Markdown表格输出分段议程，列包含：时段、时长、议题、我方动作、对方需给的信息或决策、预期产出；最后一段必须是确认下一步与行动承诺。表格后再给出4条现场话术：2条开放式或SPIN式提问、1条应对"我们已经在用别家"的话术、1条收尾索取承诺的话术。\n' +
+      '## 七、一致性自检\n用Markdown表格做清单校验，列包含：检查项、状态、说明。至少校验：目标与承诺是否闭环、议程能否支撑承诺获取、信息分享是否对准该角色的KPI、是否存在阶段错配（如首次拜访就索要合同承诺）。\n' +
+      '## 八、缺失信息与会前补齐建议（Top 5）\n用Markdown表格列出5条缺失信息，列包含：序号、缺失信息、影响风险、会前补齐动作（写明具体搜索关键词或核实渠道）。\n' +
+      '## 九、会后48小时跟进\n用有序列表给出会后24小时内与48小时内的具体动作（纪要与承诺回执、材料投递、下一会议邀约、内部商机系统更新），每条含负责人与时间点。';
+    userPrompt = '拜访场景：' + sceneName + '\n拜访对象角色：' + (input.role || '') + '\n' + (input.details || '') +
+      '\n\n【执行顺序】1) 先联网搜索客户业务/组织/在用云现状；2) 再按9个章节输出拜访计划；3) 所有事实与人名必须来自搜索结果，查不到写"未查询到公开信息"。' +
+      '\n请严格按照Markdown格式输出，包含##章节标题、###子标题、**加粗**、列表和表格。';
 
   } else if (type === 'batch_analysis') {
-    var isSimplifiedModel = (modelKey === 'minimax' || modelKey === 'deepseek' || modelKey === 'deepseekflash');
-    if (isSimplifiedModel) {
-      // === MiniMax/DeepSeek 简化版：5轮搜索 + 18个JSON字段 ===
-      systemPrompt =
-        '你是阿里云的企业情报分析师。通过联网搜索调研目标公司，评估其云计算与AI采购潜力，以JSON格式输出。\n\n' +
-        '【输出格式】只输出一个JSON对象，不要输出任何其他内容。\n\n' +
-        '【搜索流程 — 5轮】\n' +
-        '第1轮【工商基础】："{公司名} 天眼查" → 工商全称、成立时间、注册资本、法定代表人、注册地址、省市\n' +
-        '第2轮【母公司】："{公司名} 母公司 集团" → 如有母公司，搜索母公司营收和规模\n' +
-        '第3轮【营收员工】："{公司名} 营收 员工人数 规模 上市" → 营收、员工数、是否上市\n' +
-        '第4轮【AI信号】："{公司名} AI 大模型 技术团队 招聘" → AI活跃度\n' +
-        '第5轮【竞对+动态】："{公司名} 腾讯云 华为云 AWS 云服务" + "{公司名} 2025 2026 新闻" → 竞对使用、近期动态\n\n' +
-        '【防混淆 — 最高优先级】\n' +
-        '1. 搜索必须用用户输入的完整公司名，禁止替换为同名大公司（如"成都字节流"绝不能替换为"字节跳动"）。\n' +
-        '2. 搜不到填""或null，禁止用其他公司数据替代。\n' +
-        '3. companyName必须填用户输入公司的工商全称，搜不到则填原始名称。\n\n' +
-        'JSON结构：\n' +
-        '{\n' +
-        '  "companyName": "工商全称",\n' +
-        '  "establishedDate": "成立时间",\n' +
-        '  "legalRepresentative": "法定代表人",\n' +
-        '  "registeredCapital": "注册资本",\n' +
-        '  "address": "注册地址",\n' +
-        '  "province": "省份",\n' +
-        '  "city": "城市",\n' +
-        '  "isListed": "是否上市，未上市填未上市",\n' +
-        '  "companyStrengthScore": 1到10整数,\n' +
-        '  "industry": "所属行业",\n' +
-        '  "employeeRange": "员工数范围",\n' +
-        '  "employeeNumber": 员工数或null,\n' +
-        '  "revenue": "年营收描述",\n' +
-        '  "revenueNumber": 营收亿元或null,\n' +
-        '  "aiActivityLevel": "高/中/低",\n' +
-        '  "aiSignals": "AI信号",\n' +
-        '  "competitorCloudUsage": "竞对云/AI产品，无则填无竞对使用记录",\n' +
-        '  "parentCompany": "母公司，无则填无",\n' +
-        '  "parentCompanyRevenue": "母公司营收，无则填无",\n' +
-        '  "parentEmployeeNumber": 母公司员工数或null,\n' +
-        '  "groupCloudAiUsage": "集团云AI使用，无则填无",\n' +
-        '  "cloudAiAnnualBudget": "云+AI年消费预估含依据",\n' +
-        '  "growthTrend": "高增长/稳健/平稳/下滑",\n' +
-        '  "effectiveEmployeeNumber": 有效员工数或null,\n' +
-        '  "effectiveRevenueNumber": 有效营收亿元或null\n' +
-        '}\n只输出JSON。';
-      userPrompt = '请搜索以下公司情报并输出JSON：\n公司名称：' + (input.customerName || '') +
-        (input.productName ? '\n产品：' + input.productName : '') +
-        (input.website ? '\n官网：' + input.website : '') +
-        '\n\n【防混淆】公司名称必须原样搜索，禁止替换为相似大公司。直接输出JSON。';
-    } else {
-      // === Qwen 旗舰完整版：6轮深度搜索 + 26个JSON字段 + 来源溯源 ===
+    // 批量评估强依赖联网搜索与严格JSON输出，仅 Qwen 系列适用（GLM-5.3 不支持联网搜索，已在主入口拦截）。
+    // 旧 MiniMax/DeepSeek 精简版 Prompt 已随模型下线移除，历史版本见 docs/batch-analysis-prompt.md。
+    // === Qwen 完整版：6轮深度搜索 + 26个JSON字段 + 来源溯源 ===
       systemPrompt =
         '你是企业情报分析师。通过联网搜索调研目标公司，输出严格JSON。\n\n' +
         '【铁律 — 违反任何一条即报告作废】\n' +
@@ -279,10 +290,14 @@ function buildPrompts(type, input, modelKey) {
         (input.productName ? '\n产品：' + input.productName : '') +
         (input.website ? '\n官网：' + input.website : '') +
         '\n\n【最高优先级】1.公司名必须原样搜索，禁止替换为同名大公司。2.搜不到的字段必须填空字符串或null，禁止编造。3._emptyFields必须列出所有因搜不到而留空的字段名。\n\n直接输出JSON。';
-    }
 
   } else {
     return null;
+  }
+
+  // 不支持联网搜索的模型（GLM-5.3）：置顶注入能力提示，降级提示词中的"必须联网搜索"要求
+  if (cfg && cfg.supportsSearch === false) {
+    systemPrompt = NO_SEARCH_OVERRIDE + systemPrompt;
   }
 
   return { systemPrompt, userPrompt };
@@ -330,7 +345,7 @@ function stripThinkingPreamble(text) {
 
 // ===== 调用 DashScope API =====
 async function callDashScope(systemPrompt, userPrompt, modelKey, stream, type) {
-  var config = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen3max'];
+  var config = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen38max'];
   var apiKey = Deno.env.get('DASHSCOPE_API_KEY');
   if (!apiKey) throw new Error('DASHSCOPE_API_KEY 未配置');
 
@@ -343,16 +358,22 @@ async function callDashScope(systemPrompt, userPrompt, modelKey, stream, type) {
     ],
     max_tokens: isBatch ? 32000 : config.maxTokens,
     temperature: isBatch ? 0.1 : 0.5,
-    stream: !!stream,
-    enable_search: true
+    stream: !!stream
   };
-  // forced_search 仅 Qwen 系列模型支持；MiniMax/DeepSeek 仅使用 enable_search
-  if (modelKey === 'qwen37max' || modelKey === 'qwen3max' || modelKey === 'qwenplus') {
-    // batch_analysis 使用 pro 策略以获得更深入的搜索结果
+  // 联网搜索仅对支持 enable_search 的模型传入（qwen3.8-max / qwen3.8-flash / deepseek-v4-pro-0813）
+  // ZHIPU/GLM-5.3 在 Chat Completions 协议下不支持 enable_search，传入会导致 API 报错，故不传
+  if (config.supportsSearch) {
+    body.enable_search = true;
+    // forced_search 强制模型先搜索再回答；batch_analysis 使用 pro 策略获得更深入的搜索结果
     body.search_options = {
       forced_search: true,
       search_strategy: isBatch ? 'pro' : 'standard'
     };
+  }
+  // 默认开启思考模式的模型（qwen3.8-flash / GLM-5.3）：本场景只需最终正文，
+  // 关闭思考以控制首字时延、避免非流式调用报错并节省输出费用
+  if (config.disableThinking) {
+    body.enable_thinking = false;
   }
 
   var resp = await fetch(API_URL, {
@@ -430,7 +451,7 @@ async function handleStream(systemPrompt, userPrompt, modelKey, type) {
 async function handleNonStream(systemPrompt, userPrompt, modelKey, type) {
   var resp = await callDashScope(systemPrompt, userPrompt, modelKey, false, type);
   var data = await resp.json();
-  var config = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen3max'];
+  var config = MODEL_CONFIG[modelKey] || MODEL_CONFIG['qwen38max'];
   var content = '';
   if (data.choices && data.choices[0]) {
     content = data.choices[0].message && data.choices[0].message.content || '';
@@ -456,10 +477,17 @@ export default async (request) => {
     var body = await request.json();
     var type = body.type;
     var input = body.input;
-    var modelKey = body.model || 'qwen3max';
+    var modelKey = body.model || 'qwen38max';
     var stream = body.stream || false;
     // batch_analysis 需要 JSON 输出，强制走非流式路径以避免流式 chunk 拆分导致的 tool_call 标签残留
     if (type === 'batch_analysis') stream = false;
+    // GLM-5.3 不支持 enable_search，而批量评估强依赖联网搜索，直接拦截并给出明确提示
+    if (type === 'batch_analysis' && MODEL_CONFIG[modelKey] && MODEL_CONFIG[modelKey].supportsSearch === false) {
+      return new Response(JSON.stringify({ error: MODEL_CONFIG[modelKey].displayName + ' 不支持联网搜索，无法用于批量客户评估，请改用 Qwen3.8-Max 或 Qwen3.8-Flash' }), {
+        status: 400,
+        headers: Object.assign({}, CORS_HEADERS, { 'Content-Type': 'application/json' })
+      });
+    }
     if (!type || !input) {
       return new Response(JSON.stringify({ error: '缺少必要参数 type 或 input' }), {
         status: 400,
