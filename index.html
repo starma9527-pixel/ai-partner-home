@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 先锋·伙伴之家</title>
-  <link rel="stylesheet" href="css/style.css?v=20260531" />
+  <link rel="stylesheet" href="css/style.css?v=20261017" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 </head>
 <body>
@@ -153,20 +153,16 @@
         </div>
         <div class="model-selector">
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwen37max" checked />
-            <span class="model-chip">Qwen3.7-Max<em>首选</em></span>
+            <input type="checkbox" name="analysisModel" value="qwen38max" checked />
+            <span class="model-chip">Qwen3.8-Max<em>首选</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwen3max" />
-            <span class="model-chip">Qwen3-Max<em>旗舰</em></span>
+            <input type="checkbox" name="analysisModel" value="qwen38flash" />
+            <span class="model-chip">Qwen3.8-Flash<em>更快</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwenplus" />
-            <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
-          </label>
-          <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="deepseekflash" />
-            <span class="model-chip">DeepSeek-V4-Flash<em>极速</em></span>
+            <input type="checkbox" name="analysisModel" value="deepseekv4pro" />
+            <span class="model-chip">DeepSeek-V4-Pro<em>深度推理</em></span>
           </label>
         </div>
         <button class="btn-generate" onclick="handleCustomerAnalysis()">🤖 生成客户分析报告</button>
@@ -203,22 +199,15 @@
           <div class="batch-model-label">选择分析模型（可多选）：</div>
           <div class="model-selector">
             <label class="model-option">
-              <input type="checkbox" name="batchModel" value="qwen3max" checked />
-              <span class="model-chip">Qwen3-Max<em>首选</em></span>
+              <input type="checkbox" name="batchModel" value="qwen38max" checked />
+              <span class="model-chip">Qwen3.8-Max<em>首选</em></span>
             </label>
             <label class="model-option">
-              <input type="checkbox" name="batchModel" value="qwen37max" />
-              <span class="model-chip">Qwen3.7-Max<em>旗舰</em></span>
-            </label>
-            <label class="model-option">
-              <input type="checkbox" name="batchModel" value="qwenplus" />
-              <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
-            </label>
-            <label class="model-option">
-              <input type="checkbox" name="batchModel" value="deepseekflash" />
-              <span class="model-chip">DeepSeek-V4-Flash<em>极速</em></span>
+              <input type="checkbox" name="batchModel" value="qwen38flash" />
+              <span class="model-chip">Qwen3.8-Flash<em>更快</em></span>
             </label>
           </div>
+          <div class="batch-model-hint" style="font-size:12px;color:#8b93a7;margin-top:6px;">批量评估依赖联网搜索抓取工商/营收信息，仅支持具备联网搜索能力的 Qwen3.8 系列（智谱GLM-5.3 在 Chat Completions 协议下不支持联网搜索，不适用于本场景）</div>
           <div class="batch-actions">
             <button class="btn-generate" id="batchStartBtn" onclick="handleBatchAnalysis()">🚀 开始批量评估</button>
             <button class="btn-stop" id="batchStopBtn" onclick="stopBatchAnalysis()" style="display:none">⏹ 停止</button>
@@ -283,7 +272,7 @@
             </div>
             <div class="form-group">
               <label>解决方案/产品 *</label>
-              <input type="text" placeholder="例如：通义千问 API / 云服务器 ECS" />
+              <input type="text" placeholder="例如：千问办公 / Qoder CN / 百炼平台" />
             </div>
           </div>
 
@@ -326,20 +315,16 @@
 
         <div class="model-selector">
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="deepseekflash" checked />
-            <span class="model-chip">DeepSeek-V4-Flash<em>首选</em></span>
+            <input type="checkbox" name="visitModel" value="qwen38flash" checked />
+            <span class="model-chip">Qwen3.8-Flash<em>首选</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="qwenplus" />
-            <span class="model-chip">Qwen3-Plus<em>均衡</em></span>
+            <input type="checkbox" name="visitModel" value="qwen38max" />
+            <span class="model-chip">Qwen3.8-Max<em>旗舰</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="qwen37max" />
-            <span class="model-chip">Qwen3.7-Max<em>旗舰</em></span>
-          </label>
-          <label class="model-option">
-            <input type="checkbox" name="visitModel" value="qwen3max" />
-            <span class="model-chip">Qwen3-Max<em>旗舰</em></span>
+            <input type="checkbox" name="visitModel" value="glm53" />
+            <span class="model-chip">智谱GLM-5.3<em>长文推理</em></span>
           </label>
         </div>
 
@@ -432,6 +417,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js" defer></script>
-<script src="js/app.js?v=20260531b"></script>
+<script src="js/app.js?v=20261017a"></script>
 </body>
 </html>
