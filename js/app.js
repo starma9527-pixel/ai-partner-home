@@ -188,41 +188,11 @@ const SITE_DATA = {
     ]
   },
   "rank": {
-    "tokenRank": [
-      {"rank":1,"name":"四川捷云","score":"25%"},
-      {"rank":2,"name":"成都端木","score":"17%"},
-      {"rank":3,"name":"长虹佳华","score":"14%"},
-      {"rank":4,"name":"四川柏盛云途","score":"14%"},
-      {"rank":5,"name":"重庆羋游","score":"10%"},
-      {"rank":6,"name":"重庆云之渝","score":"9%"},
-      {"rank":7,"name":"重庆典名","score":"8%"}
-    ],
-    "caseRank": [
-      {"rank":1,"name":"重庆典名","score":""},
-      {"rank":2,"name":"数联创新","score":18},
-      {"rank":3,"name":"云翔信息","score":15},
-      {"rank":4,"name":"天行数据","score":12},
-      {"rank":5,"name":"智源网络","score":9}
-    ],
-    "studyRank": [
-      {"rank":1,"name":"云翔信息","score":"42h"},
-      {"rank":2,"name":"锐智科技","score":"38h"},
-      {"rank":3,"name":"智源网络","score":"35h"},
-      {"rank":4,"name":"数联创新","score":"31h"},
-      {"rank":5,"name":"天行数据","score":"28h"}
-    ],
-    "certRank": [
-      {"rank":1,"name":"锐智科技","score":"92%"},
-      {"rank":2,"name":"云翔信息","score":"85%"},
-      {"rank":3,"name":"天行数据","score":"78%"},
-      {"rank":4,"name":"数联创新","score":"73%"},
-      {"rank":5,"name":"智源网络","score":"68%"}
-    ],
-    "battleReports": [
-      {"title":"重庆典名签约XX客户千万级数据集建设项目","amount":"千万级","date":"2026-03-2"},
-      {"title":"四川捷云信通抓住 OpenClaw 爆发机遇，7 天狂揽 200+ 新客户！","amount":"--","date":"2026-03-10"},
-      {"title":"成都慕创中标XX一体机项目","amount":"百万级","date":"2026-03-12"}
-    ]
+    "tokenRank": [],
+    "caseRank": [],
+    "studyRank": [],
+    "certRank": [],
+    "battleReports": []
   },
   "feedback": {
     "messages": [
@@ -431,11 +401,16 @@ function renderGuide() {
 }
 
 // ===== Render: Rank =====
+const RANK_EMPTY_HTML = '<div class="rank-empty">榜单数据接入中，敬请期待</div>';
+
 function renderRank() {
   const rank = siteData.rank || {};
   function renderRankList(containerId, data, unit) {
     const el = document.getElementById(containerId);
-    (data || []).forEach(item => {
+    const list = data || [];
+    if (!list.length) { el.innerHTML = RANK_EMPTY_HTML; return; }
+    el.innerHTML = '';
+    list.forEach(item => {
       el.innerHTML += `
         <div class="rank-item">
           <div class="rank-num">${item.rank}</div>
@@ -449,7 +424,10 @@ function renderRank() {
   renderRankList('studyRankList', rank.studyRank);
   renderRankList('certRankList', rank.certRank);
   const battleList = document.getElementById('battleList');
-  (rank.battleReports || []).forEach(item => {
+  const battles = rank.battleReports || [];
+  if (!battles.length) { battleList.innerHTML = RANK_EMPTY_HTML; return; }
+  battleList.innerHTML = '';
+  battles.forEach(item => {
     battleList.innerHTML += `
       <div class="battle-item">
         <div class="battle-icon">🏅</div>
@@ -520,6 +498,7 @@ function handleCustomerAnalysis() {
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
           insertExportToolbar(panelId, fileName);
           injectReportTitle(panelId, reportTitle);
+          renderMermaidIn(document.getElementById(panelId));
           delete _retryRegistry[retryKey];
         })
         .catch(err => { renderFailPanel(panelId, statusId, err.message, retryKey); });
@@ -585,6 +564,7 @@ function handleVisitPlan() {
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
           insertExportToolbar(panelId, fileName);
           injectReportTitle(panelId, reportTitle);
+          renderMermaidIn(document.getElementById(panelId));
           delete _retryRegistry[retryKey];
         })
         .catch(err => { renderFailPanel(panelId, statusId, err.message, retryKey); });
@@ -620,7 +600,100 @@ function handleFeedback() {
 }
 
 // ===== AI API Call =====
-const MODEL_LABELS = { qwen37max: 'Qwen3.7-Max', qwen3max: 'Qwen3-Max', qwenplus: 'Qwen3-Plus', minimax: 'MiniMax-M2.1', deepseek: 'DeepSeek-V3.2', deepseekflash: 'DeepSeek-V4-Flash' };
+const MODEL_LABELS = {
+  qwen38max: 'Qwen3.8-Max',
+  qwen38flash: 'Qwen3.8-Flash',
+  deepseekv4pro: 'DeepSeek-V4-Pro',
+  glm53: '智谱GLM-5.3'
+};
+
+// ===== 组织架构图渲染（Mermaid + 层级列表降级）=====
+// mermaid 体积较大（约3MB），仅在报告真的出现架构图时按需加载，失败则降级为层级列表
+var MERMAID_CDNS = [
+  'https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js',
+  'https://unpkg.com/mermaid@10.9.3/dist/mermaid.min.js'
+];
+var _mermaidLoading = null;
+
+function loadMermaid() {
+  if (typeof mermaid !== 'undefined' && typeof mermaid.run === 'function') return Promise.resolve(true);
+  if (_mermaidLoading) return _mermaidLoading;
+  _mermaidLoading = new Promise(function (resolve) {
+    var i = 0;
+    (function next() {
+      if (i >= MERMAID_CDNS.length) { _mermaidLoading = null; resolve(false); return; }
+      var s = document.createElement('script');
+      s.src = MERMAID_CDNS[i++];
+      s.onload = function () { resolve(typeof mermaid !== 'undefined' && typeof mermaid.run === 'function'); };
+      s.onerror = next;
+      document.head.appendChild(s);
+    })();
+  });
+  return _mermaidLoading;
+}
+
+function renderMermaidIn(root) {
+  if (!root) return;
+  var codes = Array.prototype.slice.call(root.querySelectorAll('pre > code.language-mermaid'));
+  if (!codes.length) return;
+  loadMermaid().then(function (ready) {
+    codes.forEach(function (code) {
+      var src = code.textContent || '';
+      var pre = code.parentNode;
+      if (!pre || !pre.parentNode) return;
+      if (!ready) { replaceBlockWithOrgTree(pre, src); return; }
+      var holder = document.createElement('div');
+      holder.className = 'mermaid-diagram';
+      holder.textContent = src;
+      pre.parentNode.replaceChild(holder, pre);
+      try {
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'dark' });
+        var ret = mermaid.run({ nodes: [holder] });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(null, function () { replaceBlockWithOrgTree(holder, src); });
+        } else if (!holder.querySelector('svg')) {
+          replaceBlockWithOrgTree(holder, src);
+        }
+      } catch (e) {
+        replaceBlockWithOrgTree(holder, src);
+      }
+    });
+  });
+}
+
+// 把 mermaid 源码解析成父子树，渲染为层级列表（图渲染失败或 mermaid 未加载时兜底）
+function replaceBlockWithOrgTree(el, src) {
+  if (!el || !el.parentNode) return;
+  var labels = {}, parentOf = {}, order = [];
+  (src || '').split('\n').forEach(function(line) {
+    var t = line.trim();
+    if (!t || /^graph\s+(TD|TB|LR|RL|BT)$/i.test(t)) return;
+    var rel = t.match(/^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)$/);
+    if (rel) {
+      if (order.indexOf(rel[1]) < 0) order.push(rel[1]);
+      if (order.indexOf(rel[2]) < 0) order.push(rel[2]);
+      parentOf[rel[2]] = rel[1];
+      return;
+    }
+    var def = t.match(/^([A-Za-z0-9_]+)\s*\[\s*"?(.*?)"?\s*\]$/);
+    if (def) { labels[def[1]] = def[2]; if (order.indexOf(def[1]) < 0) order.push(def[1]); }
+  });
+  var roots = order.filter(function(id) { return !parentOf[id]; });
+  if (!roots.length && order.length) roots = [order[0]];
+  function build(id, depth) {
+    var label = labels[id] || id;
+    var html = '<li><span class="org-node">' + escapeHtml(label) + '</span>';
+    var children = order.filter(function(c) { return parentOf[c] === id; });
+    if (children.length && depth < 8) {
+      html += '<ul>' + children.map(function(c) { return build(c, depth + 1); }).join('') + '</ul>';
+    }
+    return html + '</li>';
+  }
+  var wrap = document.createElement('div');
+  wrap.className = 'org-tree-fallback';
+  wrap.innerHTML = '<ul>' + roots.map(function(r) { return build(r, 0); }).join('') + '</ul>';
+  el.parentNode.replaceChild(wrap, el);
+}
 
 // ===== 清理模型输出内容 =====
 // 去除工具调用标签和思考过程
@@ -644,7 +717,7 @@ function cleanAIContent(text) {
   text = text.replace(new RegExp(LT + 'query' + GT + '[^' + LT + ']*' + LT + '\\/query' + GT, 'g'), '');
   text = text.replace(new RegExp(LT + 'search_result' + GT + '[\\s\\S]*?' + LT + '\\/search_result' + GT, 'g'), '');
   text = text.replace(new RegExp(LT + 'execution_result' + GT + '[\\s\\S]*?' + LT + '\\/execution_result' + GT, 'g'), '');
-  // think 思考标签（qwen3-max 等思考模型）
+  // think 思考标签（qwen3.8-max / GLM 等思考模型）
   text = text.replace(new RegExp(LT + 'think' + GT + '[\\s\\S]*?' + LT + '\\/think' + GT, 'gi'), '');
   text = text.replace(new RegExp(LT + 'think' + GT + '[\\s\\S]*', 'gi'), '');
   // MiniMax tool_code 格式
@@ -803,6 +876,7 @@ function retryModel(retryKey) {
       if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
       insertExportToolbar(panelId, fileName);
       if (params.reportTitle) injectReportTitle(panelId, params.reportTitle);
+      renderMermaidIn(document.getElementById(panelId));
     })
     .catch(function(err) { renderFailPanel(panelId, statusId, err.message, retryKey); });
 }
@@ -833,7 +907,7 @@ async function callAIStream(type, input, model, panelId) {
         mode: 'cors',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-        body: JSON.stringify({ type, input, model: model || 'qwen3max', stream: true }),
+        body: JSON.stringify({ type, input, model: model || 'qwen38max', stream: true }),
         signal: streamCtrl.signal
       });
       if (!resp.ok) {
@@ -902,7 +976,7 @@ async function callAIStream(type, input, model, panelId) {
         const resp = await fetch(endpoint, {
           method: 'POST', mode: 'cors', credentials: 'omit',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ type, input, model: model || 'qwen3max' }),
+          body: JSON.stringify({ type, input, model: model || 'qwen38max' }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -1445,7 +1519,7 @@ function batchExportExcel() {
     { wch: 8 },  { wch: 8 },  { wch: 8 }
   ];
   var wb = XLSX.utils.book_new();
-  var modelsToExport = _batchSelectedModels.length > 1 ? _batchSelectedModels : [_batchCurrentModel || _batchSelectedModels[0] || 'qwen3max'];
+  var modelsToExport = _batchSelectedModels.length > 1 ? _batchSelectedModels : [_batchCurrentModel || _batchSelectedModels[0] || 'qwen38max'];
   var totalCustomers = 0;
   var sheetCount = 0;
   function buildRows(results) {
