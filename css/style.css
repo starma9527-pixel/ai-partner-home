@@ -860,6 +860,15 @@ input, textarea, select { font-family: inherit; }
   font-size: 0.95rem; font-weight: 700;
   color: var(--accent-green);
 }
+.rank-empty {
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
 .battle-list { display: flex; flex-direction: column; gap: 10px; }
 .battle-item {
   background: var(--bg-card);
@@ -1278,6 +1287,29 @@ input, textarea, select { font-family: inherit; }
   margin: 8px 0;
 }
 .ai-markdown-output a { color: var(--accent-purple); text-decoration: underline; }
+
+/* 组织架构图（Mermaid 渲染 + 层级列表降级） */
+.ai-markdown-output .mermaid-diagram {
+  background: rgba(0,0,0,0.03); border: 1px solid var(--border-color);
+  border-radius: 6px; padding: 12px; margin: 10px 0;
+  overflow-x: auto; text-align: center;
+}
+.ai-markdown-output .mermaid-diagram svg { max-width: 100%; height: auto; }
+.ai-markdown-output .org-tree-fallback {
+  background: rgba(0,0,0,0.02); border: 1px solid var(--border-color);
+  border-radius: 6px; padding: 12px; margin: 10px 0;
+}
+.ai-markdown-output .org-tree-fallback ul { list-style: none; margin: 0; padding-left: 18px; }
+.ai-markdown-output .org-tree-fallback > ul { padding-left: 0; }
+.ai-markdown-output .org-tree-fallback li { position: relative; padding: 3px 0 3px 14px; }
+.ai-markdown-output .org-tree-fallback li::before {
+  content: '\2514'; position: absolute; left: 0; color: var(--text-muted);
+}
+.ai-markdown-output .org-tree-fallback .org-node {
+  display: inline-block; background: rgba(139,92,246,0.08);
+  border: 1px solid var(--border-color); border-radius: 4px;
+  padding: 2px 8px; font-size: 0.86rem;
+}
 
 @media (max-width: 600px) {
   .output-tab { padding: 10px 14px; font-size: 0.82rem; }
