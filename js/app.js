@@ -53,12 +53,6 @@ const SITE_DATA = {
       "tab": "guide"
     },
     {
-      "icon": "🏆",
-      "title": "龙虎榜",
-      "desc": "Token排行·案例贡献·学习时长",
-      "tab": "rank"
-    },
-    {
       "icon": "💬",
       "title": "回音壁",
       "desc": "留言反馈·建议吐槽·需求收集",
@@ -80,13 +74,13 @@ const SITE_DATA = {
         "title": "MaaS价格核算",
         "desc": "快速核算MaaS产品价格",
         "icon": "🧮",
-        "link": "https://www.maas-nexus.top/"
+        "link": "https://h66sbxyw.qwenwork.host/?spm=qwenwork_desktop.chat_page.0.0.26c41dbdOA4pST"
       },
       {
-        "title": "客户洞察",
-        "desc": "深度洞察客户商业信息",
-        "icon": "🔍",
-        "link": "http://8.137.89.236/"
+        "title": "MaaS喜报生成器",
+        "desc": "一键生成高燃销售战报海报",
+        "icon": "🎉",
+        "link": "xibao.html"
       },
       {
         "title": "伙伴展业常见问题",
@@ -187,13 +181,6 @@ const SITE_DATA = {
       }
     ]
   },
-  "rank": {
-    "tokenRank": [],
-    "caseRank": [],
-    "studyRank": [],
-    "certRank": [],
-    "battleReports": []
-  },
   "feedback": {
     "messages": [
       {"id":1,"author":"张伟 · 锐智科技","content":"希望能增加更多金融行业的案例资料","date":"2025-02-28","likes":12},
@@ -211,13 +198,11 @@ let siteData = null;
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSiteData();
   initTabs();
-  initRankTabs();
   initSceneSelector();
   initBatchUpload();
   renderHome();
   renderWeapons();
   renderMaas();
-  renderRank();
 });
 
 // ===== Load Data =====
@@ -250,20 +235,6 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ===== Rank Sub-tabs =====
-function initRankTabs() {
-  const tabs = document.getElementById('rankTabs');
-  if (!tabs) return;
-  tabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.rank-tab');
-    if (!btn) return;
-    tabs.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.rank-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('rank-' + btn.dataset.rank).classList.add('active');
-  });
 }
 
 // ===== Scene Selector =====
@@ -400,46 +371,6 @@ function renderGuide() {
   if (guide.moreLiveLink && moreLiveLink) moreLiveLink.href = guide.moreLiveLink;
 }
 
-// ===== Render: Rank =====
-const RANK_EMPTY_HTML = '<div class="rank-empty">榜单数据接入中，敬请期待</div>';
-
-function renderRank() {
-  const rank = siteData.rank || {};
-  function renderRankList(containerId, data, unit) {
-    const el = document.getElementById(containerId);
-    const list = data || [];
-    if (!list.length) { el.innerHTML = RANK_EMPTY_HTML; return; }
-    el.innerHTML = '';
-    list.forEach(item => {
-      el.innerHTML += `
-        <div class="rank-item">
-          <div class="rank-num">${item.rank}</div>
-          <div class="rank-name">${item.name}</div>
-          <div class="rank-score">${typeof item.score === 'number' ? item.score.toLocaleString() + (unit || '') : item.score}</div>
-        </div>`;
-    });
-  }
-  renderRankList('tokenRankList', rank.tokenRank, '');
-  renderRankList('caseRankList', rank.caseRank, ' 个案例');
-  renderRankList('studyRankList', rank.studyRank);
-  renderRankList('certRankList', rank.certRank);
-  const battleList = document.getElementById('battleList');
-  const battles = rank.battleReports || [];
-  if (!battles.length) { battleList.innerHTML = RANK_EMPTY_HTML; return; }
-  battleList.innerHTML = '';
-  battles.forEach(item => {
-    battleList.innerHTML += `
-      <div class="battle-item">
-        <div class="battle-icon">🏅</div>
-        <div class="battle-info">
-          <div class="battle-title">${item.title}</div>
-          <div class="battle-meta">${item.date}</div>
-        </div>
-        <div class="battle-amount">${item.amount}</div>
-      </div>`;
-  });
-}
-
 // ===== Mobile Navigation =====
 function toggleMobileNav() {
   document.getElementById('mobileNav').classList.toggle('show');
@@ -498,7 +429,7 @@ function handleCustomerAnalysis() {
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
           insertExportToolbar(panelId, fileName);
           injectReportTitle(panelId, reportTitle);
-          renderMermaidIn(document.getElementById(panelId));
+          renderOrgChartIn(document.getElementById(panelId));
           delete _retryRegistry[retryKey];
         })
         .catch(err => { renderFailPanel(panelId, statusId, err.message, retryKey); });
@@ -564,7 +495,7 @@ function handleVisitPlan() {
           if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
           insertExportToolbar(panelId, fileName);
           injectReportTitle(panelId, reportTitle);
-          renderMermaidIn(document.getElementById(panelId));
+          renderOrgChartIn(document.getElementById(panelId));
           delete _retryRegistry[retryKey];
         })
         .catch(err => { renderFailPanel(panelId, statusId, err.message, retryKey); });
@@ -601,98 +532,125 @@ function handleFeedback() {
 
 // ===== AI API Call =====
 const MODEL_LABELS = {
+  qwen37plus: 'Qwen3.7-Plus',
   qwen38max: 'Qwen3.8-Max',
   qwen38flash: 'Qwen3.8-Flash',
+  deepseekv4flash: 'DeepSeek-V4-Flash',
   deepseekv4pro: 'DeepSeek-V4-Pro',
   glm53: '智谱GLM-5.3'
 };
 
-// ===== 组织架构图渲染（Mermaid + 层级列表降级）=====
-// mermaid 体积较大（约3MB），仅在报告真的出现架构图时按需加载，失败则降级为层级列表
-var MERMAID_CDNS = [
-  'https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js',
-  'https://unpkg.com/mermaid@10.9.3/dist/mermaid.min.js'
-];
-var _mermaidLoading = null;
+// ===== 组织架构图渲染（自绘树状图，零外部依赖）=====
+// 模型在报告里输出 graph TD 源码，前端解析成父子关系后用 CSS 连接线画成框线图。
+// 不引 mermaid CDN：线上环境 CDN 曾不可达，导致架构图退化成逐行文字。
 
-function loadMermaid() {
-  if (typeof mermaid !== 'undefined' && typeof mermaid.run === 'function') return Promise.resolve(true);
-  if (_mermaidLoading) return _mermaidLoading;
-  _mermaidLoading = new Promise(function (resolve) {
-    var i = 0;
-    (function next() {
-      if (i >= MERMAID_CDNS.length) { _mermaidLoading = null; resolve(false); return; }
-      var s = document.createElement('script');
-      s.src = MERMAID_CDNS[i++];
-      s.onload = function () { resolve(typeof mermaid !== 'undefined' && typeof mermaid.run === 'function'); };
-      s.onerror = next;
-      document.head.appendChild(s);
-    })();
-  });
-  return _mermaidLoading;
+function isOrgChartLine(t) {
+  if (!t) return false;
+  if (/^graph\s+(TD|TB|LR|RL|BT)\b/i.test(t)) return true;
+  if (/^[A-Za-z0-9_]+\s*[\[\(]/.test(t)) return true;
+  if (/^[A-Za-z0-9_]+\s*-{2,}>?/.test(t)) return true;
+  return false;
 }
 
-function renderMermaidIn(root) {
-  if (!root) return;
-  var codes = Array.prototype.slice.call(root.querySelectorAll('pre > code.language-mermaid'));
-  if (!codes.length) return;
-  loadMermaid().then(function (ready) {
-    codes.forEach(function (code) {
-      var src = code.textContent || '';
-      var pre = code.parentNode;
-      if (!pre || !pre.parentNode) return;
-      if (!ready) { replaceBlockWithOrgTree(pre, src); return; }
-      var holder = document.createElement('div');
-      holder.className = 'mermaid-diagram';
-      holder.textContent = src;
-      pre.parentNode.replaceChild(holder, pre);
-      try {
-        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'dark' });
-        var ret = mermaid.run({ nodes: [holder] });
-        if (ret && typeof ret.then === 'function') {
-          ret.then(null, function () { replaceBlockWithOrgTree(holder, src); });
-        } else if (!holder.querySelector('svg')) {
-          replaceBlockWithOrgTree(holder, src);
-        }
-      } catch (e) {
-        replaceBlockWithOrgTree(holder, src);
+// 把缩进的、缺围栏的、行间隔了空行的 mermaid 区域规整成标准围栏，确保 marked 解析为代码块
+function normalizeOrgChartFences(text) {
+  if (!text || !/\bgraph\s+(TD|TB|LR|RL|BT)\b/i.test(text)) return text;
+  var lines = text.split('\n');
+  var out = [];
+  var i = 0;
+  while (i < lines.length) {
+    var t = lines[i].trim();
+    var isFence = /^`{1,3}\s*mermaid\s*$/i.test(t);
+    var isGraph = /^graph\s+(TD|TB|LR|RL|BT)\b/i.test(t);
+    if (isFence || isGraph) {
+      var j = isFence ? i + 1 : i;
+      var body = [];
+      for (; j < lines.length; j++) {
+        var s = lines[j].trim();
+        if (/^`{1,3}\s*$/.test(s)) { j++; break; }
+        if (!s) continue;
+        if (!isOrgChartLine(s)) break;
+        body.push(s);
       }
-    });
-  });
+      if (body.length > 1 && /^graph\s+/i.test(body[0])) {
+        out.push('```mermaid');
+        out = out.concat(body);
+        out.push('```');
+        i = j;
+        continue;
+      }
+    }
+    out.push(lines[i]);
+    i++;
+  }
+  return out.join('\n');
 }
 
-// 把 mermaid 源码解析成父子树，渲染为层级列表（图渲染失败或 mermaid 未加载时兜底）
-function replaceBlockWithOrgTree(el, src) {
-  if (!el || !el.parentNode) return;
-  var labels = {}, parentOf = {}, order = [];
-  (src || '').split('\n').forEach(function(line) {
-    var t = line.trim();
-    if (!t || /^graph\s+(TD|TB|LR|RL|BT)$/i.test(t)) return;
-    var rel = t.match(/^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)$/);
-    if (rel) {
-      if (order.indexOf(rel[1]) < 0) order.push(rel[1]);
-      if (order.indexOf(rel[2]) < 0) order.push(rel[2]);
-      parentOf[rel[2]] = rel[1];
-      return;
-    }
-    var def = t.match(/^([A-Za-z0-9_]+)\s*\[\s*"?(.*?)"?\s*\]$/);
-    if (def) { labels[def[1]] = def[2]; if (order.indexOf(def[1]) < 0) order.push(def[1]); }
-  });
-  var roots = order.filter(function(id) { return !parentOf[id]; });
-  if (!roots.length && order.length) roots = [order[0]];
-  function build(id, depth) {
-    var label = labels[id] || id;
-    var html = '<li><span class="org-node">' + escapeHtml(label) + '</span>';
-    var children = order.filter(function(c) { return parentOf[c] === id; });
-    if (children.length && depth < 8) {
-      html += '<ul>' + children.map(function(c) { return build(c, depth + 1); }).join('') + '</ul>';
-    }
-    return html + '</li>';
+function renderOrgChartIn(root) {
+  if (!root) return;
+  var codes = root.querySelectorAll('pre > code.language-mermaid');
+  for (var i = 0; i < codes.length; i++) {
+    var pre = codes[i].parentNode;
+    if (pre && pre.parentNode) replaceElWithOrgTree(pre, codes[i].textContent || '');
   }
+}
+
+function replaceElWithOrgTree(el, src) {
+  var tree = buildOrgTree(src);
   var wrap = document.createElement('div');
-  wrap.className = 'org-tree-fallback';
-  wrap.innerHTML = '<ul>' + roots.map(function(r) { return build(r, 0); }).join('') + '</ul>';
+  wrap.className = 'org-chart';
+  if (tree.length) {
+    wrap.innerHTML = '<div class="org-chart-scroll"><ul class="org-root">' +
+      tree.map(function (n) { return orgNodeHtml(n, 0, {}); }).join('') + '</ul></div>';
+  } else {
+    wrap.innerHTML = '<div class="org-chart-empty">组织架构信息不足，未能生成结构图</div>';
+  }
   el.parentNode.replaceChild(wrap, el);
+}
+
+// 解析 graph TD 子集：`id["标签"]` 定义 + `a --> b` 关系
+function buildOrgTree(src) {
+  var nodes = {}, order = [], parentOf = {};
+  function get(id) {
+    if (!nodes[id]) { nodes[id] = { id: id, label: '', children: [] }; order.push(id); }
+    return nodes[id];
+  }
+  (src || '').split('\n').forEach(function (line) {
+    var t = line.trim();
+    if (!t || /^graph\s+/i.test(t) || /^%%/.test(t)) return;
+    if (/^(subgraph|end|style|classDef|class|linkStyle|click)\b/i.test(t)) return;
+    var defRe = /([A-Za-z0-9_]+)\s*[\[\(]\s*"([^"]*)"[\]\)]/g;
+    var m;
+    while ((m = defRe.exec(t))) get(m[1]).label = m[2];
+    var rel = t.replace(defRe, '$1').match(/^([A-Za-z0-9_]+)\s*-{2,}>?\s*([A-Za-z0-9_]+)\s*--\s*[^>]*$/);
+    if (!rel) rel = t.replace(defRe, '$1').match(/^([A-Za-z0-9_]+)\s*-{2,}>?\s*([A-Za-z0-9_]+)$/);
+    if (rel && rel[1] !== rel[2] && !parentOf[rel[2]]) {
+      parentOf[rel[2]] = rel[1];
+      var from = get(rel[1]), to = get(rel[2]);
+      if (from.children.indexOf(to) < 0) from.children.push(to);
+    }
+  });
+  var roots = order.filter(function (id) { return !parentOf[id]; }).map(function (id) { return nodes[id]; });
+  if (!roots.length) {
+    var all = order.map(function (id) { return nodes[id]; });
+    if (!all.length) return [];
+    roots = [all[0]];
+  }
+  return roots;
+}
+
+function orgNodeHtml(n, depth, seen) {
+  if (!n || depth > 7 || seen[n.id]) return '';
+  seen[n.id] = true;
+  var parts = String(n.label || n.id).split(/[｜|]/);
+  var dept = (parts.shift() || '').trim();
+  var person = parts.join(' ').trim();
+  var html = '<li><div class="org-box"><span class="org-dept">' + escapeHtml(dept || '未公开') + '</span>' +
+    '<span class="org-person">' + escapeHtml(person || '未公开') + '</span></div>';
+  if (n.children.length) {
+    html += '<ul>' + n.children.map(function (c) { return orgNodeHtml(c, depth + 1, seen); }).join('') + '</ul>';
+  }
+  return html + '</li>';
 }
 
 // ===== 清理模型输出内容 =====
@@ -738,6 +696,7 @@ function cleanAIContent(text) {
 function formatAIOutput(content) {
   if (!content) return '';
   content = cleanAIContent(content);
+  content = normalizeOrgChartFences(content);
   if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
     try {
       var rendered = marked.parse(content);
@@ -829,6 +788,12 @@ function mdInline(text) {
 // ===== 自动重试包装器 =====
 var _retryRegistry = {};
 
+// 模型没吐出正文属于模型侧问题（思考/搜索占满输出预算），自动重跑只会再等几分钟，
+// 直接把错误交给 UI 显示"失败 + 重试该模型"，由用户决定
+function isTerminalEmptyError(err) {
+  return !!(err && err.message && String(err.message).indexOf('EMPTY_CONTENT') === 0);
+}
+
 async function callWithRetry(type, input, model, panelId, statusId, maxRetries, delay) {
   maxRetries = maxRetries || 2;
   delay = delay || 8000;
@@ -845,6 +810,7 @@ async function callWithRetry(type, input, model, panelId, statusId, maxRetries, 
       return await callAIStream(type, input, model, panelId);
     } catch (err) {
       lastError = err;
+      if (isTerminalEmptyError(err)) throw err;
       console.error('[callWithRetry] model=' + model + ' attempt=' + attempt + ' failed:', err.message);
     }
   }
@@ -876,7 +842,7 @@ function retryModel(retryKey) {
       if (statusEl) { statusEl.textContent = '✅ 已完成'; statusEl.className = 'output-tab-status done'; }
       insertExportToolbar(panelId, fileName);
       if (params.reportTitle) injectReportTitle(panelId, params.reportTitle);
-      renderMermaidIn(document.getElementById(panelId));
+      renderOrgChartIn(document.getElementById(panelId));
     })
     .catch(function(err) { renderFailPanel(panelId, statusId, err.message, retryKey); });
 }
@@ -897,17 +863,22 @@ async function callAIStream(type, input, model, panelId) {
   if (streamEndpoint && type !== 'batch_analysis') {
     try {
       console.log('[stream] model=' + model + ' endpoint=' + streamEndpoint);
-      var streamTimeout = 120000;
-      // 批量模式放宽超时至 180s
-      if (typeof _batchRunning !== 'undefined' && _batchRunning) streamTimeout = 180000;
+      // 流式响应只设"空闲超时"：持续出字就不掐断。旧的 120s 总时长上限会在长报告
+      // 写到一半时 abort，接着触发非流式重跑，把"慢"放大成几分钟的等待
+      const STREAM_IDLE_TIMEOUT = 45000;
       const streamCtrl = new AbortController();
-      const streamTimer = setTimeout(() => streamCtrl.abort(), streamTimeout);
+      let streamTimer = null;
+      function armStreamIdleTimer() {
+        if (streamTimer) clearTimeout(streamTimer);
+        streamTimer = setTimeout(() => streamCtrl.abort(), STREAM_IDLE_TIMEOUT);
+      }
+      armStreamIdleTimer();
       const resp = await fetch(streamEndpoint, {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-        body: JSON.stringify({ type, input, model: model || 'qwen38max', stream: true }),
+        body: JSON.stringify({ type, input, model: model || 'qwen38flash', stream: true }),
         signal: streamCtrl.signal
       });
       if (!resp.ok) {
@@ -931,6 +902,7 @@ async function callAIStream(type, input, model, panelId) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        armStreamIdleTimer();
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
@@ -954,10 +926,14 @@ async function callAIStream(type, input, model, panelId) {
       }
       clearTimeout(streamTimer);
       if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-      if (!fullContent) throw new Error('未收到有效内容');
+      if (!fullContent || fullContent.trim().length < 40) {
+        throw new Error('EMPTY_CONTENT: 模型未返回有效正文，请改用 Qwen3.8-Flash 或稍后重试');
+      }
       if (panelEl) panelEl.innerHTML = formatAIOutput(fullContent);
       return { content: fullContent, model: model };
     } catch (err) {
+      // 空正文换端点重跑没有意义，直接上抛（见 isTerminalEmptyError）
+      if (isTerminalEmptyError(err)) throw err;
       console.error('[stream] 流式调用失败:', err.message, '降级到非流式');
     }
   }
@@ -976,7 +952,7 @@ async function callAIStream(type, input, model, panelId) {
         const resp = await fetch(endpoint, {
           method: 'POST', mode: 'cors', credentials: 'omit',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ type, input, model: model || 'qwen38max' }),
+          body: JSON.stringify({ type, input, model: model || 'qwen38flash' }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -984,10 +960,14 @@ async function callAIStream(type, input, model, panelId) {
         let data;
         try { data = JSON.parse(text); } catch (e) { throw new Error('返回的不是有效JSON: ' + text.substring(0, 100)); }
         if (!resp.ok || data.error) throw new Error(data.error || '请求失败 HTTP ' + resp.status);
+        if (!data.content || data.content.trim().length < 40) {
+          throw new Error('EMPTY_CONTENT: 模型未返回有效正文，请改用 Qwen3.8-Flash 或稍后重试');
+        }
         if (panelEl) panelEl.innerHTML = formatAIOutput(data.content);
         return { content: data.content, model: data.model };
       } catch (err) {
         lastError = err;
+        if (isTerminalEmptyError(err)) throw err;
         console.error('[callAI] Endpoint ' + endpoint + ' failed:', err.message);
         continue;
       }
@@ -1519,7 +1499,7 @@ function batchExportExcel() {
     { wch: 8 },  { wch: 8 },  { wch: 8 }
   ];
   var wb = XLSX.utils.book_new();
-  var modelsToExport = _batchSelectedModels.length > 1 ? _batchSelectedModels : [_batchCurrentModel || _batchSelectedModels[0] || 'qwen38max'];
+  var modelsToExport = _batchSelectedModels.length > 1 ? _batchSelectedModels : [_batchCurrentModel || _batchSelectedModels[0] || 'qwen38flash'];
   var totalCustomers = 0;
   var sheetCount = 0;
   function buildRows(results) {
