@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 先锋·伙伴之家</title>
-  <link rel="stylesheet" href="css/style.css?v=20261017" />
+  <link rel="stylesheet" href="css/style.css?v=20261018c" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
 </head>
 <body>
@@ -21,7 +21,6 @@
       <button class="pill-btn" data-tab="weapons">🧰 打单兵器</button>
       <button class="pill-btn" data-tab="maas">🚀 赢战 MaaS</button>
       <button class="pill-btn" data-tab="guide">🎯 拜访教练</button>
-      <button class="pill-btn" data-tab="rank">🏆 龙虎榜</button>
       <button class="pill-btn" data-tab="feedback">回音壁💬</button>
     </nav>
     <div class="header-right">
@@ -37,7 +36,6 @@
       <button class="mobile-nav-btn" data-tab="weapons" onclick="mobileNavTo('weapons')">🧰 打单兵器</button>
       <button class="mobile-nav-btn" data-tab="maas" onclick="mobileNavTo('maas')">🚀 赢战 MaaS</button>
       <button class="mobile-nav-btn" data-tab="guide" onclick="mobileNavTo('guide')">🎯 拜访教练</button>
-      <button class="mobile-nav-btn" data-tab="rank" onclick="mobileNavTo('rank')">🏆 龙虎榜</button>
       <button class="mobile-nav-btn" data-tab="feedback" onclick="mobileNavTo('feedback')">💬 回音壁</button>
     </div>
   </div>
@@ -71,11 +69,6 @@
         <div class="home-nav-icon">🎯</div>
         <div class="home-nav-title">拜访教练</div>
         <div class="home-nav-desc">AI客户分析报告 · 批量分析 · AI拜访计划生成</div>
-      </div>
-      <div class="home-nav-card" onclick="switchTab('rank')">
-        <div class="home-nav-icon">🏆</div>
-        <div class="home-nav-title">龙虎榜</div>
-        <div class="home-nav-desc">MaaS渗透率 · 案例贡献 · 学习时长 · 项目战报</div>
       </div>
     </div>
   </div>
@@ -153,16 +146,16 @@
         </div>
         <div class="model-selector">
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwen38max" checked />
-            <span class="model-chip">Qwen3.8-Max<em>首选</em></span>
+            <input type="checkbox" name="analysisModel" value="qwen38flash" checked />
+            <span class="model-chip">Qwen3.8-Flash<em>首选</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="analysisModel" value="qwen38flash" />
-            <span class="model-chip">Qwen3.8-Flash<em>更快</em></span>
+            <input type="checkbox" name="analysisModel" value="deepseekv4flash" />
+            <span class="model-chip">DeepSeek-V4-Flash<em>快·稳</em></span>
           </label>
           <label class="model-option">
             <input type="checkbox" name="analysisModel" value="deepseekv4pro" />
-            <span class="model-chip">DeepSeek-V4-Pro<em>深度推理</em></span>
+            <span class="model-chip">DeepSeek-V4-Pro<em>深度推理·较慢</em></span>
           </label>
         </div>
         <button class="btn-generate" onclick="handleCustomerAnalysis()">🤖 生成客户分析报告</button>
@@ -199,15 +192,15 @@
           <div class="batch-model-label">选择分析模型（可多选）：</div>
           <div class="model-selector">
             <label class="model-option">
-              <input type="checkbox" name="batchModel" value="qwen38max" checked />
-              <span class="model-chip">Qwen3.8-Max<em>首选</em></span>
+              <input type="checkbox" name="batchModel" value="qwen38flash" checked />
+              <span class="model-chip">Qwen3.8-Flash<em>首选</em></span>
             </label>
             <label class="model-option">
-              <input type="checkbox" name="batchModel" value="qwen38flash" />
-              <span class="model-chip">Qwen3.8-Flash<em>更快</em></span>
+              <input type="checkbox" name="batchModel" value="qwen37plus" />
+              <span class="model-chip">Qwen3.7-Plus<em>均衡</em></span>
             </label>
           </div>
-          <div class="batch-model-hint" style="font-size:12px;color:#8b93a7;margin-top:6px;">批量评估依赖联网搜索抓取工商/营收信息，仅支持具备联网搜索能力的 Qwen3.8 系列（智谱GLM-5.3 在 Chat Completions 协议下不支持联网搜索，不适用于本场景）</div>
+          <div class="batch-model-hint" style="font-size:12px;color:#8b93a7;margin-top:6px;">批量评估依赖联网搜索抓取工商/营收信息，仅支持具备联网搜索能力的 Qwen 系列（智谱GLM-5.3 在 Chat Completions 协议下不支持联网搜索，不适用于本场景）</div>
           <div class="batch-actions">
             <button class="btn-generate" id="batchStartBtn" onclick="handleBatchAnalysis()">🚀 开始批量评估</button>
             <button class="btn-stop" id="batchStopBtn" onclick="stopBatchAnalysis()" style="display:none">⏹ 停止</button>
@@ -319,8 +312,8 @@
             <span class="model-chip">Qwen3.8-Flash<em>首选</em></span>
           </label>
           <label class="model-option">
-            <input type="checkbox" name="visitModel" value="qwen38max" />
-            <span class="model-chip">Qwen3.8-Max<em>旗舰</em></span>
+            <input type="checkbox" name="visitModel" value="deepseekv4flash" />
+            <span class="model-chip">DeepSeek-V4-Flash<em>快·稳</em></span>
           </label>
           <label class="model-option">
             <input type="checkbox" name="visitModel" value="glm53" />
@@ -336,43 +329,6 @@
     </div>
 
   </div><!-- end tab-guide -->
-
-  <!-- ===== RANK TAB ===== -->
-  <div class="tab-panel" id="tab-rank">
-    <div class="section-title">
-      <span class="icon">🏆</span> 龙虎榜
-    </div>
-    <div class="rank-tabs" id="rankTabs">
-      <button class="rank-tab active" data-rank="token">📊 MaaS渗透率</button>
-      <button class="rank-tab" data-rank="case">📝 案例贡献</button>
-      <button class="rank-tab" data-rank="study">📖 学习时长</button>
-      <button class="rank-tab" data-rank="cert">🎓 持证率</button>
-      <button class="rank-tab" data-rank="battle">⚔️ 项目战报</button>
-    </div>
-    <div class="rank-panel active" id="rank-token">
-      <div class="rank-list" id="tokenRankList"></div>
-    </div>
-    <div class="rank-panel" id="rank-case">
-      <div class="rank-list" id="caseRankList"></div>
-    </div>
-    <div class="rank-panel" id="rank-study">
-      <div class="rank-list" id="studyRankList"></div>
-    </div>
-    <div class="rank-panel" id="rank-cert">
-      <div class="rank-list" id="certRankList"></div>
-    </div>
-    <div class="rank-panel" id="rank-battle">
-      <div class="battle-list" id="battleList"></div>
-      <a href="xibao.html" class="kb-banner" style="margin-top:16px;">
-        <span class="kb-banner-icon">🎉</span>
-        <div class="kb-banner-text">
-          <div class="kb-banner-title">MaaS喜报生成器</div>
-          <div class="kb-banner-desc">一键生成高燃销售战报海报，分享至钉钉/微信</div>
-        </div>
-        <span class="kb-banner-arrow">→</span>
-      </a>
-    </div>
-  </div>
 
   <!-- ===== FEEDBACK TAB ===== -->
   <div class="tab-panel" id="tab-feedback">
@@ -417,6 +373,6 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js" defer></script>
-<script src="js/app.js?v=20261017a"></script>
+<script src="js/app.js?v=20261018c"></script>
 </body>
 </html>
